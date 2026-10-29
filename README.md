@@ -1,4 +1,4 @@
-# Eaglerk
+# MyMoney
 
 A personal finance planner for Indian households. It answers four questions:
 
