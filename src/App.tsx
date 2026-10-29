@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Dashboard } from './views/Dashboard';
 import { Goals } from './views/Goals';
 import { Investments } from './views/Investments';
@@ -25,9 +25,13 @@ function Shell() {
     try { return (localStorage.getItem('eaglerk:theme') as Theme) || 'auto'; } catch { return 'auto'; }
   });
 
+  // Only touch data-theme once the user has picked a theme, so a host's own light/dark setting is left alone.
+  const picked = useRef(theme !== 'auto');
   useEffect(() => {
-    if (theme === 'auto') document.documentElement.removeAttribute('data-theme');
-    else document.documentElement.setAttribute('data-theme', theme);
+    if (theme !== 'auto') picked.current = true;
+    if (theme === 'auto') {
+      if (picked.current) document.documentElement.removeAttribute('data-theme');
+    } else document.documentElement.setAttribute('data-theme', theme);
     try { localStorage.setItem('eaglerk:theme', theme); } catch { /* storage blocked */ }
   }, [theme]);
 

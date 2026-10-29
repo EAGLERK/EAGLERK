@@ -18,6 +18,7 @@ export function Settings() {
   const p = state.profile;
   const file = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<{ tone: 'good' | 'bad'; text: string } | null>(null);
+  const [backupText, setBackupText] = useState('');
   const groups = [...new Set(d.assumptions.map((a) => a.group))];
 
   const exportJson = () => {
@@ -29,14 +30,27 @@ export function Settings() {
     URL.revokeObjectURL(a.href);
   };
 
-  const importJson = async (f: File) => {
+  const restore = (text: string) => {
     try {
-      const parsed = JSON.parse(await f.text()) as AppState;
+      const parsed = JSON.parse(text) as AppState;
       if (parsed.version !== 1 || !Array.isArray(parsed.txns) || !Array.isArray(parsed.goals) || !Array.isArray(parsed.investments)) throw new Error('shape');
       dispatch({ type: 'replace', state: { ...parsed, liabilities: parsed.liabilities ?? [], overrides: parsed.overrides ?? {}, onboarded: true } });
       setMsg({ tone: 'good', text: 'Backup restored.' });
     } catch {
-      setMsg({ tone: 'bad', text: 'That file is not an Eaglerk backup.' });
+      setMsg({ tone: 'bad', text: 'That is not an Eaglerk backup.' });
+    }
+  };
+  const importJson = async (f: File) => restore(await f.text());
+
+  // Downloads are blocked in some embedded viewers, so a copy/paste route is always available.
+  const copyBackup = async () => {
+    const text = JSON.stringify(state);
+    setBackupText(text);
+    try {
+      await navigator.clipboard.writeText(text);
+      setMsg({ tone: 'good', text: 'Backup copied. Paste it somewhere safe.' });
+    } catch {
+      setMsg({ tone: 'good', text: 'Select the text below and copy it.' });
     }
   };
 
@@ -87,10 +101,15 @@ export function Settings() {
       <Card title="Your data" sub="Everything is stored in this browser only. Nothing is sent anywhere.">
         <div className="row">
           <button className="btn" onClick={exportJson}>Download backup</button>
-          <button className="btn" onClick={() => file.current?.click()}>Restore backup</button>
+          <button className="btn" onClick={copyBackup}>Copy backup</button>
+          <button className="btn" onClick={() => file.current?.click()}>Restore from file</button>
           <input ref={file} type="file" accept="application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f); e.target.value = ''; }} />
           <button className="btn" onClick={() => { if (confirm('Replace your data with the sample data?')) dispatch({ type: 'loadDemo' }); }}>Load sample data</button>
           <button className="btn danger" onClick={() => { if (confirm('Erase everything in this browser? Download a backup first if you want one.')) dispatch({ type: 'startFresh' }); }}>Erase everything</button>
+        </div>
+        <div className="stack" style={{ marginTop: 12 }}>
+          <textarea id="backup-text" className="inline-input" rows={3} aria-label="Backup text" value={backupText} onChange={(e) => setBackupText(e.target.value)} placeholder="Press Copy backup to fill this with your data, or paste a backup here and press Restore from text." />
+          <div><button className="btn" disabled={!backupText.trim()} onClick={() => restore(backupText)}>Restore from text</button></div>
         </div>
         {msg && <div style={{ marginTop: 12 }}><Callout tone={msg.tone}>{msg.text}</Callout></div>}
         <p className="sub" style={{ marginTop: 12 }}>Browser storage can be wiped by clearing site data. Download a backup now and then.</p>

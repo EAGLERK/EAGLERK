@@ -8,7 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:single": "node scripts/build-single.mjs",
+    "e2e": "node e2e/flow.cjs"
   },
   "dependencies": {
     "react": "^19.3.1",

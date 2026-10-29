@@ -16,6 +16,8 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # 47 engine tests
 npm run build      # typecheck + production build
+npm run build:single   # one self-contained dist-single/eaglerk.html (no server needed)
+npm run e2e        # browser smoke test against a running server (needs Playwright + Chromium)
 ```
 
 Click **Explore with sample data** on first launch to see every screen populated.
@@ -57,7 +59,7 @@ Tax modelled: new regime FY 2026-27, 4% cess, Rs 12 lakh rebate with marginal re
 
 - **No live bank sync.** In India that needs the RBI Account Aggregator framework, which a personal app cannot join directly. Statement import is the supported path; re-importing a file does not duplicate rows.
 - **New tax regime only.** 80C / 80D / HRA are not modelled, so PPF and ELSS look less attractive than they would to an old-regime filer.
-- **Single device.** Data is in one browser. Use Settings > Download backup.
+- **Single device.** Data is in one browser. Use Settings > Download backup, or Copy backup if downloads are blocked.
 - **Not investment advice.** The advisor is a transparent rule set (110 minus age for equity share, adjusted for risk). The author is not a SEBI-registered adviser.
 - Market-linked holdings need a manually entered current value; there is no NAV or price feed.
 - Goal affordability assumes today's income stays flat.
