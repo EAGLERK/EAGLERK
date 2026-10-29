@@ -58,7 +58,7 @@ export function Investments() {
 
           <Card title="Your holdings, best to worst" sub="Ranked by return after tax and inflation, not by the headline rate">
             <div className="table-wrap">
-              <table className="table num">
+              <table className="table num cards">
                 <thead><tr><th>Holding</th><th className="r">Value</th><th className="r">Gain</th><th className="r">Rate</th><th className="r">After tax</th><th className="r">Real</th><th>Verdict</th><th /></tr></thead>
                 <tbody>
                   {ranked.map((h, i) => {
@@ -72,12 +72,12 @@ export function Investments() {
                           <div className="sub">{KIND_LABEL[h.inv.kind]}{h.inv.institution ? ` · ${h.inv.institution}` : ''}{mat ? ` · matures ${mat.date}` : ''}</div>
                           {h.flags.map((f) => <div key={f} className="watch small">! {f}</div>)}
                         </td>
-                        <td className="r" style={{ whiteSpace: 'nowrap' }}>{inr(h.value)}</td>
-                        <td className={`r ${h.gain >= 0 ? 'good' : 'bad'}`} style={{ whiteSpace: 'nowrap' }}>{h.gain >= 0 ? '+' : ''}{inr(h.gain)}</td>
-                        <td className="r">{pct(h.pretax)}<div className="sub">{h.rateSource === 'assumed' ? 'assumed' : 'yours'}</div></td>
-                        <td className="r">{pct(h.posttax)}</td>
-                        <td className={`r ${h.real < 0.5 ? 'bad' : ''}`}>{pct(h.real)}</td>
-                        <td>{best ? <Badge tone="good">{'✓'} Best</Badge> : worst ? <Badge tone={h.real < 1 ? 'bad' : 'watch'}>{h.real < 1 ? '✕' : '!'} Weakest</Badge> : null}</td>
+                        <td data-label="Value" className="r" style={{ whiteSpace: 'nowrap' }}>{inr(h.value)}</td>
+                        <td data-label="Gain" className={`r ${h.gain >= 0 ? 'good' : 'bad'}`} style={{ whiteSpace: 'nowrap' }}>{h.gain >= 0 ? '+' : ''}{inr(h.gain)}</td>
+                        <td data-label="Rate" className="r"><span className="cellval">{pct(h.pretax)}<span className="sub">{h.rateSource === 'assumed' ? 'assumed' : 'yours'}</span></span></td>
+                        <td data-label="After tax" className="r">{pct(h.posttax)}</td>
+                        <td data-label="Real return" className={`r ${h.real < 0.5 ? 'bad' : ''}`}>{pct(h.real)}</td>
+                        <td data-label="Verdict">{best ? <Badge tone="good">{'✓'} Best</Badge> : worst ? <Badge tone={h.real < 1 ? 'bad' : 'watch'}>{h.real < 1 ? '✕' : '!'} Weakest</Badge> : null}</td>
                         <td style={{ whiteSpace: 'nowrap' }}>
                           <button className="btn small" onClick={() => setEditing(h.inv)}>Edit</button>{' '}
                           <button className="btn small ghost danger" aria-label={`Delete ${h.inv.name}`} onClick={() => { if (confirm(`Delete ${h.inv.name}?`)) dispatch({ type: 'deleteInvestment', id: h.inv.id }); }}>&times;</button>
@@ -201,7 +201,7 @@ function Compare() {
       </div>
 
       <div className="table-wrap">
-        <table className="table num">
+        <table className="table num cards">
           <thead><tr><th>Instrument</th><th className="r">Rate</th><th className="r">After tax</th><th className="r">Real</th><th className="r">You end with</th><th className="r">In today&rsquo;s money</th><th className="r">Bad year</th><th>Verdict</th></tr></thead>
           <tbody>
             {rows.map((r) => {
@@ -213,13 +213,13 @@ function Compare() {
                     <div className="sub">{r.inst.where}</div>
                     {r.reason && <div className={`small ${r.eligible ? 'watch' : 'muted'}`}>{r.reason}</div>}
                   </td>
-                  <td className="r">{pct(r.pretax)}<div><Badge tone={status(r.inst.rateKey) === 'verified' ? 'good' : status(r.inst.rateKey) === 'check' ? 'watch' : undefined} title="verified: official notification · check: confirm with your bank · estimate: modelled assumption">{status(r.inst.rateKey)}</Badge></div></td>
-                  <td className="r">{pct(r.posttax)}</td>
-                  <td className={`r ${r.real < 0.5 ? 'bad' : ''}`}>{pct(r.real)}</td>
-                  <td className="r">{inrCompact(c.net)}</td>
-                  <td className="r">{inrCompact(c.real)}</td>
-                  <td className="r">{r.inst.badYear ? pct(r.inst.badYear, 0) : '0%'}</td>
-                  <td>{r.verdict === 'best' ? <Badge tone="good">{'✓'} Best</Badge> : r.verdict === 'avoid' ? <Badge tone="bad">{'✕'} Avoid</Badge> : r.verdict === 'unsuitable' ? <Badge>Not for this</Badge> : <Badge tone="info">OK</Badge>}</td>
+                  <td data-label="Rate" className="r"><span className="cellval">{pct(r.pretax)}<span><Badge tone={status(r.inst.rateKey) === 'verified' ? 'good' : status(r.inst.rateKey) === 'check' ? 'watch' : undefined} title="verified: official notification · check: confirm with your bank · estimate: modelled assumption">{status(r.inst.rateKey)}</Badge></span></span></td>
+                  <td data-label="After tax" className="r">{pct(r.posttax)}</td>
+                  <td data-label="Real return" className={`r ${r.real < 0.5 ? 'bad' : ''}`}>{pct(r.real)}</td>
+                  <td data-label="You end with" className="r">{inrCompact(c.net)}</td>
+                  <td data-label="In today's money" className="r">{inrCompact(c.real)}</td>
+                  <td data-label="Bad year" className="r">{r.inst.badYear ? pct(r.inst.badYear, 0) : '0%'}</td>
+                  <td data-label="Verdict">{r.verdict === 'best' ? <Badge tone="good">{'✓'} Best</Badge> : r.verdict === 'avoid' ? <Badge tone="bad">{'✕'} Avoid</Badge> : r.verdict === 'unsuitable' ? <Badge>Not for this</Badge> : <Badge tone="info">OK</Badge>}</td>
                 </tr>
               );
             })}

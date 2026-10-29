@@ -277,3 +277,35 @@ ul.clean { list-style: none; margin: 0; padding: 0; display: flex; flex-directio
 @media (max-width: 899px) { .showcase { height: 240px; } }
 @media (prefers-color-scheme: dark) { :root:where(:not([data-theme='light'])) .showcase { background: radial-gradient(120% 90% at 50% 15%, #23352c 0%, #18251f 62%, #131c18 100%); } }
 :root[data-theme='dark'] .showcase { background: radial-gradient(120% 90% at 50% 15%, #23352c 0%, #18251f 62%, #131c18 100%); }
+
+/* Phones: stat tiles two across, compact top bar, wide tables become stacked cards */
+@media (max-width: 599px) {
+  .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .g4 > .card, .g4 > .stat { padding: 14px; }
+  .stat .label { font-size: 12px; }
+  .stat .value { font-size: 20px; }
+  .stat .sub, .stat .delta { font-size: 12px; }
+  .crumbs { flex-wrap: nowrap; padding-bottom: 10px; gap: 8px; }
+  .crumbs .path { font-weight: 650; color: var(--text); font-size: 15px; }
+  .crumbs .crumb-rest { display: none; }
+  .crumbs .badge { font-size: 11px; padding: 2px 7px; }
+  .crumbs .pill-toggle button { padding: 4px 9px; font-size: 12px; }
+  .panel { padding-top: 12px; }
+
+  .table.cards thead { display: none; }
+  .table.cards, .table.cards tbody, .table.cards tr, .table.cards td { display: block; }
+  .table.cards tr { border: 1px solid var(--grid); border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; }
+  .table.cards td { border: 0; padding: 3px 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; text-align: right; }
+  .table.cards td::before { content: attr(data-label); color: var(--text-muted); font-size: 12px; text-align: left; flex: none; }
+  .table.cards td:first-child { display: block; text-align: left; font-weight: 600; padding-bottom: 6px; }
+  .table.cards td:first-child::before { content: none; }
+  .table.cards td:last-child:not([data-label]) { justify-content: flex-start; padding-top: 6px; }
+  .table.cards td:last-child:not([data-label])::before { content: none; }
+}
+
+.cellval > .sub, .cellval > span { display: block; }
+@media (max-width: 599px) {
+  .cellval { display: inline-flex; align-items: baseline; gap: 8px; }
+  .cellval > .sub, .cellval > span { display: inline; }
+  .table.cards td:empty { display: none; }
+}

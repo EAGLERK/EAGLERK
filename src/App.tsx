@@ -96,7 +96,7 @@ function Shell() {
 
         <div className="panel">
           <div className="crumbs">
-            <div className="path">Eaglerk &rsaquo; <b>{current.label}</b></div>
+            <div className="path">Eaglerk<span className="crumb-rest"> &rsaquo; <b>{current.label}</b></span></div>
             {state.txns.some((t) => t.source === 'demo') && <span className="badge watch">Sample data</span>}
             <div className="pill-toggle" role="group" aria-label="Theme">
               {(['auto', 'light', 'dark'] as Theme[]).map((t) => <button key={t} aria-pressed={theme === t} onClick={() => setTheme(t)}>{t}</button>)}
