@@ -25,7 +25,10 @@ const check = (ok, msg) => {
   const browser = await chromium.launch();
   const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
   const errors = [];
-  page.on('console', (m) => ['error', 'warning'].includes(m.type()) && errors.push(m.text()));
+  // Headless Chromium has no GPU and its software GL prints performance notices for any WebGL canvas.
+  // Those are driver messages, not app errors, so ignore only that exact kind.
+  const driverNoise = /GL Driver Message|GPU stall due to ReadPixels/;
+  page.on('console', (m) => ['error', 'warning'].includes(m.type()) && !driverNoise.test(m.text()) && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push('pageerror ' + e.message));
   const nav = (name) => page.getByRole('navigation').getByRole('button', { name });
   const main = () => page.locator('main').innerText();
@@ -56,6 +59,9 @@ const check = (ok, msg) => {
   check(t.includes('₹29,200') && t.includes('₹15,000'), 'Sep spend 29,200 excludes the 15,000 SIP, which shows as invested');
 
   await nav('Goals').click();
+  // The 3D scene is a lazy chunk, so wait for its canvas instead of checking at once.
+  const canvasShown = await page.waitForSelector('.showcase canvas', { timeout: 15000 }).then(() => true, () => false);
+  check(canvasShown, 'Goals page renders the 3D scene canvas');
   await page.getByRole('button', { name: 'Car', exact: true }).click();
   await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
   await page.locator('label:has-text("Price today") input').fill('2000000');

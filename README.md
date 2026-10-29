@@ -9,6 +9,10 @@ A personal finance planner for Indian households. It answers four questions:
 
 Everything runs in the browser and is stored in `localStorage`. Nothing is uploaded.
 
+![Car, house and bike](docs/illustrations/car-house-bike.png)
+
+The 3D scene on the Goals tab is built from code with Three.js (`src/three/`), in the app's chart colours. Stills are in `docs/illustrations/`. Re-render them by opening `#showcase-all`, `#showcase-car`, `#showcase-house` or `#showcase-bike` in a WebGL-capable browser.
+
 ## Run it
 
 ```bash

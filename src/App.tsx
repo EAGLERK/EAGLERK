@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Icon, type IconName } from './components/icons';
 import { Dashboard } from './views/Dashboard';
 import { Goals } from './views/Goals';
@@ -15,6 +15,8 @@ const GROUPS: Array<{ label: string; tabs: Tab[] }> = [
   { label: 'General', tabs: [{ id: 'settings', label: 'Settings', short: 'Settings', icon: 'settings' }] },
 ];
 const ALL = GROUPS.flatMap((g) => g.tabs);
+
+const ShowcasePage = lazy(() => import('./three/ShowcasePage'));
 
 type Theme = 'auto' | 'light' | 'dark';
 
@@ -47,6 +49,11 @@ function Shell() {
 
   const go = (t: string) => { location.hash = t; setTab(t); window.scrollTo({ top: 0 }); };
   const current = ALL.find((t) => t.id === tab) ?? ALL[0];
+
+  if (tab.startsWith('showcase-')) {
+    const which = tab.slice('showcase-'.length) as 'all' | 'car' | 'house' | 'bike';
+    return <Suspense fallback={null}><ShowcasePage which={which} /></Suspense>;
+  }
 
   if (!state.onboarded) {
     return (

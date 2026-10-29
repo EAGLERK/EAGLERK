@@ -4,7 +4,7 @@ import { execSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-execSync('npx vite build --base ./', { stdio: 'inherit' });
+execSync('npx vite build --base ./', { stdio: 'inherit', env: { ...process.env, SINGLE: '1' } });
 
 const assets = join('dist', 'assets');
 const files = readdirSync(assets);

@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { addMonths } from '../engine/cashflow';
 import { earliestMonths, GOAL_DEFAULTS, planGoal, type PlanContext } from '../engine/goals';
 import type { Goal, GoalKind } from '../engine/types';
 import { Badge, Callout, Card, Field, Num, NumInput } from '../components/ui';
 import { inr, inrCompact, monthLabel, monthsText, pct, uid } from '../lib/format';
 import { useStore } from '../store';
+
+const Showcase3D = lazy(() => import('../three/Showcase3D'));
 
 const DEFAULT_PRICE: Record<GoalKind, number> = { car: 1_000_000, house: 6_000_000, bike: 150_000, other: 500_000 };
 
@@ -34,6 +36,15 @@ export function Goals() {
           {(['car', 'house', 'bike', 'other'] as GoalKind[]).map((k) => <button key={k} className="btn" onClick={() => add(k)}>{GOAL_DEFAULTS[k].name}</button>)}
         </div>
       </div>
+
+      <section className="card" style={{ padding: 0, overflow: 'hidden' }} aria-label="Car, house and bike">
+        <div className="showcase">
+          <Suspense fallback={<div className="sub" style={{ padding: 24 }}>Loading 3D view...</div>}>
+            <Showcase3D />
+          </Suspense>
+        </div>
+        <div className="showcase-caption"><span><i style={{ background: 'var(--s1)' }} />Car</span><span><i style={{ background: 'var(--s2)' }} />House</span><span><i style={{ background: 'var(--s3)' }} />Bike</span><span className="muted">Drag to look around</span></div>
+      </section>
 
       {plans.length > 0 && (
         <Card title="All goals together">
