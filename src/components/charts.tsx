@@ -9,8 +9,8 @@ const axisLine = { stroke: 'var(--axis)' };
 /** Compact axis labels: 50000 -> 50k, 250000 -> 2.5L */
 const axisMoney = (n: number) => {
   const a = Math.abs(n);
-  if (a >= 1e7) return `${+(n / 1e7).toFixed(1)}Cr`;
-  if (a >= 1e5) return `${+(n / 1e5).toFixed(1)}L`;
+  if (a >= 1e7) return `${+(n / 1e7).toFixed(2)}Cr`;
+  if (a >= 1e5) return `${+(n / 1e5).toFixed(2)}L`;
   if (a >= 1e3) return `${+(n / 1e3).toFixed(0)}k`;
   return String(n);
 };

@@ -72,8 +72,8 @@ export function Investments() {
                           <div className="sub">{KIND_LABEL[h.inv.kind]}{h.inv.institution ? ` · ${h.inv.institution}` : ''}{mat ? ` · matures ${mat.date}` : ''}</div>
                           {h.flags.map((f) => <div key={f} className="watch small">! {f}</div>)}
                         </td>
-                        <td className="r">{inr(h.value)}</td>
-                        <td className={`r ${h.gain >= 0 ? 'good' : 'bad'}`}>{h.gain >= 0 ? '+' : ''}{inr(h.gain)}</td>
+                        <td className="r" style={{ whiteSpace: 'nowrap' }}>{inr(h.value)}</td>
+                        <td className={`r ${h.gain >= 0 ? 'good' : 'bad'}`} style={{ whiteSpace: 'nowrap' }}>{h.gain >= 0 ? '+' : ''}{inr(h.gain)}</td>
                         <td className="r">{pct(h.pretax)}<div className="sub">{h.rateSource === 'assumed' ? 'assumed' : 'yours'}</div></td>
                         <td className="r">{pct(h.posttax)}</td>
                         <td className={`r ${h.real < 0.5 ? 'bad' : ''}`}>{pct(h.real)}</td>
