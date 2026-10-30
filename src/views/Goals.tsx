@@ -6,7 +6,9 @@ import { Icon, type IconName } from '../components/icons';
 import { useToast } from '../components/feedback';
 import { Badge, Callout, Card, Field, Num, NumInput } from '../components/ui';
 import { inr, inrCompact, monthLabel, monthsText, pct, uid } from '../lib/format';
+import { features } from '../features';
 import { useStore } from '../store';
+import { LoansCard } from './Loans';
 
 const Showcase3D = lazy(() => import('../three/Showcase3D'));
 
@@ -89,9 +91,9 @@ export function Goals() {
             <div><div className="sub">New EMIs once all goals are bought</div><div className="num" style={{ fontSize: 24, fontWeight: 650 }}>{inr(totalEmi)}</div></div>
           </div>
           {totalMonthly > surplus ? (
-            <div style={{ marginTop: 12 }}><Callout tone="bad">Your goals need {inr(totalMonthly - surplus)} a month more than you have left over. Something has to give: push dates out, trim prices, or raise income. The Plan tab shows which goal gets funded first.</Callout></div>
+            <div style={{ marginTop: 12 }}><Callout tone="bad">Your goals need {inr(totalMonthly - surplus)} a month more than you have left over. Something has to give: push dates out, trim prices, or raise income.{features.investing ? ' The Plan tab shows which goal gets funded first.' : ''}</Callout></div>
           ) : (
-            <div style={{ marginTop: 12 }}><Callout tone="good">All goals fit inside your surplus with {inr(surplus - totalMonthly)} a month to spare. The Plan tab funds your emergency fund and any costly debt before goals, so check it for the real order.</Callout></div>
+            <div style={{ marginTop: 12 }}><Callout tone="good">All goals fit inside your surplus with {inr(surplus - totalMonthly)} a month to spare.{features.investing ? ' The Plan tab funds your emergency fund and any costly debt before goals, so check it for the real order.' : ''}</Callout></div>
           )}
         </Card>
       )}
@@ -106,6 +108,8 @@ export function Goals() {
         </Card>
       )}
       {plans.map(({ g }) => <GoalCard key={g.id} goal={g} ctx={ctx} surplus={surplus} />)}
+
+      <LoansCard />
     </div>
   );
 }
@@ -158,8 +162,12 @@ function GoalCard({ goal, ctx, surplus }: { goal: Goal; ctx: PlanContext; surplu
         <div className="stack">
           <h3>What to do</h3>
           <div className="callout info"><span className="ic" aria-hidden>i</span><div>
-            {p.requiredMonthly > 0 ? <>Put aside <b className="num">{inr(p.requiredMonthly)}</b> a month in a <b>{p.vehicle.toLowerCase()}</b> (about {pct(p.vehicleReturn)} a year after tax). </> : <>You already have enough set aside for the up-front cash. </>}
-            {p.years < 3 ? 'The date is under 3 years away, so keep this out of equity: a market fall right before purchase would hurt.' : 'The date is 3+ years away, so some market exposure is reasonable.'}
+            {p.requiredMonthly > 0
+              ? features.investing
+                ? <>Put aside <b className="num">{inr(p.requiredMonthly)}</b> a month in a <b>{p.vehicle.toLowerCase()}</b> (about {pct(p.vehicleReturn)} a year after tax). </>
+                : <>Put aside <b className="num">{inr(p.requiredMonthly)}</b> a month. This assumes your savings grow about {pct(p.vehicleReturn)} a year after tax; saving more or sooner shortens the wait. </>
+              : <>You already have enough set aside for the up-front cash. </>}
+            {features.investing && (p.years < 3 ? 'The date is under 3 years away, so keep this out of equity: a market fall right before purchase would hurt.' : 'The date is 3+ years away, so some market exposure is reasonable.')}
           </div></div>
           {hasLoan && <div className="row"><Badge tone={tone}>{tone === 'good' ? '✓' : tone === 'watch' ? '!' : '✕'} {p.verdict}</Badge><span className="sub">Total EMIs would be {pct(p.foir * 100, 0)} of monthly income {ctx.existingEmi > 0 ? `(including ${inr(ctx.existingEmi)} you pay now)` : ''}</span></div>}
           <div className="row">

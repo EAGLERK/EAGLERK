@@ -2,6 +2,8 @@
 // Usage: npm run build && npx vite preview --port 4174 & node e2e/flow.cjs
 const { chromium } = require('playwright');
 const URL = process.env.APP_URL || 'http://localhost:4174/';
+// Investing is hidden unless the app was started with VITE_FEATURE_INVESTING=1; run this test with INVESTING=1 against such a server.
+const investing = process.env.INVESTING === '1';
 
 const csv = `Account Statement,,,,,
 Date,Narration,Chq./Ref.No.,Value Dt,Withdrawal Amt.,Deposit Amt.,Closing Balance
@@ -37,8 +39,13 @@ const check = (ok, msg) => {
   await page.getByRole('button', { name: 'Start with my own data' }).click();
   check(await page.getByText('Nothing here yet').isVisible(), 'empty dashboard shows onboarding card');
 
-  await nav('Plan').click();
-  check(await page.getByText('No income found in your transactions yet').isVisible(), 'plan falls back to profile estimates');
+  if (investing) {
+    await nav('Plan').click();
+    check(await page.getByText('No income found in your transactions yet').isVisible(), 'plan falls back to profile estimates');
+  } else {
+    const sideTabs = await page.getByRole('navigation').first().innerText();
+    check(!/Investments|\bPlan\b/.test(sideTabs.replace('PLAN', '')), 'investing is hidden: no Investments or Plan tab');
+  }
 
   await nav('Transactions').click();
   await page.locator('textarea').fill(csv);
@@ -68,28 +75,45 @@ const check = (ok, msg) => {
   await page.locator('label:has-text("Price today") input').fill('2000000');
   check((await main()).includes('₹20,00,000'), 'goal price edit flows into the plan');
 
-  await nav('Investments').click();
-  await page.getByRole('button', { name: 'Add investment' }).click();
-  await page.locator('label:has-text("Name") input').first().fill('Test FD');
-  await page.locator('label:has-text("Deposit amount") input').fill('100000');
-  await page.locator('label:has-text("Interest rate") input').fill('7');
-  check((await main()).includes('Matures on'), 'FD maturity preview shown');
-  await page.getByRole('button', { name: 'Save investment' }).click();
-  check((await main()).includes('Test FD'), 'FD appears in holdings');
-
-  await page.reload();
-  await nav('Investments').click();
-  check((await main()).includes('Test FD'), 'data persists across reload');
+  if (investing) {
+    await nav('Investments').click();
+    await page.getByRole('button', { name: 'Add investment' }).click();
+    await page.locator('label:has-text("Name") input').first().fill('Test FD');
+    await page.locator('label:has-text("Deposit amount") input').fill('100000');
+    await page.locator('label:has-text("Interest rate") input').fill('7');
+    check((await main()).includes('Matures on'), 'FD maturity preview shown');
+    await page.getByRole('button', { name: 'Save investment' }).click();
+    check((await main()).includes('Test FD'), 'FD appears in holdings');
+    await page.reload();
+    await nav('Investments').click();
+    check((await main()).includes('Test FD'), 'data persists across reload');
+  } else {
+    // Loans now live on Goals, because their EMIs decide what each goal can afford.
+    await page.getByRole('button', { name: 'Add loan' }).click();
+    const loan = page.getByRole('group', { name: 'Loan details' });
+    await loan.getByLabel(/^Name/).fill('Test loan');
+    await loan.getByLabel(/^Outstanding/).fill('50000');
+    await loan.getByLabel(/^Monthly EMI/).fill('3000');
+    await page.getByRole('button', { name: 'Save loan' }).click();
+    check((await main()).includes('Test loan'), 'a loan can be added on the Goals screen');
+    await page.reload();
+    await nav('Goals').click();
+    check((await main()).includes('Test loan'), 'data persists across reload');
+  }
 
   // Upgrade path: data saved under the old app name must still load.
   const legacyPage = await (await browser.newContext()).newPage();
   await legacyPage.addInitScript(() => {
-    const state = { version: 1, onboarded: true, profile: { name: 'Legacy' }, txns: [], goals: [], investments: [{ id: 'x', kind: 'savings', name: 'Old savings', institution: '', startDate: '2020-01-01', amount: 12345, currentValue: 12345, rate: 3, tenureMonths: 0 }], liabilities: [], overrides: {} };
+    const state = { version: 1, onboarded: true, profile: { name: 'Legacy' }, txns: [{ id: 't1', date: '2026-10-01', description: 'Legacy coffee', amount: 120, type: 'expense', category: 'Food & Dining', source: 'manual' }], goals: [], investments: [{ id: 'x', kind: 'savings', name: 'Old savings', institution: '', startDate: '2020-01-01', amount: 12345, currentValue: 12345, rate: 3, tenureMonths: 0 }], liabilities: [], overrides: {} };
     if (!localStorage.getItem('mymoney:v1')) localStorage.setItem('eaglerk:v1', JSON.stringify(state));
   });
   await legacyPage.goto(URL);
-  await legacyPage.getByRole('navigation').getByRole('button', { name: 'Investments' }).click();
-  check((await legacyPage.locator('main').innerText()).includes('Old savings'), 'data saved under the old key (eaglerk) still loads');
+  await legacyPage.getByRole('navigation').getByRole('button', { name: 'Transactions' }).click();
+  check((await legacyPage.locator('main').innerText()).includes('Legacy coffee'), 'data saved under the old key (eaglerk) still loads');
+  if (investing) {
+    await legacyPage.getByRole('navigation').getByRole('button', { name: 'Investments' }).click();
+    check((await legacyPage.locator('main').innerText()).includes('Old savings'), 'old-key investments still load too');
+  }
   check((await legacyPage.locator('.brand').first().innerText()).includes('MyMoney'), 'app shows the MyMoney name');
   await legacyPage.close();
 

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { ConfirmProvider, ToastProvider } from './components/feedback';
 import { Icon, type IconName } from './components/icons';
+import { features } from './features';
 import { Dashboard } from './views/Dashboard';
 import { Goals } from './views/Goals';
 import { Investments } from './views/Investments';
@@ -16,7 +17,14 @@ import { StoreProvider, useStore } from './store';
 interface Tab { id: string; label: string; short: string; icon: IconName }
 const GROUPS: Array<{ label: string; tabs: Tab[] }> = [
   { label: 'Track', tabs: [{ id: 'dashboard', label: 'Dashboard', short: 'Home', icon: 'dashboard' }, { id: 'transactions', label: 'Transactions', short: 'Activity', icon: 'transactions' }] },
-  { label: 'Plan', tabs: [{ id: 'goals', label: 'Goals', short: 'Goals', icon: 'goals' }, { id: 'investments', label: 'Investments', short: 'Invest', icon: 'investments' }, { id: 'plan', label: 'Plan', short: 'Plan', icon: 'plan' }] },
+  {
+    label: 'Plan',
+    tabs: [
+      { id: 'goals', label: 'Goals', short: 'Goals', icon: 'goals' },
+      // Investing is switched off for now (see src/features.ts).
+      ...(features.investing ? [{ id: 'investments', label: 'Investments', short: 'Invest', icon: 'investments' } as Tab, { id: 'plan', label: 'Plan', short: 'Plan', icon: 'plan' } as Tab] : []),
+    ],
+  },
   { label: 'General', tabs: [{ id: 'settings', label: 'Settings', short: 'Settings', icon: 'settings' }] },
 ];
 const ALL = GROUPS.flatMap((g) => g.tabs);
@@ -35,7 +43,9 @@ function Shell() {
   const sync = useSync();
   const [route, setRoute] = useState<string>(() => location.hash.slice(1) || 'dashboard');
   // 'add-transaction' is a shortcut route: the Transactions screen with its form already open.
-  const tab = route === 'add-transaction' ? 'transactions' : route;
+  const wanted = route === 'add-transaction' ? 'transactions' : route;
+  // A link to a screen that is switched off (or does not exist) lands on the Dashboard instead of a blank page.
+  const tab = ALL.some((t) => t.id === wanted) ? wanted : 'dashboard';
   const mainRef = useRef<HTMLElement>(null);
   const [theme, setTheme] = useState<Theme>(() => {
     try { return ((localStorage.getItem('mymoney:theme') ?? localStorage.getItem('eaglerk:theme')) as Theme) || 'auto'; } catch { return 'auto'; }
@@ -74,7 +84,7 @@ function Shell() {
       <div className="frame">
         <div className="card hero" style={{ marginTop: 48 }}>
           <h1>MyMoney</h1>
-          <p>See where your money goes each month, plan a car, house and bike, and find out what to do with the surplus: FD, RD, PPF, mutual funds, or paying down debt. Everything stays in this browser.</p>
+          <p>See where your money goes each month, plan a car, house and bike, {features.investing ? 'and find out what to do with the surplus: FD, RD, PPF, mutual funds, or paying down debt.' : 'and see what each one will cost you.'} Everything stays in this browser.</p>
           <div className="row" style={{ justifyContent: 'center' }}>
             <button className="btn primary" onClick={() => dispatch({ type: 'startFresh' })}>Start with my own data</button>
             <button className="btn" onClick={() => dispatch({ type: 'loadDemo' })}>Explore with sample data</button>
@@ -134,8 +144,8 @@ function Shell() {
           <main ref={mainRef} tabIndex={-1} id="main">
             {tab === 'transactions' ? <Transactions openAdd={route === 'add-transaction'} onCloseAdd={() => { location.hash = 'transactions'; setRoute('transactions'); }} />
               : tab === 'goals' ? <Goals />
-              : tab === 'investments' ? <Investments />
-              : tab === 'plan' ? <Plan go={go} />
+              : features.investing && tab === 'investments' ? <Investments />
+              : features.investing && tab === 'plan' ? <Plan go={go} />
               : tab === 'settings' ? <Settings />
               : <Dashboard go={go} />}
           </main>

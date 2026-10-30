@@ -5,6 +5,7 @@ import { Icon, type IconName } from '../components/icons';
 import { Badge, Callout, Card, Delta, Empty, Toggle } from '../components/ui';
 import { HBars, IncomeSpendChart, StackedBar } from '../components/charts';
 import { inr, inrCompact, monthLabel, monthsText, pct } from '../lib/format';
+import { features } from '../features';
 import { useStore } from '../store';
 
 export const GROUP_COLOR = { income: 'var(--s1)', needs: 'var(--s1)', wants: 'var(--s2)', savings: 'var(--s3)' } as const;
@@ -55,7 +56,7 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
   const notes = useMemo(() => insights(state.txns, month), [state.txns, month]);
   const recent = useMemo(() => [...state.txns].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8), [state.txns]);
 
-  if (state.txns.length === 0 && state.investments.length === 0 && state.goals.length === 0) {
+  if (state.txns.length === 0 && (!features.investing || state.investments.length === 0) && state.goals.length === 0) {
     return (
       <Empty title="Nothing here yet">
         <p style={{ marginBottom: 14 }}>Add your transactions, investments and goals, or load sample data to see how the numbers look.</p>
@@ -102,15 +103,25 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
         <SummaryCard
           feature icon="wallet" title="Left over" subtitle={`${monthLabel(month)} · income minus spend`}
           value={inr(cur.saved)} pill={cur.income > 0 ? { text: `${pct(savePct * 100, 0)} saved`, tone: saveTone } : undefined}
-          extra={<div className="mini"><div>Income<b>{inr(cur.income)}</b></div><div>Spent<b>{inr(cur.spend)}</b></div><div>Invested<b>{inr(cur.invested)}</b></div></div>}
+          extra={<div className="mini"><div>Income<b>{inr(cur.income)}</b></div><div>Spent<b>{inr(cur.spend)}</b></div>{features.investing && <div>Invested<b>{inr(cur.invested)}</b></div>}</div>}
           foot="See where it went" onFoot={() => go('transactions')}
         />
-        <SummaryCard
-          icon="net" title="Net worth" subtitle="Everything you hold minus what you owe"
-          value={inrCompact(p.netWorth)} pill={p.total > 0 ? { text: `${pct(p.blendedPosttax)} after tax`, tone: 'plain' } : undefined}
-          extra={<div className="sub">Assets {inrCompact(p.total)} &middot; Liabilities {inrCompact(p.liabilities)}</div>}
-          foot="Analyze performance" onFoot={() => go('investments')}
-        />
+        {features.investing ? (
+          <SummaryCard
+            icon="net" title="Net worth" subtitle="Everything you hold minus what you owe"
+            value={inrCompact(p.netWorth)} pill={p.total > 0 ? { text: `${pct(p.blendedPosttax)} after tax`, tone: 'plain' } : undefined}
+            extra={<div className="sub">Assets {inrCompact(p.total)} &middot; Liabilities {inrCompact(p.liabilities)}</div>}
+            foot="Analyze performance" onFoot={() => go('investments')}
+          />
+        ) : state.liabilities.length > 0 ? (
+          <SummaryCard
+            icon="wallet" title="Loans" subtitle={`${state.liabilities.length} loan${state.liabilities.length === 1 ? '' : 's'} you are paying`}
+            value={`${inr(d.plan.existingEmi)}/mo`}
+            pill={d.plan.income > 0 ? { text: `${pct((d.plan.existingEmi / d.plan.income) * 100, 0)} of income`, tone: d.plan.existingEmi / d.plan.income > 0.4 ? 'bad' : d.plan.existingEmi / d.plan.income > 0.3 ? 'watch' : 'good' } : undefined}
+            extra={<div className="sub">Still owed: {inrCompact(p.liabilities)}</div>}
+            foot="See your loans" onFoot={() => go('goals')}
+          />
+        ) : null}
         {goalPlan && nextGoal ? (
           <SummaryCard
             icon="target" title={`Next goal: ${nextGoal.name}`} subtitle={`${monthLabel(nextGoal.targetMonth)} · ${monthsText(goalPlan.months)} away`}
@@ -167,33 +178,35 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
           </div>
         </Card>
 
-        <Card title="What you own" sub="By asset class" right={<button className="btn small" onClick={() => go('investments')}>Manage</button>}>
-          {p.total > 0 ? (
-            <StackedBar parts={[
-              { label: 'Equity', value: p.byClass.equity, color: CLASS_COLOR.equity },
-              { label: 'Debt', value: p.byClass.debt, color: CLASS_COLOR.debt },
-              { label: 'Cash', value: p.byClass.cash, color: CLASS_COLOR.cash },
-              { label: 'Gold', value: p.byClass.gold, color: CLASS_COLOR.gold },
-              { label: 'Other', value: p.byClass.other, color: CLASS_COLOR.other },
-            ]} />
-          ) : <p className="sub">Add investments to see your mix.</p>}
-          {p.holdings.length > 0 && (
-            <div className="table-wrap" style={{ marginTop: 16 }}>
-              <table className="table num">
-                <thead><tr><th>Largest holdings</th><th className="r">Value</th><th className="r">After tax and inflation</th></tr></thead>
-                <tbody>
-                  {[...p.holdings].sort((a, b) => b.value - a.value).slice(0, 5).map((h) => (
-                    <tr key={h.inv.id}>
-                      <td>{h.inv.name}</td>
-                      <td className="r" style={{ whiteSpace: 'nowrap' }}>{inrCompact(h.value)}</td>
-                      <td className={`r ${h.real < 0.5 ? 'bad' : ''}`} style={{ whiteSpace: 'nowrap' }}>{h.real < 0.5 ? '\u2715 ' : ''}{pct(h.real)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+        {features.investing && (
+          <Card title="What you own" sub="By asset class" right={<button className="btn small" onClick={() => go('investments')}>Manage</button>}>
+            {p.total > 0 ? (
+              <StackedBar parts={[
+                { label: 'Equity', value: p.byClass.equity, color: CLASS_COLOR.equity },
+                { label: 'Debt', value: p.byClass.debt, color: CLASS_COLOR.debt },
+                { label: 'Cash', value: p.byClass.cash, color: CLASS_COLOR.cash },
+                { label: 'Gold', value: p.byClass.gold, color: CLASS_COLOR.gold },
+                { label: 'Other', value: p.byClass.other, color: CLASS_COLOR.other },
+              ]} />
+            ) : <p className="sub">Add investments to see your mix.</p>}
+            {p.holdings.length > 0 && (
+              <div className="table-wrap" style={{ marginTop: 16 }}>
+                <table className="table num">
+                  <thead><tr><th>Largest holdings</th><th className="r">Value</th><th className="r">After tax and inflation</th></tr></thead>
+                  <tbody>
+                    {[...p.holdings].sort((a, b) => b.value - a.value).slice(0, 5).map((h) => (
+                      <tr key={h.inv.id}>
+                        <td>{h.inv.name}</td>
+                        <td className="r" style={{ whiteSpace: 'nowrap' }}>{inrCompact(h.value)}</td>
+                        <td className={`r ${h.real < 0.5 ? 'bad' : ''}`} style={{ whiteSpace: 'nowrap' }}>{h.real < 0.5 ? '\u2715 ' : ''}{pct(h.real)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        )}
       </div>
 
       {state.goals.length > 0 && (

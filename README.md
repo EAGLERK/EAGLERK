@@ -22,12 +22,22 @@ npm test           # 69 unit tests, including the database access rules
 npm run build      # typecheck + production build
 npm run build:single   # one self-contained dist-single/mymoney.html (no server needed)
 npm run e2e        # browser smoke test against a running server (needs Playwright + Chromium)
+                   # against a build with VITE_FEATURE_INVESTING=1, run it as: INVESTING=1 npm run e2e
 npm run e2e:ui     # UI standards: 44px tap targets, one primary button per screen, Undo, dialogs, focus
 npm run e2e:auth   # sign-in, Google, sync and conflict tests against a mock Supabase
 npm run dev:auth-demo   # try the sign-in screens at http://localhost:5177 with no Supabase project (in-memory mock)
 ```
 
 Click **Explore with sample data** on first launch to see every screen populated.
+
+## Investing is switched off
+
+For now MyMoney covers cash flow (income, spend, transactions) and goals (car, house, bike, with your loans on the Goals screen). The Investments tab, net worth, holdings and the Plan tab are hidden.
+
+- Nothing is deleted. Investments you already entered stay in your saved data and backups.
+- To bring everything back, set `VITE_FEATURE_INVESTING=1` and restart or rebuild.
+- The "Investments" spending category in Transactions stays, because money you move into investments is still money that left your account.
+- Goal advice with investing off assumes your savings grow at the after-tax rate in Settings, and does not tell you where to invest.
 
 ## Accounts (optional)
 

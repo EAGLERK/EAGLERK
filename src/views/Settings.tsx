@@ -4,6 +4,7 @@ import { Badge, Callout, Card, Field, Num, NumInput, Toggle } from '../component
 import { pct } from '../lib/format';
 import { Icon } from '../components/icons';
 import { useConfirm, useToast } from '../components/feedback';
+import { features } from '../features';
 import { useAuth } from '../auth/AuthContext';
 import { useSync } from '../auth/CloudStore';
 import { useStore, type AppState } from '../store';
@@ -41,7 +42,9 @@ export function Settings() {
   const file = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<{ tone: 'good' | 'bad'; text: string } | null>(null);
   const [backupText, setBackupText] = useState('');
-  const groups = [...new Set(d.assumptions.map((a) => a.group))];
+  // With investing switched off, only the assumptions that goals use are shown. The rest keep their defaults.
+  const GOAL_GROUPS = ['Price growth', 'Loans'];
+  const groups = [...new Set(d.assumptions.map((a) => a.group))].filter((g) => features.investing || GOAL_GROUPS.includes(g));
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
@@ -89,24 +92,28 @@ export function Settings() {
           <Num label="Monthly take-home (₹)" value={p.monthlyIncome} onChange={(n) => dispatch({ type: 'profile', patch: { monthlyIncome: n } })} min={0} />
           <Num label="Monthly spend (₹)" value={p.monthlyExpenses} onChange={(n) => dispatch({ type: 'profile', patch: { monthlyExpenses: n } })} min={0} hint="Including rent and EMIs" />
           <Num label="Annual gross income (₹)" value={p.annualGrossIncome} onChange={(n) => dispatch({ type: 'profile', patch: { annualGrossIncome: n } })} min={0} hint="Sets your tax slab" />
-          <Num label="Emergency fund (months)" value={p.emergencyMonths} onChange={(n) => dispatch({ type: 'profile', patch: { emergencyMonths: n } })} min={0} hint="6 is standard; 9-12 if income is irregular" />
-          <Field label="Risk comfort" wide><Toggle label="Risk profile" value={p.risk} onChange={(v) => dispatch({ type: 'profile', patch: { risk: v } })} options={[['conservative', 'Low'], ['moderate', 'Medium'], ['aggressive', 'High']]} /></Field>
+          {features.investing && (<Num label="Emergency fund (months)" value={p.emergencyMonths} onChange={(n) => dispatch({ type: 'profile', patch: { emergencyMonths: n } })} min={0} hint="6 is standard; 9-12 if income is irregular" />)}
+          {features.investing && (<Field label="Risk comfort" wide><Toggle label="Risk profile" value={p.risk} onChange={(v) => dispatch({ type: 'profile', patch: { risk: v } })} options={[['conservative', 'Low'], ['moderate', 'Medium'], ['aggressive', 'High']]} /></Field>)}
         </div>
         <div className="row" style={{ marginTop: 12 }}>
           <label className="check"><input type="checkbox" checked={p.salaried} onChange={(e) => dispatch({ type: 'profile', patch: { salaried: e.target.checked } })} /> Salaried (Rs 75,000 standard deduction)</label>
-          <label className="check"><input type="checkbox" checked={p.hasHealthInsurance} onChange={(e) => dispatch({ type: 'profile', patch: { hasHealthInsurance: e.target.checked } })} /> I have health insurance</label>
-          <label className="check"><input type="checkbox" checked={p.hasTermInsurance} onChange={(e) => dispatch({ type: 'profile', patch: { hasTermInsurance: e.target.checked } })} /> I have term life insurance</label>
+          {features.investing && (<label className="check"><input type="checkbox" checked={p.hasHealthInsurance} onChange={(e) => dispatch({ type: 'profile', patch: { hasHealthInsurance: e.target.checked } })} /> I have health insurance</label>)}
+          {features.investing && (<label className="check"><input type="checkbox" checked={p.hasTermInsurance} onChange={(e) => dispatch({ type: 'profile', patch: { hasTermInsurance: e.target.checked } })} /> I have term life insurance</label>)}
         </div>
         <p className="sub" style={{ marginTop: 12 }}>
-          Tax on this income (new regime, FY 2026-27): <b>{inr(incomeTax(p.annualGrossIncome, p.salaried))}</b>. Tax on your next rupee of interest: <b>{pct(d.marginal * 100, 1)}</b>. Under the new regime income up to Rs 12.75 lakh (salaried) pays nil, so FD interest costs you nothing extra until you cross that line.
+          Tax on this income (new regime, FY 2026-27): <b>{inr(incomeTax(p.annualGrossIncome, p.salaried))}</b>.{features.investing && <> Tax on your next rupee of interest: <b>{pct(d.marginal * 100, 1)}</b>. Under the new regime income up to Rs 12.75 lakh (salaried) pays nil, so FD interest costs you nothing extra until you cross that line.</>}
         </p>
       </Card>
 
-      <Card title="Rates and assumptions" sub="Every number the planner uses. Change any of them; reset returns the default.">
+      <Card title="Rates and assumptions" sub={features.investing ? 'Every number the planner uses. Change any of them; reset returns the default.' : 'The numbers your goals use. Change any of them; reset returns the default.'}>
         <div className="stack">
-          <Callout tone="info">
-            <b>Verified</b> rates come from the 30 Sep 2026 small-savings notification and the 7 Oct 2026 RBI policy. <b>Check</b> rates differ by bank: aggregator sites disagreed on SBI&rsquo;s 1-year FD by 25 bps, so enter your bank&rsquo;s own. <b>Estimates</b> are modelling choices. Press reports were the source, not the primary notifications, so confirm before a large decision.
-          </Callout>
+          {features.investing ? (
+            <Callout tone="info">
+              <b>Verified</b> rates come from the 30 Sep 2026 small-savings notification and the 7 Oct 2026 RBI policy. <b>Check</b> rates differ by bank: aggregator sites disagreed on SBI&rsquo;s 1-year FD by 25 bps, so enter your bank&rsquo;s own. <b>Estimates</b> are modelling choices. Press reports were the source, not the primary notifications, so confirm before a large decision.
+            </Callout>
+          ) : (
+            <Callout tone="info">Loan rates differ by lender, so enter the rate you were actually quoted. House, car and bike price growth are estimates, not forecasts.</Callout>
+          )}
           {groups.map((g) => (
             <div key={g}>
               <h3 style={{ margin: '8px 0' }}>{g}</h3>

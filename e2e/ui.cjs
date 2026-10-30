@@ -3,6 +3,8 @@
 // Needs Playwright with Chromium available. Usage: APP_URL=http://localhost:5173/ npm run e2e:ui
 const { chromium } = require('playwright');
 const URL = process.env.APP_URL || 'http://localhost:5173/';
+// Investing is hidden unless the app was built with VITE_FEATURE_INVESTING=1; run with INVESTING=1 against such a build.
+const investing = process.env.INVESTING === '1';
 
 let failed = 0;
 const check = (ok, msg) => { console.log((ok ? 'PASS ' : 'FAIL ') + msg); if (!ok) failed++; };
@@ -30,7 +32,8 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     const ph = await phoneCtx.newPage();
     await ph.goto(URL);
     await ph.getByRole('button', { name: 'Explore with sample data' }).click();
-    for (const tab of ['Home', 'Activity', 'Goals', 'Invest', 'Plan', 'Settings']) {
+    const phoneTabs = investing ? ['Home', 'Activity', 'Goals', 'Invest', 'Plan', 'Settings'] : ['Home', 'Activity', 'Goals', 'Settings'];
+    for (const tab of phoneTabs) {
       await ph.getByRole('navigation').getByRole('button', { name: tab, exact: true }).click();
       if (tab === 'Goals') await ph.waitForSelector('.showcase canvas', { timeout: 15000 }).catch(() => {});
       await ph.waitForTimeout(400);
@@ -51,7 +54,8 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     await p.getByRole('button', { name: 'Explore with sample data' }).click();
     const nav = (n) => p.getByRole('navigation').getByRole('button', { name: n, exact: true }).click();
 
-    for (const tab of ['Dashboard', 'Transactions', 'Goals', 'Investments', 'Settings']) {
+    const deskTabs = investing ? ['Dashboard', 'Transactions', 'Goals', 'Investments', 'Settings'] : ['Dashboard', 'Transactions', 'Goals', 'Settings'];
+    for (const tab of deskTabs) {
       await nav(tab);
       await p.waitForTimeout(300);
       const prim = await primaries(p);
@@ -65,7 +69,7 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     // ---------- alignment ----------
     await nav('Dashboard');
     const tops = await p.evaluate(() => [...document.querySelectorAll('.sumcard .big')].map((e) => Math.round(e.getBoundingClientRect().top)));
-    check(tops.length === 3 && tops.every((y) => y === tops[0]), `dashboard: the three headline figures sit on one line ${JSON.stringify(tops)}`);
+    check(tops.length >= 2 && tops.every((y) => y === tops[0]), `dashboard: the headline figures sit on one line ${JSON.stringify(tops)}`);
     const head = await p.evaluate(() => { const t = document.querySelector('.page-head h1').getBoundingClientRect(), b = document.querySelector('.page-head .btn.primary').getBoundingClientRect(); return { titleMid: (t.top + t.bottom) / 2, btnMid: (b.top + b.bottom) / 2 }; });
     check(Math.abs(head.titleMid - head.btnMid) < 40, 'dashboard: the primary button sits in the header row beside the title');
 
@@ -118,12 +122,48 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     check((await p.locator('text=/Price today/').count()) === goalsBefore + 1, 'Undo restores the removed goal');
     void goalCards;
 
+    // ---------- Goals: loans live here ----------
+    check(await shown(p.getByRole('heading', { name: 'Loans you are paying' })), 'Goals shows the loans card' + (investing ? '' : ' (loans moved here with investing hidden)'));
+    if (!investing) {
+      const loanRows = () => p.locator('table.cards').filter({ hasText: 'Outstanding' }).locator('tbody tr').count();
+      const loansBefore = await loanRows();
+      await p.getByRole('button', { name: 'Add loan' }).click();
+      const saveLoan = p.getByRole('button', { name: 'Save loan' });
+      check(await shown(saveLoan) && await saveLoan.isDisabled(), 'Save loan is disabled until the loan has a name');
+      const loan = p.getByRole('group', { name: 'Loan details' });
+      await loan.getByLabel(/^Name/).fill('Test loan');
+      await loan.getByLabel(/^Outstanding/).fill('50000');
+      await loan.getByLabel(/^Monthly EMI/).fill('2500');
+      await saveLoan.click();
+      check((await loanRows()) === loansBefore + 1, 'the loan is added');
+      await p.locator('button[aria-label="Delete Test loan"]').click();
+      check(await shown(p.locator('.toast', { hasText: 'Test loan deleted' })) && (await loanRows()) === loansBefore, 'deleting a loan shows a toast and removes it');
+      await p.locator('.toast-btn', { hasText: 'Undo' }).last().click();
+      check((await loanRows()) === loansBefore + 1, 'Undo restores the loan');
+    }
+
     // ---------- Settings: dangerous actions are separated and confirmed ----------
     await nav('Settings');
     check(await shown(p.getByRole('heading', { name: 'Danger zone' })), 'destructive actions live in a separate danger zone');
     await p.getByRole('button', { name: 'Erase all data' }).click();
     check(await shown(p.getByRole('dialog')), 'Erase all data asks for confirmation in the page');
     await p.getByRole('button', { name: 'Cancel' }).last().click();
+
+    // ---------- investing hidden ----------
+    if (!investing) {
+      await nav('Dashboard');
+      const text = await p.locator('main').innerText();
+      check(!/Net worth|What you own/.test(text), 'dashboard: no net worth or holdings cards');
+      check((await p.getByRole('navigation').getByRole('button', { name: /^(Investments|Plan)$/ }).count()) === 0, 'no Investments or Plan tab');
+      for (const hash of ['#investments', '#plan']) {
+        await p.evaluate((h) => { location.hash = h; }, hash);
+        await p.waitForTimeout(300);
+        check(/Left over/.test(await p.locator('main').innerText()), `${hash} falls back to the Dashboard`);
+        check(!/Where should new money go|Your monthly plan/.test(await p.locator('main').innerText()), `${hash} does not show the hidden screen`);
+      }
+      await nav('Settings');
+      check(!/Emergency fund|Insurance/.test(await p.locator('main').innerText()), 'settings: no emergency-fund or insurance questions');
+    }
 
     // ---------- keyboard and focus ----------
     await p.reload();
