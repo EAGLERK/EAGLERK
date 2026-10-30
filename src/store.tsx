@@ -85,18 +85,35 @@ const KEY = 'mymoney:v1';
 /** The app was first called Eaglerk. Keep reading that key so existing data is not lost on upgrade. */
 const LEGACY_KEY = 'eaglerk:v1';
 
-function load(): AppState {
+/** Fills in anything missing so data saved by an older version (or by the cloud) still loads. */
+export function normalizeState(raw: unknown): AppState | null {
+  const p = raw as Partial<AppState> | null;
+  if (!p || typeof p !== 'object' || p.version !== 1 || !Array.isArray(p.txns)) return null;
+  return { ...initial, ...p, profile: { ...EMPTY_PROFILE, ...(p.profile ?? {}) } } as AppState;
+}
+
+/** Data this browser saved before accounts existed (or in local-only mode). */
+export function readLocalState(): AppState | null {
   try {
     const raw = localStorage.getItem(KEY) ?? localStorage.getItem(LEGACY_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as AppState;
-      if (parsed.version === 1) return { ...initial, ...parsed, profile: { ...EMPTY_PROFILE, ...parsed.profile } };
-    }
+    return raw ? normalizeState(JSON.parse(raw)) : null;
   } catch {
-    /* corrupt or blocked storage: start clean */
+    return null; // corrupt or blocked storage
   }
-  return initial;
 }
+
+export function clearLocalState(): void {
+  try {
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(LEGACY_KEY);
+  } catch {
+    /* storage blocked */
+  }
+}
+
+export const hasUserData = (s: AppState): boolean => s.txns.length + s.goals.length + s.investments.length + s.liabilities.length > 0;
+
+const load = (): AppState => readLocalState() ?? initial;
 
 export interface Derived {
   today: string;
@@ -111,15 +128,31 @@ export interface Derived {
 
 const Ctx = createContext<{ state: AppState; dispatch: Dispatch<Action>; d: Derived } | null>(null);
 
-export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, load);
+export interface StoreProviderProps {
+  children: ReactNode;
+  /** Start from this state (the signed-in user's cloud data). Omit to read this browser's saved data. */
+  initial?: AppState;
+  /**
+   * 'local' saves to this browser. A function receives every new state instead (cloud sync), and nothing is
+   * written to the browser, so a shared computer keeps no copy after sign-out.
+   */
+  persistence?: 'local' | ((state: AppState) => void);
+}
+
+export function StoreProvider({ children, initial: start, persistence = 'local' }: StoreProviderProps) {
+  const [state, dispatch] = useReducer(reducer, undefined, () => start ?? load());
 
   useEffect(() => {
+    if (typeof persistence === 'function') {
+      persistence(state);
+      return;
+    }
     try {
       localStorage.setItem(KEY, JSON.stringify(state));
     } catch {
       /* storage full or blocked: keep working in memory */
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
   const d = useMemo<Derived>(() => {

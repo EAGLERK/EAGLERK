@@ -10,15 +10,19 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build:single": "node scripts/build-single.mjs",
-    "e2e": "node e2e/flow.cjs"
+    "e2e": "node e2e/flow.cjs",
+    "e2e:auth": "node e2e/auth.cjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "recharts": "^3.10.1",
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.13",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.186.0",

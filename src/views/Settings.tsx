@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import type { Assumption } from '../engine/assumptions';
 import { Badge, Callout, Card, Field, Num, NumInput, Toggle } from '../components/ui';
 import { pct } from '../lib/format';
+import { useAuth } from '../auth/AuthContext';
+import { useSync } from '../auth/CloudStore';
 import { useStore, type AppState } from '../store';
 import { incomeTax } from '../engine/tax';
 import { inr } from '../lib/format';
@@ -15,6 +17,7 @@ const STATUS_HELP = {
 
 export function Settings() {
   const { state, dispatch, d } = useStore();
+  const auth = useAuth();
   const p = state.profile;
   const file = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<{ tone: 'good' | 'bad'; text: string } | null>(null);
@@ -58,6 +61,8 @@ export function Settings() {
     <div className="page">
       <h1>Settings</h1>
 
+      {auth?.user && <AccountCard />}
+
       <Card title="About you" sub="Used for tax slab, equity share and fallbacks until you import transactions">
         <div className="form-grid">
           <Field label="Name"><input value={p.name} onChange={(e) => dispatch({ type: 'profile', patch: { name: e.target.value } })} /></Field>
@@ -98,7 +103,7 @@ export function Settings() {
         </div>
       </Card>
 
-      <Card title="Your data" sub="Everything is stored in this browser only. Nothing is sent anywhere.">
+      <Card title="Your data" sub={auth?.user ? "Stored in your MyMoney account and synced across your devices. Other users cannot read it." : "Everything is stored in this browser only. Nothing is sent anywhere."}>
         <div className="row">
           <button className="btn" onClick={exportJson}>Download backup</button>
           <button className="btn" onClick={copyBackup}>Copy backup</button>
@@ -112,7 +117,7 @@ export function Settings() {
           <div><button className="btn" disabled={!backupText.trim()} onClick={() => restore(backupText)}>Restore from text</button></div>
         </div>
         {msg && <div style={{ marginTop: 12 }}><Callout tone={msg.tone}>{msg.text}</Callout></div>}
-        <p className="sub" style={{ marginTop: 12 }}>Browser storage can be wiped by clearing site data. Download a backup now and then.</p>
+        <p className="sub" style={{ marginTop: 12 }}>{auth?.user ? 'Your account keeps a copy on the server. A downloaded backup is still a good second copy.' : 'Browser storage can be wiped by clearing site data. Download a backup now and then.'}</p>
       </Card>
     </div>
   );
@@ -129,5 +134,72 @@ function AssumptionRow({ a, overridden }: { a: Assumption; overridden: boolean }
       <td className="sub">{a.source} <span className="muted">· as of {a.asOf}</span></td>
       <td>{overridden && <button className="btn small ghost" onClick={() => dispatch({ type: 'override', key: a.key, value: null })}>Reset</button>}</td>
     </tr>
+  );
+}
+
+function AccountCard() {
+  const auth = useAuth()!;
+  const sync = useSync();
+  const user = auth.user!;
+  const providers = ((user.app_metadata?.providers as string[] | undefined) ?? [user.app_metadata?.provider as string | undefined]).filter(Boolean) as string[];
+  const hasPassword = providers.includes('email') || providers.includes('phone');
+  const [pw, setPw] = useState('');
+  const [msg, setMsg] = useState<{ tone: 'good' | 'bad'; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [typed, setTyped] = useState('');
+
+  const changePassword = async () => {
+    setBusy(true);
+    const r = await auth.updatePassword(pw);
+    setBusy(false);
+    if (r.ok) { setPw(''); setMsg({ tone: 'good', text: 'Password changed.' }); } else setMsg({ tone: 'bad', text: r.error });
+  };
+
+  const remove = async () => {
+    setBusy(true);
+    const r = await auth.deleteAccount();
+    setBusy(false);
+    if (!r.ok) setMsg({ tone: 'bad', text: r.error });
+  };
+
+  return (
+    <Card title="Account" sub={user.email || user.phone || ''}
+      right={sync && <span className={`sync-chip ${sync.status === 'saved' ? '' : sync.status === 'saving' ? 'saving' : 'bad'}`} role="status"><i />{sync.status === 'saved' ? 'All changes saved' : sync.status === 'saving' ? 'Saving...' : 'Needs attention'}</span>}>
+      <div className="stack">
+        <p className="sub">Signed in with {providers.length ? providers.map((x) => (x === 'google' ? 'Google' : x === 'phone' ? 'mobile number' : 'email and password')).join(' and ') : 'your account'}.</p>
+        <div className="row">
+          <button className="btn" onClick={() => void (sync ? sync.signOutSafely() : auth.signOut())}>Sign out</button>
+        </div>
+
+        {hasPassword ? (
+          <div className="form-grid" style={{ alignItems: 'end' }}>
+            <Field label="New password" hint="At least 8 characters.">
+              <input type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
+            </Field>
+            <div><button className="btn" disabled={busy || !pw} onClick={changePassword}>Change password</button></div>
+          </div>
+        ) : (
+          <p className="sub">You sign in with Google, so there is no MyMoney password to change.</p>
+        )}
+
+        <details>
+          <summary>Delete my account</summary>
+          <div className="stack" style={{ marginTop: 10 }}>
+            <p className="sub">This permanently deletes your account and all the data in it. It cannot be undone. Download a backup first if you want one.</p>
+            {!confirming ? (
+              <div><button className="btn danger" onClick={() => setConfirming(true)}>I want to delete my account</button></div>
+            ) : (
+              <div className="form-grid" style={{ alignItems: 'end' }}>
+                <Field label="Type DELETE to confirm"><input value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" /></Field>
+                <div className="row"><button className="btn danger" disabled={busy || typed !== 'DELETE'} onClick={remove}>Delete everything</button><button className="btn" onClick={() => { setConfirming(false); setTyped(''); }}>Cancel</button></div>
+              </div>
+            )}
+          </div>
+        </details>
+
+        {msg && <Callout tone={msg.tone}>{msg.text}</Callout>}
+      </div>
+    </Card>
   );
 }

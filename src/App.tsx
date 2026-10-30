@@ -6,6 +6,10 @@ import { Investments } from './views/Investments';
 import { Plan } from './views/Plan';
 import { Settings } from './views/Settings';
 import { Transactions } from './views/Transactions';
+import { AuthProvider, useAuth } from './auth/AuthContext';
+import { AuthGate } from './auth/AuthGate';
+import { CloudStore, useSync } from './auth/CloudStore';
+import { authFeatures } from './auth/supabase';
 import { StoreProvider, useStore } from './store';
 
 interface Tab { id: string; label: string; short: string; icon: IconName }
@@ -26,6 +30,8 @@ const Mark = ({ size = 18 }: { size?: number }) => (
 
 function Shell() {
   const { state, dispatch } = useStore();
+  const auth = useAuth();
+  const sync = useSync();
   const [tab, setTab] = useState<string>(() => location.hash.slice(1) || 'dashboard');
   const [theme, setTheme] = useState<Theme>(() => {
     try { return ((localStorage.getItem('mymoney:theme') ?? localStorage.getItem('eaglerk:theme')) as Theme) || 'auto'; } catch { return 'auto'; }
@@ -49,11 +55,6 @@ function Shell() {
 
   const go = (t: string) => { location.hash = t; setTab(t); window.scrollTo({ top: 0 }); };
   const current = ALL.find((t) => t.id === tab) ?? ALL[0];
-
-  if (tab.startsWith('showcase-')) {
-    const which = tab.slice('showcase-'.length) as 'all' | 'car' | 'house' | 'bike';
-    return <Suspense fallback={null}><ShowcasePage which={which} /></Suspense>;
-  }
 
   if (!state.onboarded) {
     return (
@@ -88,9 +89,23 @@ function Shell() {
             ))}
           </nav>
           <div className="side-foot">
-            <b>Your data stays here</b>
-            <span className="sub">Stored in this browser only. Back it up now and then.</span>
-            <button className="btn small" onClick={() => go('settings')}>Back up</button>
+            {auth?.user ? (
+              <>
+                <b style={{ overflowWrap: 'anywhere' }}>{auth.user.email || auth.user.phone}</b>
+                {sync && (
+                  <span className={`sync-chip ${sync.status === 'saved' ? '' : sync.status === 'saving' ? 'saving' : 'bad'}`} role="status">
+                    <i />{sync.status === 'saved' ? 'All changes saved' : sync.status === 'saving' ? 'Saving...' : sync.status === 'conflict' ? 'Needs your attention' : 'Not saved'}
+                  </span>
+                )}
+                <button className="btn small" onClick={() => void (sync ? sync.signOutSafely() : auth.signOut())}>Sign out</button>
+              </>
+            ) : (
+              <>
+                <b>Your data stays here</b>
+                <span className="sub">Stored in this browser only. Back it up now and then.</span>
+                <button className="btn small" onClick={() => go('settings')}>Back up</button>
+              </>
+            )}
           </div>
         </aside>
 
@@ -124,6 +139,35 @@ function Shell() {
   );
 }
 
+function useHash() {
+  const [hash, setHash] = useState(() => location.hash.slice(1));
+  useEffect(() => {
+    const on = () => setHash(location.hash.slice(1));
+    window.addEventListener('hashchange', on);
+    return () => window.removeEventListener('hashchange', on);
+  }, []);
+  return hash;
+}
+
 export default function App() {
-  return <StoreProvider><Shell /></StoreProvider>;
+  const hash = useHash();
+
+  // Chromeless routes that render the 3D stills. They show no personal data, so they need no account.
+  if (hash.startsWith('showcase-')) {
+    const which = hash.slice('showcase-'.length) as 'all' | 'car' | 'house' | 'bike';
+    return <Suspense fallback={null}><ShowcasePage which={which} /></Suspense>;
+  }
+
+  // No Supabase project configured: the original browser-only mode.
+  if (!authFeatures.enabled) return <StoreProvider><Shell /></StoreProvider>;
+
+  return (
+    <AuthProvider>
+      <AuthGate>
+        <CloudStore>
+          <Shell />
+        </CloudStore>
+      </AuthGate>
+    </AuthProvider>
+  );
 }
