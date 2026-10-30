@@ -12,7 +12,8 @@
     "build:single": "node scripts/build-single.mjs",
     "e2e": "node e2e/flow.cjs",
     "e2e:auth": "node e2e/auth.cjs",
-    "dev:auth-demo": "node scripts/dev-auth-demo.cjs"
+    "dev:auth-demo": "node scripts/dev-auth-demo.cjs",
+    "e2e:ui": "node e2e/ui.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

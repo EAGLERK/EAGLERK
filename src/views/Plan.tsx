@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { buildAdvice, projectWealth, type StepTone } from '../engine/advisor';
+import { Icon } from '../components/icons';
 import { Badge, Callout, Card, Stat } from '../components/ui';
 import { ProjectionChart, StackedBar } from '../components/charts';
 import { inr, inrCompact, pct } from '../lib/format';
@@ -46,26 +47,27 @@ export function Plan({ go }: { go: (tab: string) => void }) {
 
       <Card title="Where each rupee goes" sub={`${pct(rate, 0)} of your surplus is allocated. Order matters: each step is funded before the next.`}>
         {advice.lines.length === 0 ? <p className="sub">Nothing to allocate yet.</p> : (
-          <div className="table-wrap">
-            <table className="table num">
-              <thead><tr><th>Step</th><th>Put it in</th><th className="r">Per month</th><th>Why</th></tr></thead>
-              <tbody>
-                {advice.lines.map((l, i) => (
-                  <tr key={i}>
-                    <td style={{ whiteSpace: 'nowrap' }}><div className="sub">{STEP_LABEL[l.step]}</div><div style={{ fontWeight: 550 }}>{l.label}</div></td>
-                    <td><div>{l.into}</div><div className="sub">{l.where}</div></td>
-                    <td className="r" style={{ whiteSpace: 'nowrap' }}>{inr(l.monthly)}{l.short && <div><Badge tone="watch">! short</Badge></div>}</td>
-                    <td className="sub" style={{ minWidth: 220 }}>{l.why}</td>
-                  </tr>
-                ))}
-                <tr>
-                  <td colSpan={2} style={{ fontWeight: 650 }}>Total allocated</td>
-                  <td className="r" style={{ fontWeight: 650 }}>{inr(advice.allocated)}</td>
-                  <td className="sub">{advice.unallocated > 1 ? `${inr(advice.unallocated)} left unassigned` : 'Fully assigned'}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="table-wrap">
+              <table className="table num cards">
+                <thead><tr><th>Step</th><th>Put it in</th><th className="r">Per month</th><th>Why</th></tr></thead>
+                <tbody>
+                  {advice.lines.map((l, i) => (
+                    <tr key={i}>
+                      <td className="title" style={{ whiteSpace: 'nowrap' }}><div className="sub">{STEP_LABEL[l.step]}</div><div style={{ fontWeight: 550 }}>{l.label}</div></td>
+                      <td data-label="Put it in"><div>{l.into}</div><div className="sub">{l.where}</div></td>
+                      <td data-label="Per month" className="r" style={{ whiteSpace: 'nowrap' }}>{inr(l.monthly)}{l.short && <div><Badge tone="watch">! short</Badge></div>}</td>
+                      <td data-label="Why" className="sub" style={{ minWidth: 220 }}>{l.why}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <dl className="kv" style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--grid)' }}>
+              <dt className="strong">Total allocated</dt><dd className="strong">{inr(advice.allocated)}</dd>
+              <dt>{advice.unallocated > 1 ? 'Left unassigned' : 'Status'}</dt><dd>{advice.unallocated > 1 ? inr(advice.unallocated) : 'Fully assigned'}</dd>
+            </dl>
+          </>
         )}
         {advice.wealthMonthly > 0 && (
           <div style={{ marginTop: 16 }} className="stack">
@@ -83,17 +85,20 @@ export function Plan({ go }: { go: (tab: string) => void }) {
       </Card>
 
       {advice.goalPlans.length > 0 && (
-        <Card title="Goal funding status">
+        <Card title="Goal funding status" sub="Goals are funded soonest first, after your safety net and any costly debt">
           <div className="table-wrap">
-            <table className="table num">
-              <thead><tr><th>Goal</th><th className="r">Needed / month</th><th className="r">Funded</th><th>Status</th></tr></thead>
+            <table className="table num cards">
+              <thead><tr><th>Goal</th><th className="r">Needed / month</th><th className="r">Funded</th><th>Status</th><th><span className="sr-only">Action</span></th></tr></thead>
               <tbody>
                 {advice.goalPlans.map(({ goal, plan, funded }) => {
                   const ok = funded >= plan.requiredMonthly - 1;
                   return (
                     <tr key={goal.id}>
-                      <td>{goal.name}</td><td className="r">{inr(plan.requiredMonthly)}</td><td className="r">{inr(funded)}</td>
-                      <td><Badge tone={ok ? 'good' : 'bad'}>{ok ? '✓ on track' : '✕ short by ' + inr(plan.requiredMonthly - funded)}</Badge></td>
+                      <td className="title">{goal.name}</td>
+                      <td data-label="Needed / month" className="r">{inr(plan.requiredMonthly)}</td>
+                      <td data-label="Funded" className="r">{inr(funded)}</td>
+                      <td data-label="Status"><Badge tone={ok ? 'good' : 'bad'}>{ok ? '\u2713 on track' : '\u2715 short by ' + inr(plan.requiredMonthly - funded)}</Badge></td>
+                      <td className="actions"><div className="row-actions"><button className="btn small" onClick={() => go('goals')}>{ok ? 'View goal' : 'Adjust goal'}<Icon name="arrow" size={16} /></button></div></td>
                     </tr>
                   );
                 })}

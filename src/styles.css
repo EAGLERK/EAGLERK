@@ -297,10 +297,6 @@ ul.clean { list-style: none; margin: 0; padding: 0; display: flex; flex-directio
   .table.cards tr { border: 1px solid var(--grid); border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; }
   .table.cards td { border: 0; padding: 3px 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; text-align: right; }
   .table.cards td::before { content: attr(data-label); color: var(--text-muted); font-size: 12px; text-align: left; flex: none; }
-  .table.cards td:first-child { display: block; text-align: left; font-weight: 600; padding-bottom: 6px; }
-  .table.cards td:first-child::before { content: none; }
-  .table.cards td:last-child:not([data-label]) { justify-content: flex-start; padding-top: 6px; }
-  .table.cards td:last-child:not([data-label])::before { content: none; }
 }
 
 .cellval > .sub, .cellval > span { display: block; }
@@ -330,3 +326,125 @@ ul.clean { list-style: none; margin: 0; padding: 0; display: flex; flex-directio
 .sync-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--good-text); display: inline-block; }
 .sync-chip.saving i { background: var(--watch-text); }
 .sync-chip.bad i { background: var(--bad-text); }
+
+/* ===== Controls, CTAs and alignment ===== */
+:root { --tap: 44px; --control: 40px; --danger: #c93535; --danger-ink: #fff; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--control); line-height: 1.2; transition: background-color 0.15s, filter 0.15s, transform 0.15s; }
+.btn.small { min-height: 34px; padding: 6px 14px; }
+.btn.primary { font-weight: 650; }
+.btn:active:not(:disabled) { transform: scale(0.98); }
+.btn.danger { color: var(--bad-text); border-color: color-mix(in srgb, var(--bad-text) 38%, transparent); }
+.btn.danger-solid { background: var(--danger); color: var(--danger-ink); border-color: transparent; }
+.btn.danger-solid:hover { filter: brightness(1.08); }
+.btn.icon { padding: 0; width: var(--control); min-width: var(--control); }
+.btn.icon.small { width: 34px; min-width: 34px; }
+.btn:disabled { cursor: not-allowed; }
+
+.field input, .field select, .inline-input { min-height: var(--control); }
+.field textarea { min-height: 0; }
+.field .pill-toggle { display: flex; width: 100%; }
+.field .pill-toggle button { flex: 1; }
+.card > .card-head { align-items: center; }
+.row-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+.form-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+.form-actions .why { font-size: 13px; color: var(--text-muted); }
+.req::after { content: ' *'; color: var(--bad-text); }
+.field-note { font-size: 13px; color: var(--text-muted); }
+input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
+.check { gap: 10px; cursor: pointer; min-height: 32px; }
+select, summary, .check { cursor: pointer; }
+summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+.danger-zone { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--grid); display: flex; flex-direction: column; gap: 8px; }
+.danger-zone h3 { color: var(--bad-text); }
+
+.skip { position: absolute; left: -9999px; top: 8px; z-index: 100; }
+.skip:focus { left: 12px; background: var(--text); color: var(--shell); padding: 10px 16px; border-radius: 999px; border: 0; font-weight: 600; }
+
+.empty-cta { text-align: center; padding: 28px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.empty-cta p { max-width: 460px; }
+
+/* Goal-type chooser */
+.chooser { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
+.choice { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); cursor: pointer; text-align: left; min-height: 96px; }
+.choice:hover { background: var(--surface-2); border-color: var(--axis); }
+.choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.choice .icon-tile { width: 40px; height: 40px; }
+.choice b { font-size: 15px; }
+.choice .sub { font-size: 12.5px; }
+
+/* Toasts and the confirm dialog */
+.toasts { position: fixed; z-index: 60; left: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; max-width: min(420px, calc(100vw - 32px)); pointer-events: none; }
+.toast { pointer-events: auto; display: flex; align-items: center; gap: 8px; background: #151a17; color: #f2f4f3; border-radius: 12px; padding: 6px 6px 6px 16px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25); font-size: 14px; animation: toast-in 0.18s ease-out; }
+.toast span { flex: 1; padding: 6px 0; }
+.toast-btn { background: none; border: 0; color: #7fe0b4; font-weight: 650; cursor: pointer; padding: 8px 12px; border-radius: 8px; min-height: 36px; }
+.toast-btn:hover, .toast-x:hover { background: rgba(255, 255, 255, 0.1); }
+.toast-x { background: none; border: 0; color: #c9d1cd; cursor: pointer; width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; }
+.toast-btn:focus-visible, .toast-x:focus-visible { outline: 2px solid #7fe0b4; outline-offset: 1px; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+dialog.modal { border: 0; border-radius: 20px; padding: 0; width: min(440px, calc(100vw - 32px)); background: var(--surface); color: var(--text); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); }
+dialog.modal::backdrop { background: rgba(8, 12, 10, 0.55); }
+.modal-body { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+  .btn { transition: none; }
+  .btn:active:not(:disabled) { transform: none; }
+}
+
+/* Cards on phones: explicit title and actions cells */
+@media (max-width: 599px) {
+  .table.cards tr { display: flex; flex-direction: column; }
+  .table.cards td.title { order: -1; display: block; text-align: left; font-weight: 600; padding-bottom: 6px; }
+  .table.cards td.title::before { content: none; }
+  .table.cards td.actions { justify-content: flex-end; padding-top: 8px; }
+  .table.cards td.actions::before { content: none; }
+}
+
+/* Touch screens and phones: 44px targets, 16px inputs (stops iOS zooming on focus) */
+@media (pointer: coarse), (max-width: 599px) {
+  :root { --control: 44px; }
+  .btn.small { min-height: var(--tap); padding: 8px 16px; }
+  .btn.icon.small { width: var(--tap); min-width: var(--tap); }
+  .field input, .field select, .field textarea, .inline-input { font-size: 16px; }
+  .pill-toggle button { min-height: 36px; padding: 6px 14px; }
+  .check { min-height: var(--tap); }
+  .linkbtn { min-height: var(--tap); display: inline-flex; align-items: center; }
+  summary { min-height: var(--tap); display: flex; align-items: center; }
+  .toast-btn, .toast-x { min-height: var(--tap); }
+  .toast-x { width: var(--tap); }
+}
+@media (max-width: 899px) {
+  .toasts { left: 12px; right: 12px; max-width: none; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions .btn { width: 100%; }
+}
+
+input[type='file'] { font-size: 14px; max-width: 100%; color: var(--text-2); }
+input[type='file']::file-selector-button { font: inherit; font-weight: 550; min-height: var(--control); padding: 0 18px; margin-right: 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+input[type='file']::file-selector-button:hover { background: var(--surface-2); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+main:focus { outline: none; }
+
+@media (min-width: 600px) { .form-grid .span-2 { grid-column: span 2; } }
+.field .pill-toggle button { padding-inline: 10px; white-space: nowrap; min-width: 0; }
+@media (pointer: coarse), (max-width: 599px) {
+  /* The whole segmented control is the tap target: segments fill its 44px height, no dead padding around them. */
+  .pill-toggle { padding: 0; gap: 0; border: 0; box-shadow: inset 0 0 0 1px var(--border); }
+  .pill-toggle button { min-height: var(--tap); }
+  input[type='checkbox'] { width: 24px; height: 24px; }
+}
+
+@media (min-width: 600px) and (pointer: fine) { .pill-toggle button { min-height: 32px; } }
+
+/* Row cells line up on their middle when a row mixes text with dropdowns and buttons */
+.table.txn td { vertical-align: middle; }
+.icon-label { display: none; }
+@media (max-width: 599px) {
+  .table.cards .btn.icon.small { width: auto; min-width: var(--tap); padding: 0 16px; gap: 8px; }
+  .table.cards .btn.icon .icon-label { display: inline; }
+  .table.cards td.actions { padding-top: 2px; }
+}
+/* Summary cards: reserve two subtitle lines so the big figures line up across a row */
+.sumcard .head { min-height: 64px; align-items: flex-start; }

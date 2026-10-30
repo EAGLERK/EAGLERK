@@ -62,7 +62,8 @@ const check = (ok, msg) => {
   // The 3D scene is a lazy chunk, so wait for its canvas instead of checking at once.
   const canvasShown = await page.waitForSelector('.showcase canvas', { timeout: 15000 }).then(() => true, () => false);
   check(canvasShown, 'Goals page renders the 3D scene canvas');
-  await page.getByRole('button', { name: 'Car', exact: true }).click();
+  await page.getByRole('button', { name: 'Add goal' }).click();
+  await page.getByRole('button', { name: /^Car/ }).click();
   await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
   await page.locator('label:has-text("Price today") input').fill('2000000');
   check((await main()).includes('₹20,00,000'), 'goal price edit flows into the plan');
@@ -73,7 +74,7 @@ const check = (ok, msg) => {
   await page.locator('label:has-text("Deposit amount") input').fill('100000');
   await page.locator('label:has-text("Interest rate") input').fill('7');
   check((await main()).includes('Matures on'), 'FD maturity preview shown');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: 'Save investment' }).click();
   check((await main()).includes('Test FD'), 'FD appears in holdings');
 
   await page.reload();

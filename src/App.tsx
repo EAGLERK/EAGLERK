@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { ConfirmProvider, ToastProvider } from './components/feedback';
 import { Icon, type IconName } from './components/icons';
 import { Dashboard } from './views/Dashboard';
 import { Goals } from './views/Goals';
@@ -32,7 +33,10 @@ function Shell() {
   const { state, dispatch } = useStore();
   const auth = useAuth();
   const sync = useSync();
-  const [tab, setTab] = useState<string>(() => location.hash.slice(1) || 'dashboard');
+  const [route, setRoute] = useState<string>(() => location.hash.slice(1) || 'dashboard');
+  // 'add-transaction' is a shortcut route: the Transactions screen with its form already open.
+  const tab = route === 'add-transaction' ? 'transactions' : route;
+  const mainRef = useRef<HTMLElement>(null);
   const [theme, setTheme] = useState<Theme>(() => {
     try { return ((localStorage.getItem('mymoney:theme') ?? localStorage.getItem('eaglerk:theme')) as Theme) || 'auto'; } catch { return 'auto'; }
   });
@@ -48,12 +52,21 @@ function Shell() {
   }, [theme]);
 
   useEffect(() => {
-    const on = () => setTab(location.hash.slice(1) || 'dashboard');
+    const on = () => setRoute(location.hash.slice(1) || 'dashboard');
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
 
-  const go = (t: string) => { location.hash = t; setTab(t); window.scrollTo({ top: 0 }); };
+  const go = (t: string) => { location.hash = t; setRoute(t); window.scrollTo({ top: 0 }); };
+
+  // After moving to another screen, put keyboard and screen-reader focus on the new content.
+  // Compare with the previous screen instead of using a "first render" flag, which React's dev double-run defeats.
+  const prevTab = useRef(tab);
+  useEffect(() => {
+    if (prevTab.current === tab) return;
+    prevTab.current = tab;
+    mainRef.current?.focus({ preventScroll: true });
+  }, [tab]);
   const current = ALL.find((t) => t.id === tab) ?? ALL[0];
 
   if (!state.onboarded) {
@@ -73,6 +86,7 @@ function Shell() {
 
   return (
     <div className="frame">
+      <button className="skip" onClick={() => mainRef.current?.focus()}>Skip to main content</button>
       <div className="shell">
         <aside className="sidebar">
           <div className="brand"><span className="brand-mark"><Mark /></span>MyMoney</div>
@@ -117,8 +131,8 @@ function Shell() {
               {(['auto', 'light', 'dark'] as Theme[]).map((t) => <button key={t} aria-pressed={theme === t} onClick={() => setTheme(t)}>{t}</button>)}
             </div>
           </div>
-          <main>
-            {tab === 'transactions' ? <Transactions />
+          <main ref={mainRef} tabIndex={-1} id="main">
+            {tab === 'transactions' ? <Transactions openAdd={route === 'add-transaction'} onCloseAdd={() => { location.hash = 'transactions'; setRoute('transactions'); }} />
               : tab === 'goals' ? <Goals />
               : tab === 'investments' ? <Investments />
               : tab === 'plan' ? <Plan go={go} />
@@ -149,7 +163,7 @@ function useHash() {
   return hash;
 }
 
-export default function App() {
+function AppInner() {
   const hash = useHash();
 
   // Chromeless routes that render the 3D stills. They show no personal data, so they need no account.
@@ -169,5 +183,15 @@ export default function App() {
         </CloudStore>
       </AuthGate>
     </AuthProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <ConfirmProvider>
+        <AppInner />
+      </ConfirmProvider>
+    </ToastProvider>
   );
 }

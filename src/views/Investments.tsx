@@ -6,6 +6,8 @@ import { equityShare } from '../engine/advisor';
 import { realReturn } from '../engine/projection';
 import { FD_TDS_THRESHOLD } from '../engine/tax';
 import type { Investment, InvestmentKind, Liability, RiskProfile } from '../engine/types';
+import { Icon } from '../components/icons';
+import { useToast } from '../components/feedback';
 import { Badge, Callout, Card, Field, Num, Stat, Toggle } from '../components/ui';
 import { StackedBar } from '../components/charts';
 import { inr, inrCompact, pct, todayISO, uid } from '../lib/format';
@@ -16,6 +18,7 @@ const KINDS = Object.keys(KIND_LABEL) as InvestmentKind[];
 
 export function Investments() {
   const { state, dispatch, d } = useStore();
+  const { toast } = useToast();
   const p = d.portfolio;
   const [editing, setEditing] = useState<Investment | null>(null);
   const [editingLoan, setEditingLoan] = useState<Liability | null>(null);
@@ -29,12 +32,20 @@ export function Investments() {
     <div className="page">
       <div className="row between">
         <h1>Investments</h1>
-        <button className="btn primary" onClick={() => setEditing(blank())}>Add investment</button>
+        <button className="btn primary" onClick={() => setEditing(blank())}><Icon name="plus" size={18} />Add investment</button>
       </div>
 
       {editing && <InvestmentForm initial={editing} onClose={() => setEditing(null)} />}
 
-      {state.investments.length === 0 && !editing && <Card><p className="sub">Add your savings, FDs, RDs, PPF, mutual funds, stocks and gold. Each one is valued today and compared on what you actually keep after tax and inflation.</p></Card>}
+      {state.investments.length === 0 && !editing && (
+        <Card>
+          <div className="empty-cta">
+            <h2>No investments yet</h2>
+            <p className="sub">Add your savings, FDs, RDs, PPF, mutual funds, stocks and gold. Each one is valued today and compared on what you actually keep after tax and inflation.</p>
+            <button className="btn" onClick={() => setEditing(blank())}><Icon name="plus" size={18} />Add your first investment</button>
+          </div>
+        </Card>
+      )}
 
       {p.holdings.length > 0 && (
         <>
@@ -67,7 +78,7 @@ export function Investments() {
                     const mat = maturity(h.inv, d.today);
                     return (
                       <tr key={h.inv.id}>
-                        <td>
+                        <td className="title">
                           <div style={{ fontWeight: 550 }}>{h.inv.name}</div>
                           <div className="sub">{KIND_LABEL[h.inv.kind]}{h.inv.institution ? ` · ${h.inv.institution}` : ''}{mat ? ` · matures ${mat.date}` : ''}</div>
                           {h.flags.map((f) => <div key={f} className="watch small">! {f}</div>)}
@@ -78,9 +89,11 @@ export function Investments() {
                         <td data-label="After tax" className="r">{pct(h.posttax)}</td>
                         <td data-label="Real return" className={`r ${h.real < 0.5 ? 'bad' : ''}`}>{pct(h.real)}</td>
                         <td data-label="Verdict">{best ? <Badge tone="good">{'✓'} Best</Badge> : worst ? <Badge tone={h.real < 1 ? 'bad' : 'watch'}>{h.real < 1 ? '✕' : '!'} Weakest</Badge> : null}</td>
-                        <td style={{ whiteSpace: 'nowrap' }}>
-                          <button className="btn small" onClick={() => setEditing(h.inv)}>Edit</button>{' '}
-                          <button className="btn small ghost danger" aria-label={`Delete ${h.inv.name}`} onClick={() => { if (confirm(`Delete ${h.inv.name}?`)) dispatch({ type: 'deleteInvestment', id: h.inv.id }); }}>&times;</button>
+                        <td className="actions">
+                          <div className="row-actions">
+                            <button className="btn small" onClick={() => setEditing(h.inv)}><Icon name="pencil" size={16} />Edit</button>
+                            <button className="btn icon small ghost danger" aria-label={`Delete ${h.inv.name}`} title="Delete" onClick={() => { dispatch({ type: 'deleteInvestment', id: h.inv.id }); toast(`${h.inv.name} deleted`, { undo: () => dispatch({ type: 'upsertInvestment', inv: h.inv }) }); }}><Icon name="trash" size={18} /><span className="icon-label">Delete</span></button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -97,18 +110,18 @@ export function Investments() {
       <DepositCalc />
 
       <Card title="Loans you are paying" sub="These count against your monthly capacity and net worth"
-        right={<button className="btn small" onClick={() => setEditingLoan({ id: uid(), name: '', outstanding: 0, rate: 10, emi: 0 })}>Add loan</button>}>
+        right={<button className="btn small" onClick={() => setEditingLoan({ id: uid(), name: '', outstanding: 0, rate: 10, emi: 0 })}><Icon name="plus" size={16} />Add loan</button>}>
         {editingLoan && <LoanForm initial={editingLoan} onClose={() => setEditingLoan(null)} />}
         {state.liabilities.length === 0 ? <p className="sub">None recorded.</p> : (
           <div className="table-wrap">
-            <table className="table num">
+            <table className="table num cards">
               <thead><tr><th>Loan</th><th className="r">Outstanding</th><th className="r">Rate</th><th className="r">EMI</th><th /></tr></thead>
               <tbody>
                 {state.liabilities.map((l) => (
                   <tr key={l.id}>
-                    <td>{l.name} {l.rate > 10 && <Badge tone="watch">! costly</Badge>}</td>
-                    <td className="r">{inr(l.outstanding)}</td><td className="r">{pct(l.rate)}</td><td className="r">{inr(l.emi)}</td>
-                    <td><button className="btn small" onClick={() => setEditingLoan(l)}>Edit</button>{' '}<button className="btn small ghost danger" aria-label={`Delete ${l.name}`} onClick={() => dispatch({ type: 'deleteLiability', id: l.id })}>&times;</button></td>
+                    <td className="title">{l.name} {l.rate > 10 && <Badge tone="watch">! costly</Badge>}</td>
+                    <td data-label="Outstanding" className="r">{inr(l.outstanding)}</td><td data-label="Rate" className="r">{pct(l.rate)}</td><td data-label="EMI" className="r">{inr(l.emi)}</td>
+                    <td className="actions"><div className="row-actions"><button className="btn small" onClick={() => setEditingLoan(l)}><Icon name="pencil" size={16} />Edit</button><button className="btn icon small ghost danger" aria-label={`Delete ${l.name}`} title="Delete" onClick={() => { dispatch({ type: 'deleteLiability', id: l.id }); toast(`${l.name} deleted`, { undo: () => dispatch({ type: 'upsertLiability', liability: l }) }); }}><Icon name="trash" size={18} /><span className="icon-label">Delete</span></button></div></td>
                   </tr>
                 ))}
               </tbody>
@@ -124,22 +137,28 @@ const blank = (): Investment => ({ id: uid(), kind: 'fd', name: '', institution:
 
 function LoanForm({ initial, onClose }: { initial: Liability; onClose: () => void }) {
   const { dispatch } = useStore();
+  const { toast } = useToast();
   const [l, setL] = useState(initial);
   return (
     <div className="stack" style={{ marginBottom: 14 }}>
       <div className="form-grid">
-        <Field label="Name"><input value={l.name} onChange={(e) => setL({ ...l, name: e.target.value })} placeholder="Car loan, credit card..." /></Field>
+        <Field label="Name" required><input value={l.name} onChange={(e) => setL({ ...l, name: e.target.value })} placeholder="Car loan, credit card..." /></Field>
         <Num label="Outstanding (₹)" value={l.outstanding} onChange={(n) => setL({ ...l, outstanding: n })} min={0} />
         <Num label="Interest rate (%)" value={l.rate} onChange={(n) => setL({ ...l, rate: n })} min={0} />
         <Num label="Monthly EMI (₹)" value={l.emi} onChange={(n) => setL({ ...l, emi: n })} min={0} />
       </div>
-      <div className="row"><button className="btn primary" disabled={!l.name} onClick={() => { dispatch({ type: 'upsertLiability', liability: l }); onClose(); }}>Save</button><button className="btn" onClick={onClose}>Cancel</button></div>
+      <div className="form-actions" style={{ marginTop: 0 }}>
+        <button className="btn primary" disabled={!l.name} onClick={() => { dispatch({ type: 'upsertLiability', liability: l }); toast(`${l.name} saved`); onClose(); }}>Save loan</button>
+        <button className="btn" onClick={onClose}>Cancel</button>
+        {!l.name && <span className="why" role="status">Enter a name to save.</span>}
+      </div>
     </div>
   );
 }
 
 function InvestmentForm({ initial, onClose }: { initial: Investment; onClose: () => void }) {
   const { dispatch, d } = useStore();
+  const { toast } = useToast();
   const [v, setV] = useState<Investment>(initial);
   const set = (patch: Partial<Investment>) => setV((x) => ({ ...x, ...patch }));
   const timed = v.kind === 'fd' || v.kind === 'rd';
@@ -148,13 +167,13 @@ function InvestmentForm({ initial, onClose }: { initial: Investment; onClose: ()
   const defaultRate = v.kind === 'fd' ? d.rates.fd : v.kind === 'rd' ? d.rates.rd : v.kind === 'ppf' ? d.rates.ppf : v.kind === 'savings' ? d.rates.savings : 0;
 
   return (
-    <Card title={initial.name ? `Edit ${initial.name}` : 'New investment'}>
+    <Card title={initial.name ? `Edit ${initial.name}` : 'New investment'} sub="Fields marked * are required">
       <div className="form-grid">
         <Field label="Type"><select value={v.kind} onChange={(e) => { const k = e.target.value as InvestmentKind; set({ kind: k, tenureMonths: k === 'fd' ? 12 : k === 'rd' ? 12 : 0, emergency: k === 'savings' }); }}>{KINDS.map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}</select></Field>
-        <Field label="Name"><input value={v.name} onChange={(e) => set({ name: e.target.value })} placeholder="e.g. SBI 1-year FD" /></Field>
+        <Field label="Name" required><input value={v.name} onChange={(e) => set({ name: e.target.value })} placeholder="e.g. SBI 1-year FD" /></Field>
         <Field label="Bank / platform"><input value={v.institution} onChange={(e) => set({ institution: e.target.value })} /></Field>
         <Field label={timed ? 'Start date' : 'Invested since'}><input type="date" value={v.startDate} onChange={(e) => set({ startDate: e.target.value })} /></Field>
-        <Num label={v.kind === 'rd' ? 'Monthly instalment (₹)' : v.kind === 'fd' ? 'Deposit amount (₹)' : v.kind === 'savings' ? 'Balance (₹)' : 'Total invested (₹)'} value={v.amount} onChange={(n) => set({ amount: n, ...(v.kind === 'savings' ? { currentValue: n } : {}) })} min={0} />
+        <Num label={v.kind === 'rd' ? 'Monthly instalment (₹)' : v.kind === 'fd' ? 'Deposit amount (₹)' : v.kind === 'savings' ? 'Balance (₹)' : 'Total invested (₹)'} value={v.amount} onChange={(n) => set({ amount: n, ...(v.kind === 'savings' ? { currentValue: n } : {}) })} min={0} required />
         {(timed || v.kind === 'savings' || v.kind === 'ppf' || v.kind === 'epf' || v.kind === 'mutual_fund' || v.kind === 'nps') && (
           <Num label={v.kind === 'mutual_fund' ? 'Your return, XIRR (% / yr, optional)' : 'Interest rate (% / yr)'} value={v.rate} onChange={(n) => set({ rate: n })} min={0} hint={v.rate ? undefined : defaultRate ? `Leave 0 to use ${defaultRate}% from Settings` : 'Leave 0 to use the Settings assumption'} />
         )}
@@ -166,9 +185,10 @@ function InvestmentForm({ initial, onClose }: { initial: Investment; onClose: ()
       {mat && (
         <div style={{ marginTop: 12 }}><Callout tone="info">Matures on <b>{mat.date}</b> at about <b>{inr(mat.value)}</b> (interest {inr(mat.interest)}). Banks round differently, so expect a few rupees of difference.</Callout></div>
       )}
-      <div className="row" style={{ marginTop: 12 }}>
-        <button className="btn primary" disabled={!v.name || v.amount <= 0} onClick={() => { dispatch({ type: 'upsertInvestment', inv: v }); onClose(); }}>Save</button>
+      <div className="form-actions">
+        <button className="btn primary" disabled={!v.name || v.amount <= 0} onClick={() => { dispatch({ type: 'upsertInvestment', inv: v }); toast(`${v.name} saved`); onClose(); }}>Save investment</button>
         <button className="btn" onClick={onClose}>Cancel</button>
+        {(!v.name || v.amount <= 0) && <span className="why" role="status">{!v.name ? 'Enter a name to save.' : 'Enter an amount to save.'}</span>}
       </div>
     </Card>
   );
@@ -192,7 +212,7 @@ function Compare() {
         <Num label="One-time amount (₹)" value={lump} onChange={setLump} min={0} />
         <Num label="Monthly amount (₹)" value={monthly} onChange={setMonthly} min={0} />
         <Num label="Years until you need it" value={years} onChange={(n) => setYears(Math.max(0.25, n))} min={0.25} />
-        <Field label="Risk comfort"><Toggle label="Risk profile" value={risk} onChange={setRisk} options={[['conservative', 'Low'], ['moderate', 'Medium'], ['aggressive', 'High']]} /></Field>
+        <Field label="Risk comfort" wide><Toggle label="Risk profile" value={risk} onChange={setRisk} options={[['conservative', 'Low'], ['moderate', 'Medium'], ['aggressive', 'High']]} /></Field>
       </div>
 
       <div className="grid g2" style={{ marginBottom: 14 }}>
@@ -208,7 +228,7 @@ function Compare() {
               const c = corpusAfterTax(r.inst, d.rates, d.marginal, { lump, monthly, years });
               return (
                 <tr key={r.inst.id} style={{ opacity: r.eligible ? 1 : 0.62 }}>
-                  <td>
+                  <td className="title">
                     <div style={{ fontWeight: 550 }}>{r.inst.name}</div>
                     <div className="sub">{r.inst.where}</div>
                     {r.reason && <div className={`small ${r.eligible ? 'watch' : 'muted'}`}>{r.reason}</div>}
@@ -250,7 +270,7 @@ function DepositCalc() {
   return (
     <Card title="FD / RD calculator" sub="Quarterly compounding, as Indian banks do it">
       <div className="form-grid">
-        <Field label="Type"><Toggle label="Deposit type" value={kind} onChange={(k) => { setKind(k); setRate(k === 'fd' ? d.rates.fd : d.rates.rd); }} options={[['fd', 'Fixed deposit'], ['rd', 'Recurring deposit']]} /></Field>
+        <Field label="Type" wide><Toggle label="Deposit type" value={kind} onChange={(k) => { setKind(k); setRate(k === 'fd' ? d.rates.fd : d.rates.rd); }} options={[['fd', 'Fixed deposit'], ['rd', 'Recurring deposit']]} /></Field>
         <Num label={kind === 'fd' ? 'Deposit (₹)' : 'Monthly instalment (₹)'} value={amount} onChange={setAmount} min={0} />
         <Num label="Rate (% / yr)" value={rate} onChange={setRate} min={0} hint="Use your bank's quoted rate" />
         <Num label="Tenure (months)" value={months} onChange={(n) => setMonths(Math.max(1, Math.round(n)))} min={1} />

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode } from 'react';
 import { StoreProvider, clearLocalState, hasUserData, normalizeState, readLocalState, useStore, type Action, type AppState } from '../store';
+import { useConfirm } from '../components/feedback';
 import { useAuth } from './AuthContext';
 import { loadCloud, saveCloud } from './cloud';
 import { supabase } from './supabase';
@@ -72,6 +73,7 @@ function SyncBar() {
 
 export function CloudStore({ children }: { children: ReactNode }) {
   const auth = useAuth()!;
+  const confirm = useConfirm();
   const user = auth.user!;
   const db = supabase!;
 
@@ -206,9 +208,12 @@ export function CloudStore({ children }: { children: ReactNode }) {
 
   const signOutSafely = useCallback(async () => {
     await flushNow();
-    if (statusRef.current !== 'saved' && !window.confirm('Some changes could not be saved. Sign out anyway and lose them?')) return;
+    if (statusRef.current !== 'saved') {
+      const ok = await confirm({ title: 'Some changes are not saved', body: 'If you sign out now they will be lost.', confirmLabel: 'Sign out anyway', cancelLabel: 'Stay signed in', danger: true });
+      if (!ok) return;
+    }
     await auth.signOut();
-  }, [auth, flushNow]);
+  }, [auth, confirm, flushNow]);
 
   // Do not lose edits: warn on close while anything is unsaved, and push pending edits when the tab is hidden.
   useEffect(() => {

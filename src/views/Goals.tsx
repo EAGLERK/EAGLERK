@@ -2,6 +2,8 @@ import { lazy, Suspense, useState } from 'react';
 import { addMonths } from '../engine/cashflow';
 import { earliestMonths, GOAL_DEFAULTS, planGoal, type PlanContext } from '../engine/goals';
 import type { Goal, GoalKind } from '../engine/types';
+import { Icon, type IconName } from '../components/icons';
+import { useToast } from '../components/feedback';
 import { Badge, Callout, Card, Field, Num, NumInput } from '../components/ui';
 import { inr, inrCompact, monthLabel, monthsText, pct, uid } from '../lib/format';
 import { useStore } from '../store';
@@ -10,8 +12,31 @@ const Showcase3D = lazy(() => import('../three/Showcase3D'));
 
 const DEFAULT_PRICE: Record<GoalKind, number> = { car: 1_000_000, house: 6_000_000, bike: 150_000, other: 500_000 };
 
+const CHOICES: Array<{ kind: GoalKind; icon: IconName; title: string; hint: string }> = [
+  { kind: 'car', icon: 'car', title: 'Car', hint: 'Down payment, loan and running costs' },
+  { kind: 'house', icon: 'house', title: 'House', hint: 'Down payment, home loan and fees' },
+  { kind: 'bike', icon: 'bike', title: 'Bike', hint: 'A motorbike or scooter' },
+  { kind: 'other', icon: 'target', title: 'Something else', hint: 'Any one-off purchase, saved for in cash' },
+];
+
+function GoalChooser({ onPick }: { onPick: (k: GoalKind) => void }) {
+  return (
+    <div className="chooser" role="group" aria-label="Choose what you are saving for">
+      {CHOICES.map((c) => (
+        <button key={c.kind} className="choice" onClick={() => onPick(c.kind)}>
+          <span className="icon-tile"><Icon name={c.icon} size={22} /></span>
+          <b>{c.title}</b>
+          <span className="sub">{c.hint}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Goals() {
   const { state, dispatch, d } = useStore();
+  const { toast } = useToast();
+  const [choosing, setChoosing] = useState(false);
   const ctx: PlanContext = { today: d.today, rates: d.rates, monthlyIncome: d.plan.income, existingEmi: d.plan.existingEmi, marginal: d.marginal, annualIncome: state.profile.annualGrossIncome };
 
   const add = (kind: GoalKind) => {
@@ -20,6 +45,8 @@ export function Goals() {
       type: 'upsertGoal',
       goal: { id: uid(), kind, name: g.name, price: DEFAULT_PRICE[kind], targetMonth: addMonths(d.today.slice(0, 7), kind === 'house' ? 84 : 24), downPaymentPct: g.downPaymentPct, loanRate: d.rates[g.rateKey] ?? 9, loanYears: g.loanYears, extraCostPct: g.extraCostPct, saved: 0 },
     });
+    setChoosing(false);
+    toast(`${g.name} goal added. Edit its price and date below.`);
   };
 
   const plans = state.goals.map((g) => ({ g, p: planGoal(g, ctx) }));
@@ -29,13 +56,21 @@ export function Goals() {
 
   return (
     <div className="page">
-      <div className="row between">
-        <h1>Goals</h1>
-        <div className="row">
-          <span className="sub">Add:</span>
-          {(['car', 'house', 'bike', 'other'] as GoalKind[]).map((k) => <button key={k} className="btn" onClick={() => add(k)}>{GOAL_DEFAULTS[k].name}</button>)}
+      <div className="page-head">
+        <div>
+          <h1>Goals</h1>
+          <div className="sub">What you are saving for, and what it takes to get there</div>
         </div>
+        <button className="btn primary" aria-expanded={choosing} onClick={() => setChoosing((c) => !c)}>
+          <Icon name={choosing ? 'close' : 'plus'} size={18} />{choosing ? 'Cancel' : 'Add goal'}
+        </button>
       </div>
+
+      {choosing && (
+        <Card title="What are you saving for?" sub="Pick one. You can change every number afterwards.">
+          <GoalChooser onPick={add} />
+        </Card>
+      )}
 
       <section className="card" style={{ padding: 0, overflow: 'hidden' }} aria-label="Car, house and bike">
         <div className="showcase">
@@ -61,7 +96,15 @@ export function Goals() {
         </Card>
       )}
 
-      {plans.length === 0 && <Card><p className="sub">Add a car, house or bike above. You will see the price at your target date, the cash needed up front, the EMI, the total interest, and the monthly saving that gets you there.</p></Card>}
+      {plans.length === 0 && !choosing && (
+        <Card>
+          <div className="empty-cta">
+            <h2>No goals yet</h2>
+            <p className="sub">Add a car, house or bike. You will see the price at your target date, the cash needed up front, the EMI, the total interest, and the monthly saving that gets you there.</p>
+            <button className="btn" onClick={() => setChoosing(true)}><Icon name="plus" size={18} />Add your first goal</button>
+          </div>
+        </Card>
+      )}
       {plans.map(({ g }) => <GoalCard key={g.id} goal={g} ctx={ctx} surplus={surplus} />)}
     </div>
   );
@@ -69,6 +112,7 @@ export function Goals() {
 
 function GoalCard({ goal, ctx, surplus }: { goal: Goal; ctx: PlanContext; surplus: number }) {
   const { dispatch } = useStore();
+  const { toast } = useToast();
   const [edit, setEdit] = useState(false);
   const [pace, setPace] = useState(Math.round(surplus / 4 / 1000) * 1000 || 10_000);
   const p = planGoal(goal, ctx);
@@ -82,7 +126,7 @@ function GoalCard({ goal, ctx, surplus }: { goal: Goal; ctx: PlanContext; surplu
     <Card
       title={<span>{goal.name} <span className="muted" style={{ fontWeight: 400 }}>· {monthLabel(goal.targetMonth)} ({monthsText(p.months)} away)</span></span>}
       sub={`Price today ${inr(goal.price)}`}
-      right={<div className="row"><button className="btn small" onClick={() => setEdit(!edit)}>{edit ? 'Done' : 'Edit'}</button><button className="btn small danger" onClick={() => { if (confirm(`Remove ${goal.name}?`)) dispatch({ type: 'deleteGoal', id: goal.id }); }}>Remove</button></div>}
+      right={<div className="row-actions"><button className="btn small" aria-expanded={edit} onClick={() => setEdit(!edit)}><Icon name={edit ? 'close' : 'pencil'} size={16} />{edit ? 'Done' : 'Edit'}</button><button className="btn small danger" onClick={() => { dispatch({ type: 'deleteGoal', id: goal.id }); toast(`${goal.name} goal removed`, { undo: () => dispatch({ type: 'upsertGoal', goal }) }); }}><Icon name="trash" size={16} />Remove</button></div>}
     >
       {edit && (
         <div className="form-grid" style={{ marginBottom: 16 }}>

@@ -86,10 +86,13 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
           <h1>Overview</h1>
           <div className="sub">Summary of your money for {monthLabel(month)}</div>
         </div>
-        <div className="row" style={{ gap: 6 }}>
-          <button className="btn small" aria-label="Previous month" onClick={() => setMonth(addMonths(month, -1))}>&larr;</button>
-          <b style={{ minWidth: 86, textAlign: 'center' }}>{monthLabel(month)}</b>
-          <button className="btn small" aria-label="Next month" onClick={() => setMonth(addMonths(month, 1))}>&rarr;</button>
+        <div className="row" style={{ gap: 12 }}>
+          <div className="row" style={{ gap: 6 }}>
+            <button className="btn icon small" aria-label="Previous month" onClick={() => setMonth(addMonths(month, -1))}>&larr;</button>
+            <b style={{ minWidth: 86, textAlign: 'center' }}>{monthLabel(month)}</b>
+            <button className="btn icon small" aria-label="Next month" onClick={() => setMonth(addMonths(month, 1))}>&rarr;</button>
+          </div>
+          <button className="btn primary" onClick={() => go('add-transaction')}><Icon name="plus" size={18} />Add transaction</button>
         </div>
       </div>
 

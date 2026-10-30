@@ -66,19 +66,19 @@ export function NumInput({ value, onChange, ...rest }: { value: number; onChange
   );
 }
 
-export function Field({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
+export function Field({ label, hint, required, wide, children }: { label: string; hint?: ReactNode; required?: boolean; /** Spans two columns of a form grid on wider screens. */ wide?: boolean; children: ReactNode }) {
   return (
-    <label className="field">
-      <span>{label}</span>
+    <label className={`field${wide ? ' span-2' : ''}`}>
+      <span className={required ? 'req' : undefined}>{label}</span>
       {children}
       {hint && <span className="hint">{hint}</span>}
     </label>
   );
 }
 
-export function Num({ label, value, onChange, hint, min, step = 'any' }: { label: string; value: number; onChange: (n: number) => void; hint?: ReactNode; min?: number; step?: string }) {
+export function Num({ label, value, onChange, hint, min, step = 'any', required }: { label: string; value: number; onChange: (n: number) => void; hint?: ReactNode; min?: number; step?: string; required?: boolean }) {
   return (
-    <Field label={label} hint={hint}>
+    <Field label={label} hint={hint} required={required}>
       <NumInput value={value} onChange={(n) => onChange(min !== undefined ? Math.max(min, n) : n)} step={step} />
     </Field>
   );

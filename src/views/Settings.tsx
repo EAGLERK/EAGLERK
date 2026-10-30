@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import type { Assumption } from '../engine/assumptions';
 import { Badge, Callout, Card, Field, Num, NumInput, Toggle } from '../components/ui';
 import { pct } from '../lib/format';
+import { Icon } from '../components/icons';
+import { useConfirm, useToast } from '../components/feedback';
 import { useAuth } from '../auth/AuthContext';
 import { useSync } from '../auth/CloudStore';
 import { useStore, type AppState } from '../store';
@@ -18,7 +20,24 @@ const STATUS_HELP = {
 export function Settings() {
   const { state, dispatch, d } = useStore();
   const auth = useAuth();
+  const confirm = useConfirm();
+  const { toast } = useToast();
   const p = state.profile;
+  const where = auth?.user ? 'your account' : 'this browser';
+
+  const replaceWithSample = async () => {
+    const ok = await confirm({ title: 'Replace your data with sample data?', body: `Everything in ${where} is replaced by made-up example transactions, investments and goals. Download a backup first if you want to keep yours.`, confirmLabel: 'Replace with sample data', danger: true });
+    if (!ok) return;
+    dispatch({ type: 'loadDemo' });
+    toast('Sample data loaded');
+  };
+
+  const eraseAll = async () => {
+    const ok = await confirm({ title: 'Erase all your data?', body: `Every transaction, investment, goal and setting in ${where} is deleted. This cannot be undone. Download a backup first if you might want it back.`, confirmLabel: 'Erase all data', danger: true });
+    if (!ok) return;
+    dispatch({ type: 'startFresh' });
+    toast('All data erased');
+  };
   const file = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<{ tone: 'good' | 'bad'; text: string } | null>(null);
   const [backupText, setBackupText] = useState('');
@@ -71,7 +90,7 @@ export function Settings() {
           <Num label="Monthly spend (₹)" value={p.monthlyExpenses} onChange={(n) => dispatch({ type: 'profile', patch: { monthlyExpenses: n } })} min={0} hint="Including rent and EMIs" />
           <Num label="Annual gross income (₹)" value={p.annualGrossIncome} onChange={(n) => dispatch({ type: 'profile', patch: { annualGrossIncome: n } })} min={0} hint="Sets your tax slab" />
           <Num label="Emergency fund (months)" value={p.emergencyMonths} onChange={(n) => dispatch({ type: 'profile', patch: { emergencyMonths: n } })} min={0} hint="6 is standard; 9-12 if income is irregular" />
-          <Field label="Risk comfort"><Toggle label="Risk profile" value={p.risk} onChange={(v) => dispatch({ type: 'profile', patch: { risk: v } })} options={[['conservative', 'Low'], ['moderate', 'Medium'], ['aggressive', 'High']]} /></Field>
+          <Field label="Risk comfort" wide><Toggle label="Risk profile" value={p.risk} onChange={(v) => dispatch({ type: 'profile', patch: { risk: v } })} options={[['conservative', 'Low'], ['moderate', 'Medium'], ['aggressive', 'High']]} /></Field>
         </div>
         <div className="row" style={{ marginTop: 12 }}>
           <label className="check"><input type="checkbox" checked={p.salaried} onChange={(e) => dispatch({ type: 'profile', patch: { salaried: e.target.checked } })} /> Salaried (Rs 75,000 standard deduction)</label>
@@ -103,21 +122,30 @@ export function Settings() {
         </div>
       </Card>
 
-      <Card title="Your data" sub={auth?.user ? "Stored in your MyMoney account and synced across your devices. Other users cannot read it." : "Everything is stored in this browser only. Nothing is sent anywhere."}>
-        <div className="row">
-          <button className="btn" onClick={exportJson}>Download backup</button>
-          <button className="btn" onClick={copyBackup}>Copy backup</button>
-          <button className="btn" onClick={() => file.current?.click()}>Restore from file</button>
-          <input ref={file} type="file" accept="application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f); e.target.value = ''; }} />
-          <button className="btn" onClick={() => { if (confirm('Replace your data with the sample data?')) dispatch({ type: 'loadDemo' }); }}>Load sample data</button>
-          <button className="btn danger" onClick={() => { if (confirm('Erase everything in this browser? Download a backup first if you want one.')) dispatch({ type: 'startFresh' }); }}>Erase everything</button>
-        </div>
-        <div className="stack" style={{ marginTop: 12 }}>
-          <textarea id="backup-text" className="inline-input" rows={3} aria-label="Backup text" value={backupText} onChange={(e) => setBackupText(e.target.value)} placeholder="Press Copy backup to fill this with your data, or paste a backup here and press Restore from text." />
+      <Card title="Your data" sub={auth?.user ? 'Stored in your MyMoney account and synced across your devices. Other users cannot read it.' : 'Everything is stored in this browser only. Nothing is sent anywhere.'}>
+        <div className="stack">
+          <div className="row">
+            <button className="btn primary" onClick={exportJson}>Download backup</button>
+            <button className="btn" onClick={copyBackup}>Copy backup</button>
+            <button className="btn" onClick={() => file.current?.click()}>Restore from file</button>
+            <input ref={file} type="file" accept="application/json" hidden aria-label="Backup file" onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f); e.target.value = ''; }} />
+          </div>
+          <Field label="Backup text" hint="Copy backup fills this in. To restore, paste a backup here.">
+            <textarea id="backup-text" rows={3} value={backupText} onChange={(e) => setBackupText(e.target.value)} />
+          </Field>
           <div><button className="btn" disabled={!backupText.trim()} onClick={() => restore(backupText)}>Restore from text</button></div>
+          {msg && <Callout tone={msg.tone}>{msg.text}</Callout>}
+          <p className="sub">{auth?.user ? 'Your account keeps a copy on the server. A downloaded backup is still a good second copy.' : 'Browser storage can be wiped by clearing site data. Download a backup now and then.'}</p>
         </div>
-        {msg && <div style={{ marginTop: 12 }}><Callout tone={msg.tone}>{msg.text}</Callout></div>}
-        <p className="sub" style={{ marginTop: 12 }}>{auth?.user ? 'Your account keeps a copy on the server. A downloaded backup is still a good second copy.' : 'Browser storage can be wiped by clearing site data. Download a backup now and then.'}</p>
+
+        <div className="danger-zone">
+          <h3>Danger zone</h3>
+          <p className="sub">These replace or remove your data. You will be asked to confirm.</p>
+          <div className="row">
+            <button className="btn danger" onClick={replaceWithSample}>Replace with sample data</button>
+            <button className="btn danger" onClick={eraseAll}><Icon name="trash" size={16} />Erase all data</button>
+          </div>
+        </div>
       </Card>
     </div>
   );

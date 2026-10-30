@@ -11,6 +11,13 @@ const PATHS: Record<string, string> = {
   arrow: 'M5 12h14M13 6l6 6-6 6',
   dots: 'M5 12h.01M12 12h.01M19 12h.01',
   shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
+  plus: 'M12 5v14M5 12h14',
+  trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3',
+  pencil: 'M4 20l4-1 11-11a2.1 2.1 0 0 0-3-3L5 16l-1 4z',
+  close: 'M6 6l12 12M18 6L6 18',
+  car: 'M5 16l1.4-4.6A2 2 0 0 1 8.3 10h7.4a2 2 0 0 1 1.9 1.4L19 16M3.5 16h17v3h-17zM7 19v1.5M17 19v1.5M7.5 13.2h.01M16.5 13.2h.01',
+  house: 'M4 11l8-7 8 7M6 10v10h12V10M10 20v-6h4v6',
+  bike: 'M5.5 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18.5 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 15h5l2.5-6H12M13 15l-2.5-4H8M15.5 9l1-3h2.5',
 };
 
 export type IconName = keyof typeof PATHS;
