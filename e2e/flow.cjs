@@ -80,6 +80,18 @@ const check = (ok, msg) => {
   await nav('Investments').click();
   check((await main()).includes('Test FD'), 'data persists across reload');
 
+  // Upgrade path: data saved under the old app name must still load.
+  const legacyPage = await (await browser.newContext()).newPage();
+  await legacyPage.addInitScript(() => {
+    const state = { version: 1, onboarded: true, profile: { name: 'Legacy' }, txns: [], goals: [], investments: [{ id: 'x', kind: 'savings', name: 'Old savings', institution: '', startDate: '2020-01-01', amount: 12345, currentValue: 12345, rate: 3, tenureMonths: 0 }], liabilities: [], overrides: {} };
+    if (!localStorage.getItem('mymoney:v1')) localStorage.setItem('eaglerk:v1', JSON.stringify(state));
+  });
+  await legacyPage.goto(URL);
+  await legacyPage.getByRole('navigation').getByRole('button', { name: 'Investments' }).click();
+  check((await legacyPage.locator('main').innerText()).includes('Old savings'), 'data saved under the old key (eaglerk) still loads');
+  check((await legacyPage.locator('.brand').first().innerText()).includes('MyMoney'), 'app shows the MyMoney name');
+  await legacyPage.close();
+
   await page.setViewportSize({ width: 390, height: 844 });
   check(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no horizontal overflow at 390px');
   check(errors.length === 0, 'no console errors' + (errors.length ? ': ' + errors.join(' | ') : ''));

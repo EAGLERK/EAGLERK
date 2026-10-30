@@ -81,11 +81,13 @@ function reducer(s: AppState, a: Action): AppState {
   }
 }
 
-const KEY = 'eaglerk:v1';
+const KEY = 'mymoney:v1';
+/** The app was first called Eaglerk. Keep reading that key so existing data is not lost on upgrade. */
+const LEGACY_KEY = 'eaglerk:v1';
 
 function load(): AppState {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY) ?? localStorage.getItem(LEGACY_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as AppState;
       if (parsed.version === 1) return { ...initial, ...parsed, profile: { ...EMPTY_PROFILE, ...parsed.profile } };

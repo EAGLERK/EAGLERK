@@ -28,7 +28,7 @@ function Shell() {
   const { state, dispatch } = useStore();
   const [tab, setTab] = useState<string>(() => location.hash.slice(1) || 'dashboard');
   const [theme, setTheme] = useState<Theme>(() => {
-    try { return (localStorage.getItem('eaglerk:theme') as Theme) || 'auto'; } catch { return 'auto'; }
+    try { return ((localStorage.getItem('mymoney:theme') ?? localStorage.getItem('eaglerk:theme')) as Theme) || 'auto'; } catch { return 'auto'; }
   });
 
   // Only touch data-theme once the user has picked a theme, so a host's own light/dark setting is left alone.
@@ -38,7 +38,7 @@ function Shell() {
     if (theme === 'auto') {
       if (picked.current) document.documentElement.removeAttribute('data-theme');
     } else document.documentElement.setAttribute('data-theme', theme);
-    try { localStorage.setItem('eaglerk:theme', theme); } catch { /* storage blocked */ }
+    try { localStorage.setItem('mymoney:theme', theme); } catch { /* storage blocked */ }
   }, [theme]);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ function Shell() {
     return (
       <div className="frame">
         <div className="card hero" style={{ marginTop: 48 }}>
-          <h1>Eaglerk</h1>
+          <h1>MyMoney</h1>
           <p>See where your money goes each month, plan a car, house and bike, and find out what to do with the surplus: FD, RD, PPF, mutual funds, or paying down debt. Everything stays in this browser.</p>
           <div className="row" style={{ justifyContent: 'center' }}>
             <button className="btn primary" onClick={() => dispatch({ type: 'startFresh' })}>Start with my own data</button>
@@ -74,7 +74,7 @@ function Shell() {
     <div className="frame">
       <div className="shell">
         <aside className="sidebar">
-          <div className="brand"><span className="brand-mark"><Mark /></span>Eaglerk</div>
+          <div className="brand"><span className="brand-mark"><Mark /></span>MyMoney</div>
           <nav aria-label="Sections" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             {GROUPS.map((g) => (
               <div className="side-group" key={g.label}>
@@ -96,7 +96,7 @@ function Shell() {
 
         <div className="panel">
           <div className="crumbs">
-            <div className="path">Eaglerk<span className="crumb-rest"> &rsaquo; <b>{current.label}</b></span></div>
+            <div className="path">MyMoney<span className="crumb-rest"> &rsaquo; <b>{current.label}</b></span></div>
             {state.txns.some((t) => t.source === 'demo') && <span className="badge watch">Sample data</span>}
             <div className="pill-toggle" role="group" aria-label="Theme">
               {(['auto', 'light', 'dark'] as Theme[]).map((t) => <button key={t} aria-pressed={theme === t} onClick={() => setTheme(t)}>{t}</button>)}

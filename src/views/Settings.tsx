@@ -25,7 +25,7 @@ export function Settings() {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `eaglerk-backup-${d.today}.json`;
+    a.download = `mymoney-backup-${d.today}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
@@ -37,7 +37,7 @@ export function Settings() {
       dispatch({ type: 'replace', state: { ...parsed, liabilities: parsed.liabilities ?? [], overrides: parsed.overrides ?? {}, onboarded: true } });
       setMsg({ tone: 'good', text: 'Backup restored.' });
     } catch {
-      setMsg({ tone: 'bad', text: 'That is not an Eaglerk backup.' });
+      setMsg({ tone: 'bad', text: 'That is not a MyMoney backup.' });
     }
   };
   const importJson = async (f: File) => restore(await f.text());

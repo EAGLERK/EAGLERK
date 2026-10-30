@@ -1,4 +1,4 @@
-// Builds the app into one self-contained HTML file: dist-single/eaglerk.html
+// Builds the app into one self-contained HTML file: dist-single/mymoney.html
 // Usage: npm run build:single
 import { execSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -25,5 +25,5 @@ html = html.replace('</head>', () => `<style>${cssText}</style>\n</head>`);
 html = html.replace('</body>', () => `<script type="module">${jsText}</script>\n</body>`);
 
 mkdirSync('dist-single', { recursive: true });
-writeFileSync(join('dist-single', 'eaglerk.html'), html);
-console.log(`dist-single/eaglerk.html  ${(html.length / 1024).toFixed(0)} kB`);
+writeFileSync(join('dist-single', 'mymoney.html'), html);
+console.log(`dist-single/mymoney.html  ${(html.length / 1024).toFixed(0)} kB`);

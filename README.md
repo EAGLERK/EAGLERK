@@ -20,7 +20,7 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # 47 engine tests
 npm run build      # typecheck + production build
-npm run build:single   # one self-contained dist-single/eaglerk.html (no server needed)
+npm run build:single   # one self-contained dist-single/mymoney.html (no server needed)
 npm run e2e        # browser smoke test against a running server (needs Playwright + Chromium)
 ```
 
