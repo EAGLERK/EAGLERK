@@ -174,8 +174,8 @@ function AccountCard() {
 
         {hasPassword ? (
           <div className="form-grid" style={{ alignItems: 'end' }}>
-            <Field label="New password" hint="At least 8 characters.">
-              <input type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
+            <Field label="New password">
+              <input type="password" autoComplete="new-password" placeholder="At least 8 characters" value={pw} onChange={(e) => setPw(e.target.value)} />
             </Field>
             <div><button className="btn" disabled={busy || !pw} onClick={changePassword}>Change password</button></div>
           </div>

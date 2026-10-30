@@ -23,6 +23,7 @@ npm run build      # typecheck + production build
 npm run build:single   # one self-contained dist-single/mymoney.html (no server needed)
 npm run e2e        # browser smoke test against a running server (needs Playwright + Chromium)
 npm run e2e:auth   # sign-in, Google, sync and conflict tests against a mock Supabase
+npm run dev:auth-demo   # try the sign-in screens at http://localhost:5177 with no Supabase project (in-memory mock)
 ```
 
 Click **Explore with sample data** on first launch to see every screen populated.

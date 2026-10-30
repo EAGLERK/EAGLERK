@@ -5,7 +5,7 @@ const { spawn } = require('node:child_process');
 const { chromium } = require('playwright');
 const mock = require('./mock-supabase.cjs');
 
-const MOCK_PORT = 54321;
+const MOCK_PORT = 54322; // not 54321, which `npm run dev:auth-demo` uses
 const APP_PORT = 5174;
 const MOCK = `http://localhost:${MOCK_PORT}`;
 const APP = `http://localhost:${APP_PORT}/`;
@@ -25,13 +25,23 @@ const text = (page) => page.locator('body').innerText();
 /** Waits for the element instead of reading the page the instant after an action. */
 const shown = (loc) => loc.waitFor({ timeout: 8000 }).then(() => true, () => false);
 
+/** Stops the dev server and everything it started. Killing only the npx wrapper would leave vite running. */
+function stop(proc) {
+  try { process.kill(-proc.pid, 'SIGTERM'); } catch { /* already gone */ }
+}
+
 async function startApp(port = APP_PORT, extraEnv = {}) {
+  // If something already answers on this port, our server would fail to bind while the check below
+  // still saw a healthy response and carried on against the wrong server.
+  const taken = await fetch(`http://localhost:${port}/`).then(() => true, () => false);
+  if (taken) throw new Error(`port ${port} is already in use; stop whatever is serving it and rerun`);
   const proc = spawn('npx', ['vite', '--port', String(port), '--strictPort'], {
     env: { ...process.env, VITE_SUPABASE_URL: MOCK, VITE_SUPABASE_ANON_KEY: 'anon-test-key', ...extraEnv },
     stdio: 'ignore',
+    detached: true, // its own process group, so the whole tree (npx and vite) can be stopped together
   });
   for (let i = 0; i < 60; i++) { try { if ((await fetch(`http://localhost:${port}/`)).ok) return proc; } catch { /* not up yet */ } await sleep(500); }
-  proc.kill();
+  stop(proc);
   throw new Error('dev server did not start');
 }
 
@@ -60,12 +70,21 @@ const savedChip = (page) => page.getByText('All changes saved').first().waitFor(
 const nav = (page, name) => page.getByRole('navigation').getByRole('button', { name }).first().click();
 
 (async () => {
-  const appProc = await startApp();
-  const phoneApp = await startApp(5175, { VITE_AUTH_PHONE: '1' });
+  let appProc, phoneApp, m, browser;
   const PHONE_APP = 'http://localhost:5175/';
-  const m = await mock.start(MOCK_PORT);
-  const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  const cleanup = async () => {
+    try { await browser?.close(); } catch { /* already closed */ }
+    try { await m?.close(); } catch { /* already closed */ }
+    if (appProc) stop(appProc);
+    if (phoneApp) stop(phoneApp);
+  };
+  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, async () => { await cleanup(); process.exit(130); });
+  // Everything that starts something runs inside the try, so a failure anywhere still stops it all.
   try {
+    m = await mock.start(MOCK_PORT);
+    appProc = await startApp();
+    phoneApp = await startApp(5175, { VITE_AUTH_PHONE: '1' });
+    browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
     // 1. Signed out: only the sign-in screen, nothing of the app
     await reset();
     let p = await newPage(browser);
@@ -342,10 +361,7 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     check(await p.getByText('+919876543210').first().waitFor({ timeout: 8000 }).then(() => true, () => false), 'signing in with number and password works afterwards');
     await p.context().close();
   } finally {
-    await browser.close();
-    await m.close();
-    appProc.kill();
-    phoneApp.kill();
+    await cleanup();
   }
   console.log(`\n${results.length - failed}/${results.length} passed`);
   process.exit(failed ? 1 : 0);
