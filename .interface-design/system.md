@@ -6,7 +6,9 @@ Written from `src/styles.css` and the tested UI rules on 2026-10-31. If this fil
 
 **Personality:** Sophistication & Trust, with warmth. A personal-money app people open on a phone, often once a day, to see what is left.
 
-**Foundation:** neutral grey-green. Page `#e6eaed`, white shell, `#f3f5f5` panel, white cards. Dark mode follows the system and has a manual switch.
+**Foundation:** neutral grey-green. Page `#e6eaed`, white shell, `#f3f5f5` panel, white cards. Dark mode follows the system and has a manual switch (three icon buttons: monitor = match my device, sun = light, moon = dark).
+
+**Dark mode** is near-black with a green cast, modelled on the owner's second reference: page `#040605`, shell `#070a08`, panel `#0a0e0c`, cards `#0e1311` with 9% white borders, one soft mint glow at the panel's top-right (`--glow`), primary buttons in bright mint `#34d399` with near-black ink `#04130c` (9.9:1), active sidebar item as a bordered dark pill instead of the light mode's black one, and the Left over card as a dark card with a mint bloom in its corner instead of a green fill. Muted text is 6.5:1 on cards. Dark and light values are tokens in `:root`, so screens must not hard-code colours.
 
 **Depth:** borders first (1px `--border`, 8% black), one soft shadow only on the chart tooltip. One gradient is allowed: the green "feature" card (`--feature-a` to `--feature-b`) and the brand mark. Do not add more.
 
@@ -68,6 +70,8 @@ Flat list, no group headings: Dashboard, Transactions, Goals, Settings (Investme
 | Goals leads with the verdict ("All goals together"), the 3D scene follows | The scene filled the first screen and pushed the answer below the fold | 2026-10-31 |
 | "Delete all" moved from the Transactions header to a footer after the list | A destructive button above the filters was the first thing on a phone | 2026-10-31 |
 | Row category menus are borderless until hover or focus (mouse devices only) | 197 bordered boxes buried the amounts; touch keeps visible borders | 2026-10-31 |
+| Dark mode redrawn from the owner's dark dashboard reference | Near-black surfaces, mint accent, corner glow; contrast measured (all text pairs above 6:1) | 2026-10-31 |
+| Theme switcher is three icon buttons with spoken names | Owner asked for icons; each is 44px on phones and tested in `e2e/ui.cjs` | 2026-10-31 |
 | Sidebar headings (Track / Plan / General) removed | Owner asked for one flat list | 2026-10-31 |
 | Investing hidden behind `VITE_FEATURE_INVESTING` | Owner asked to remove it for now; nothing deleted | 2026-10-30 |
 

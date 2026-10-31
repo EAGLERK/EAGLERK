@@ -15,6 +15,11 @@ import { authFeatures } from './auth/supabase';
 import { StoreProvider, useStore } from './store';
 
 interface Tab { id: string; label: string; short: string; icon: IconName }
+const THEMES: Array<{ id: Theme; label: string; icon: IconName }> = [
+  { id: 'auto', label: 'Match my device', icon: 'monitor' },
+  { id: 'light', label: 'Light', icon: 'sun' },
+  { id: 'dark', label: 'Dark', icon: 'moon' },
+];
 const ALL: Tab[] = [
   { id: 'dashboard', label: 'Dashboard', short: 'Home', icon: 'dashboard' },
   { id: 'transactions', label: 'Transactions', short: 'Activity', icon: 'transactions' },
@@ -127,8 +132,8 @@ function Shell() {
           <div className="crumbs">
             <div className="path">MyMoney<span className="crumb-rest"> &rsaquo; <b>{current.label}</b></span></div>
             {state.txns.some((t) => t.source === 'demo') && <span className="badge watch">Sample data</span>}
-            <div className="pill-toggle" role="group" aria-label="Theme">
-              {(['auto', 'light', 'dark'] as Theme[]).map((t) => <button key={t} aria-pressed={theme === t} onClick={() => setTheme(t)}>{t}</button>)}
+            <div className="pill-toggle theme-switch" role="group" aria-label="Colour theme">
+              {THEMES.map(({ id, label, icon }) => <button key={id} aria-pressed={theme === id} aria-label={label} title={label} onClick={() => setTheme(id)}><Icon name={icon} size={18} /></button>)}
             </div>
           </div>
           <main ref={mainRef} tabIndex={-1} id="main">

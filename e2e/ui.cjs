@@ -42,6 +42,9 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
       check((await primaries(ph)).length <= 1, `phone / ${tab}: at most one primary button (${JSON.stringify(await primaries(ph))})`);
       check((await clipped(ph)).length === 0, `phone / ${tab}: no clipped toggles`);
     }
+    const sw = await ph.locator('.theme-switch button').evaluateAll((b) => b.map((e) => Math.round(e.getBoundingClientRect().height)));
+    check(sw.length === 3 && sw.every((h) => h >= 44), `phone: theme buttons are at least 44px tall ${JSON.stringify(sw)}`);
+    check(await ph.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'phone: the header with the theme switcher does not overflow sideways');
     await phoneCtx.close();
 
     // ---------- desktop ----------
@@ -148,6 +151,18 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     await p.getByRole('button', { name: 'Erase all data' }).click();
     check(await shown(p.getByRole('dialog')), 'Erase all data asks for confirmation in the page');
     await p.getByRole('button', { name: 'Cancel' }).last().click();
+
+    // ---------- theme switcher: three labelled icon buttons ----------
+    const themeBtns = p.getByRole('group', { name: 'Colour theme' }).getByRole('button');
+    check((await themeBtns.count()) === 3, 'the theme switcher has three buttons');
+    check(await p.locator('.theme-switch button svg').count() === 3 && (await themeBtns.allInnerTexts()).every((t) => t.trim() === ''), 'each theme button is an icon with no visible text');
+    check(JSON.stringify(await themeBtns.evaluateAll((b) => b.map((e) => e.getAttribute('aria-label')))) === JSON.stringify(['Match my device', 'Light', 'Dark']), 'each icon has a spoken name: Match my device, Light, Dark');
+    await p.getByRole('button', { name: 'Dark', exact: true }).click();
+    check((await p.evaluate(() => document.documentElement.dataset.theme)) === 'dark' && (await p.getByRole('button', { name: 'Dark', exact: true }).getAttribute('aria-pressed')) === 'true', 'Dark applies and shows as selected');
+    await p.reload();
+    check((await p.evaluate(() => document.documentElement.dataset.theme)) === 'dark', 'the choice survives a reload');
+    await p.getByRole('button', { name: 'Light', exact: true }).click();
+    check((await p.evaluate(() => document.documentElement.dataset.theme)) === 'light', 'Light applies');
 
     // ---------- investing hidden ----------
     if (!investing) {
