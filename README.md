@@ -61,7 +61,11 @@ devices. Mobile-number sign-in is built but switched off until an SMS provider i
 7. Recommended: turn on CAPTCHA and leaked-password protection under Authentication > Attack Protection (some options
    depend on your Supabase plan).
 8. Deploy the built site (`npm run build`) to any static host with the two `VITE_SUPABASE_*` values set at build time.
-9. Mobile numbers: Authentication > Providers > Phone, choose an SMS provider and add its credentials. SMS to Indian
+9. Check your setup: `npm run check:supabase`. It reads `.env.local`, confirms the project answers to your key, that the
+   table exists and refuses anonymous access, that email confirmation is on and that Google is enabled. It prints OK, WARN
+   or FAIL with the fix for each, and changes nothing. It cannot see your Google client settings or redirect URLs, so
+   finish by signing up two accounts and confirming each only sees its own data.
+10. Mobile numbers: Authentication > Providers > Phone, choose an SMS provider and add its credentials. SMS to Indian
    numbers normally requires DLT registration with your provider. Then set `VITE_AUTH_PHONE=1` and rebuild.
 
 The single-file preview (`npm run build:single`) and the hosted preview page run without keys, so they have no sign-in.
