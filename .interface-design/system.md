@@ -65,6 +65,9 @@ Flat list, no group headings: Dashboard, Transactions, Goals, Settings (Investme
 | 44px minimum tap size, enforced in `e2e/ui.cjs` | Used on phones; small targets were failing | 2026-10 |
 | One primary button per screen, enforced in `e2e/ui.cjs` | Several screens had competing green buttons | 2026-10 |
 | In-page dialogs and Undo toasts | `window.confirm` is silently blocked in embedded viewers | 2026-10 |
+| Goals leads with the verdict ("All goals together"), the 3D scene follows | The scene filled the first screen and pushed the answer below the fold | 2026-10-31 |
+| "Delete all" moved from the Transactions header to a footer after the list | A destructive button above the filters was the first thing on a phone | 2026-10-31 |
+| Row category menus are borderless until hover or focus (mouse devices only) | 197 bordered boxes buried the amounts; touch keeps visible borders | 2026-10-31 |
 | Sidebar headings (Track / Plan / General) removed | Owner asked for one flat list | 2026-10-31 |
 | Investing hidden behind `VITE_FEATURE_INVESTING` | Owner asked to remove it for now; nothing deleted | 2026-10-30 |
 

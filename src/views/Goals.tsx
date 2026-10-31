@@ -74,20 +74,12 @@ export function Goals() {
         </Card>
       )}
 
-      <section className="card" style={{ padding: 0, overflow: 'hidden' }} aria-label="Car, house and bike">
-        <div className="showcase">
-          <Suspense fallback={<div className="sub" style={{ padding: 24 }}>Loading 3D view...</div>}>
-            <Showcase3D />
-          </Suspense>
-        </div>
-        <div className="showcase-caption"><span><i style={{ background: 'var(--s1)' }} />Car</span><span><i style={{ background: 'var(--s2)' }} />House</span><span><i style={{ background: 'var(--s3)' }} />Bike</span><span className="muted">Drag to look around</span></div>
-      </section>
 
       {plans.length > 0 && (
         <Card title="All goals together">
-          <div className="grid g3">
+          <div className="stats">
             <div><div className="sub">Saving needed every month</div><div className="num" style={{ fontSize: 24, fontWeight: 650 }}>{inr(totalMonthly)}</div></div>
-            <div><div className="sub">Your monthly surplus</div><div className="num" style={{ fontSize: 24, fontWeight: 650 }}>{inr(surplus)}</div><div className="sub">{d.plan.fromTransactions ? `Average of last ${d.plan.months} month(s)` : 'From your profile estimate'}</div></div>
+            <div><div className="sub">Your monthly surplus</div><div className="num" style={{ fontSize: 24, fontWeight: 650 }}>{inr(surplus)}</div><div className="sub">{d.plan.fromTransactions ? `Average of the last ${d.plan.months} month${d.plan.months === 1 ? '' : 's'}` : 'From your profile estimate'}</div></div>
             <div><div className="sub">New EMIs once all goals are bought</div><div className="num" style={{ fontSize: 24, fontWeight: 650 }}>{inr(totalEmi)}</div></div>
           </div>
           {totalMonthly > surplus ? (
@@ -97,6 +89,15 @@ export function Goals() {
           )}
         </Card>
       )}
+
+      <section className="card" style={{ padding: 0, overflow: 'hidden' }} aria-label="Car, house and bike">
+        <div className="showcase">
+          <Suspense fallback={<div className="sub" style={{ padding: 24 }}>Loading 3D view...</div>}>
+            <Showcase3D />
+          </Suspense>
+        </div>
+        <div className="showcase-caption"><span><i style={{ background: 'var(--s1)' }} />Car</span><span><i style={{ background: 'var(--s2)' }} />House</span><span><i style={{ background: 'var(--s3)' }} />Bike</span><span className="muted">Drag to look around</span></div>
+      </section>
 
       {plans.length === 0 && !choosing && (
         <Card>

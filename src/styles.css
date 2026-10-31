@@ -447,3 +447,17 @@ main:focus { outline: none; }
 }
 /* Summary cards: reserve two subtitle lines so the big figures line up across a row */
 .sumcard .head { min-height: 64px; align-items: flex-start; }
+
+/* Goals: the three headline figures share one row when there is room. */
+.stats { display: grid; gap: 16px 24px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+
+/* Transactions: the row category menu stays quiet until you point at it; the rarely used Delete all sits after the list. */
+.card-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--grid); }
+@media (min-width: 600px) and (pointer: fine) {
+  .table.txn td select.inline-input { background-color: transparent; border-color: transparent; }
+  .table.txn tr:hover td select.inline-input, .table.txn td select.inline-input:focus-visible { background-color: var(--surface); border-color: var(--axis); }
+}
+@media (max-width: 599px) {
+  .form-grid.filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .form-grid.filters > :last-child { grid-column: 1 / -1; }
+}

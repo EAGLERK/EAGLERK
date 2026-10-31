@@ -80,11 +80,8 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
       <Card
         title="All transactions"
         sub={`${rows.length} shown · in ${inr(totals.in)} · out ${inr(totals.out)}`}
-        right={state.txns.length > 0 && (
-          <button className="btn small danger" onClick={removeAll}><Icon name="trash" size={16} />Delete all</button>
-        )}
       >
-        <div className="form-grid" style={{ marginBottom: 12 }}>
+        <div className="form-grid filters" style={{ marginBottom: 12 }}>
           <Field label="Month"><select value={month} onChange={(e) => { setMonth(e.target.value); setLimit(PAGE); }}><option value="all">All months</option>{months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}</select></Field>
           <Field label="Category"><select value={category} onChange={(e) => { setCategory(e.target.value); setLimit(PAGE); }}><option value="all">All categories</option>{DEFAULT_CATEGORIES.map((c) => <option key={c.name}>{c.name}</option>)}</select></Field>
           <Field label="Search"><input value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE); }} placeholder="swiggy, rent, ..." /></Field>
@@ -118,6 +115,12 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
               </tbody>
             </table>
             {rows.length > limit && <div className="row" style={{ justifyContent: 'center', marginTop: 10 }}><button className="btn" onClick={() => setLimit(limit + PAGE)}>Show {Math.min(PAGE, rows.length - limit)} more</button></div>}
+          </div>
+        )}
+        {state.txns.length > 0 && (
+          <div className="card-foot">
+            <span className="sub">Starting over? This removes every transaction, not just the ones shown.</span>
+            <button className="btn small danger" onClick={removeAll}><Icon name="trash" size={16} />Delete all</button>
           </div>
         )}
       </Card>
