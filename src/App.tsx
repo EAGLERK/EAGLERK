@@ -15,19 +15,14 @@ import { authFeatures } from './auth/supabase';
 import { StoreProvider, useStore } from './store';
 
 interface Tab { id: string; label: string; short: string; icon: IconName }
-const GROUPS: Array<{ label: string; tabs: Tab[] }> = [
-  { label: 'Track', tabs: [{ id: 'dashboard', label: 'Dashboard', short: 'Home', icon: 'dashboard' }, { id: 'transactions', label: 'Transactions', short: 'Activity', icon: 'transactions' }] },
-  {
-    label: 'Plan',
-    tabs: [
-      { id: 'goals', label: 'Goals', short: 'Goals', icon: 'goals' },
-      // Investing is switched off for now (see src/features.ts).
-      ...(features.investing ? [{ id: 'investments', label: 'Investments', short: 'Invest', icon: 'investments' } as Tab, { id: 'plan', label: 'Plan', short: 'Plan', icon: 'plan' } as Tab] : []),
-    ],
-  },
-  { label: 'General', tabs: [{ id: 'settings', label: 'Settings', short: 'Settings', icon: 'settings' }] },
+const ALL: Tab[] = [
+  { id: 'dashboard', label: 'Dashboard', short: 'Home', icon: 'dashboard' },
+  { id: 'transactions', label: 'Transactions', short: 'Activity', icon: 'transactions' },
+  { id: 'goals', label: 'Goals', short: 'Goals', icon: 'goals' },
+  // Investing is switched off for now (see src/features.ts).
+  ...(features.investing ? [{ id: 'investments', label: 'Investments', short: 'Invest', icon: 'investments' } as Tab, { id: 'plan', label: 'Plan', short: 'Plan', icon: 'plan' } as Tab] : []),
+  { id: 'settings', label: 'Settings', short: 'Settings', icon: 'settings' },
 ];
-const ALL = GROUPS.flatMap((g) => g.tabs);
 
 const ShowcasePage = lazy(() => import('./three/ShowcasePage'));
 
@@ -100,16 +95,11 @@ function Shell() {
       <div className="shell">
         <aside className="sidebar">
           <div className="brand"><span className="brand-mark"><Mark /></span>MyMoney</div>
-          <nav aria-label="Sections" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {GROUPS.map((g) => (
-              <div className="side-group" key={g.label}>
-                <div className="side-label">{g.label}</div>
-                {g.tabs.map((t) => (
-                  <button key={t.id} className="side-link" aria-current={tab === t.id ? 'page' : undefined} onClick={() => go(t.id)}>
-                    <Icon name={t.icon} />{t.label}
-                  </button>
-                ))}
-              </div>
+          <nav aria-label="Sections" className="side-group">
+            {ALL.map((t) => (
+              <button key={t.id} className="side-link" aria-current={tab === t.id ? 'page' : undefined} onClick={() => go(t.id)}>
+                <Icon name={t.icon} />{t.label}
+              </button>
             ))}
           </nav>
           <div className="side-foot">
