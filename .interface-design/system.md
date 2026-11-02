@@ -56,6 +56,9 @@ No header band, hairline row separators, muted 14px heads. On phones `.table.car
 ### Chart
 Recharts, styled like shadcn charts: horizontal grid only, no axis lines or ticks, 12px muted tick labels, a bordered tooltip with 10px colour chips, and a plain muted legend. Data colours are the five `--s*` tokens.
 
+### Import
+One card with an Import button at the top right. Clicking it opens the file chooser straight away and imports on selection, with no box, preview or confirm step. Each imported file then appears as a row (name, row count, date range) with its own Remove button; Remove deletes that file's rows and offers Undo in a toast. Files that cannot be read show one inline warning. Rows carry the file name in `Txn.file`, so rows imported before this change stay in the list but have no file row.
+
 ### Forms
 Label above the field, required fields marked, Cancel beside Save, and a visible reason when Save is disabled. Password boxes have the show/hide eye inside the field.
 
@@ -82,6 +85,7 @@ All motion is GSAP (3.15, core only), written in `src/motion/index.ts`. Do not a
 
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Import opens the file chooser directly; imported files are listed with a Remove button | Owner asked: no box to open, and a way to take an import back from the same place | 2026-11-02 |
 | Look aligned with shadcn/ui: neutral surfaces, 14px cards with border and shadow, 36px controls, tab-style toggles, flat sidebar | Owner asked; values taken from shadcn's own registry source rather than memory | 2026-11-02 |
 | Primary colour stays green; chart data colours stay as they were | Brand colour, and the chart colours carry meaning | 2026-11-02 |
 | `--text-muted` is `#666666` in light mode, not shadcn's `#737373` | Keeps 4.5:1 on the muted `#f5f5f5` | 2026-11-02 |

@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEFAULT_CATEGORIES, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../engine/categories';
 import { categorize } from '../engine/categorize';
 import { monthsWithData } from '../engine/cashflow';
-import { parseStatement, type CsvResult } from '../engine/csv';
+import { parseStatement } from '../engine/csv';
 import type { Txn } from '../engine/types';
 import { Icon } from '../components/icons';
-import { Badge, Callout, Card, Field, Num } from '../components/ui';
+import { Callout, Card, Field, Num } from '../components/ui';
 import { useConfirm, useToast } from '../components/feedback';
 import { inr, monthLabel, todayISO, uid } from '../lib/format';
 import { useStore } from '../store';
@@ -21,7 +21,6 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
   const [q, setQ] = useState('');
   const [limit, setLimit] = useState(PAGE);
   const [adding, setAdding] = useState(openAdd);
-  const [importPending, setImportPending] = useState(false);
   const months = useMemo(() => monthsWithData(state.txns).reverse(), [state.txns]);
 
   useEffect(() => {
@@ -68,14 +67,13 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
           <h1>Transactions</h1>
           <div className="sub">Everything you earned and spent, from statements or added by hand</div>
         </div>
-        {/* One primary action per screen: while an import is waiting to be confirmed, that becomes the primary one. */}
-        <button className={`btn ${importPending ? '' : 'primary'}`} aria-expanded={adding} onClick={() => setAdding(true)}>
+        <button className="btn primary" aria-expanded={adding} onClick={() => setAdding(true)}>
           <Icon name="plus" size={18} />Add transaction
         </button>
       </div>
 
       {adding && <AddForm onDone={closeAdd} />}
-      <ImportCard defaultOpen={state.txns.length === 0} onPending={setImportPending} />
+      <ImportCard />
 
       <Card
         title="All transactions"
@@ -169,70 +167,95 @@ function AddForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-function ImportCard({ defaultOpen, onPending }: { defaultOpen: boolean; onPending: (pending: boolean) => void }) {
+function ImportCard() {
   const { state, dispatch } = useStore();
   const { toast } = useToast();
-  const [open, setOpen] = useState(defaultOpen);
-  const [result, setResult] = useState<CsvResult | null>(null);
-  const [pasted, setPasted] = useState('');
-  const file = useRef<HTMLInputElement>(null);
+  const picker = useRef<HTMLInputElement>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
-  const have = new Set(state.txns.map((t) => t.id));
-  const fresh = result?.rows.filter((r) => !have.has(r.id)) ?? [];
-  const dates = result?.rows.map((r) => r.date).sort() ?? [];
+  // Every imported file, with how many rows it brought and the dates they cover.
+  const files = useMemo(() => {
+    const by = new Map<string, { count: number; from: string; to: string }>();
+    for (const t of state.txns) {
+      if (!t.file) continue;
+      const f = by.get(t.file) ?? { count: 0, from: t.date, to: t.date };
+      f.count += 1;
+      if (t.date < f.from) f.from = t.date;
+      if (t.date > f.to) f.to = t.date;
+      by.set(t.file, f);
+    }
+    return [...by.entries()];
+  }, [state.txns]);
 
-  useEffect(() => {
-    onPending(fresh.length > 0);
-  }, [fresh.length, onPending]);
+  const importFile = async (f: File) => {
+    setWarning(null);
+    const result = parseStatement(await f.text());
+    if (!result.rows.length) {
+      setWarning(result.warnings[0] ?? `Nothing could be read from ${f.name}.`);
+      return;
+    }
+    const have = new Set(state.txns.map((t) => t.id));
+    const fresh = result.rows.filter((r) => !have.has(r.id)).map((r) => ({ ...r, file: f.name }));
+    if (!fresh.length) {
+      toast(`Nothing new: all ${result.rows.length} rows in ${f.name} are already here.`);
+      return;
+    }
+    dispatch({ type: 'addTxns', txns: fresh });
+    const already = result.rows.length - fresh.length;
+    toast(`Imported ${fresh.length} transactions from ${f.name}${already ? `, ${already} were already here` : ''}. Check any marked Other.`);
+    if (result.warnings.length) setWarning(result.warnings.join(' '));
+  };
 
-  const read = (text: string) => setResult(parseStatement(text));
+  const remove = (name: string) => {
+    const gone = state.txns.filter((t) => t.file === name);
+    dispatch({ type: 'removeFile', file: name });
+    toast(`Removed ${gone.length} transactions from ${name}.`, { undo: () => dispatch({ type: 'addTxns', txns: gone }) });
+  };
 
   return (
     <Card
       title="Import a bank statement"
-      sub="Works with any bank that lets you download a CSV"
-      right={<button className="btn small" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{open ? 'Hide' : 'Import'}</button>}
-    >
-      {open && (
-        <div className="stack">
-          <div className="row">
-            <input ref={file} type="file" aria-label="Choose a statement file" accept=".csv,.txt,text/csv" onChange={async (e) => { const f = e.target.files?.[0]; if (f) read(await f.text()); e.target.value = ''; }} />
-            <span className="sub">or paste the CSV text:</span>
-          </div>
-          <textarea className="inline-input" rows={3} aria-label="Paste CSV text" value={pasted} onChange={(e) => setPasted(e.target.value)} placeholder="Date,Narration,Withdrawal Amt.,Deposit Amt.&#10;01/10/26,UPI-SWIGGY,450.00,," />
-          {pasted.trim() && <div><button className="btn" onClick={() => read(pasted)}>Read pasted text</button></div>}
-
-          {result && (
-            <div className="stack">
-              {result.warnings.map((w, i) => <Callout key={i} tone={result.rows.length ? 'watch' : 'bad'}>{w}</Callout>)}
-              {result.rows.length > 0 && (
-                <>
-                  <div className="row">
-                    <Badge tone="info">{result.rows.length} rows read</Badge>
-                    <Badge tone={fresh.length ? 'good' : 'watch'}>{fresh.length} new</Badge>
-                    {result.rows.length - fresh.length > 0 && <Badge>{result.rows.length - fresh.length} already imported</Badge>}
-                    <span className="sub">{dates[0]} to {dates[dates.length - 1]}</span>
-                  </div>
-                  <p className="sub">Categories are guessed from the narration. Check the "Other" rows after importing and fix them in the list below.</p>
-                  <div className="form-actions" style={{ marginTop: 0 }}>
-                    <button className="btn primary" disabled={!fresh.length} onClick={() => { dispatch({ type: 'addTxns', txns: result.rows }); toast(`Imported ${fresh.length} transactions.`); setResult(null); setPasted(''); }}>Import {fresh.length} transactions</button>
-                    <button className="btn" onClick={() => { setResult(null); setPasted(''); }}>Cancel</button>
-                    {!fresh.length && <span className="why">Everything in this file is already here.</span>}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
+      sub={(
+        <>
+          <div>Works with any bank that lets you download a CSV.</div>
           <details>
             <summary>Why not connect my bank account directly?</summary>
             <div className="stack sub" style={{ marginTop: 8 }}>
-              <p>In India, a live feed of your bank transactions has to go through the RBI&rsquo;s Account Aggregator framework: you consent to an AA, and the data goes only to regulated financial-information users. A personal app cannot plug into that directly, and screen-scraping net banking breaks your bank&rsquo;s terms and puts your credentials at risk.</p>
+              <p>In India, a live feed of your bank transactions has to go through the RBI&rsquo;s Account Aggregator framework: you consent to an AA, and the data goes only to regulated financial-information users. A personal app cannot plug into that on its own.</p>
               <p>So this app does not pretend to do it. Download a statement from net banking each month (CSV or Excel saved as CSV) and import it. Re-importing the same file will not create duplicates.</p>
               <p>If you want live sync later, the clean path is to put an AA gateway provider behind a small backend and feed its output into the same import function used here.</p>
             </div>
           </details>
-        </div>
+        </>
+      )}
+      right={(
+        <>
+          <input
+            ref={picker}
+            hidden
+            type="file"
+            aria-label="Choose a statement file"
+            accept=".csv,.txt,text/csv"
+            onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void importFile(f); }}
+          />
+          <button className="btn small" onClick={() => picker.current?.click()}><Icon name="upload" size={16} />Import</button>
+        </>
+      )}
+    >
+      {warning && <Callout tone="watch">{warning}</Callout>}
+      {files.length > 0 && (
+        <ul className="clean files" aria-label="Imported files">
+          {files.map(([name, f]) => (
+            <li key={name}>
+              <Icon name="file" size={18} />
+              <div className="file-info">
+                <b>{name}</b>
+                <span className="sub">{f.count} transactions &middot; {f.from} to {f.to}</span>
+              </div>
+              <button className="btn small danger" aria-label={`Remove ${name}`} onClick={() => remove(name)}><Icon name="trash" size={16} />Remove</button>
+            </li>
+          ))}
+        </ul>
       )}
     </Card>
   );

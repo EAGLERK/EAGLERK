@@ -40,6 +40,7 @@ export type Action =
   | { type: 'updateTxn'; id: string; patch: Partial<Txn> }
   | { type: 'deleteTxn'; id: string }
   | { type: 'clearTxns'; source?: Txn['source'] }
+  | { type: 'removeFile'; file: string }
   | { type: 'upsertGoal'; goal: Goal }
   | { type: 'deleteGoal'; id: string }
   | { type: 'upsertInvestment'; inv: Investment }
@@ -62,6 +63,7 @@ function reducer(s: AppState, a: Action): AppState {
     }
     case 'updateTxn': return { ...s, txns: s.txns.map((t) => (t.id === a.id ? { ...t, ...a.patch } : t)) };
     case 'deleteTxn': return { ...s, txns: s.txns.filter((t) => t.id !== a.id) };
+    case 'removeFile': return { ...s, txns: s.txns.filter((t) => t.file !== a.file) };
     case 'clearTxns': return { ...s, txns: a.source ? s.txns.filter((t) => t.source !== a.source) : [] };
     case 'upsertGoal': return { ...s, goals: upsert(s.goals, a.goal) };
     case 'deleteGoal': return { ...s, goals: s.goals.filter((g) => g.id !== a.id) };

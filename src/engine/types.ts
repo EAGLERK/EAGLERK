@@ -16,6 +16,8 @@ export interface Txn {
   type: 'income' | 'expense';
   category: string;
   source: 'manual' | 'csv' | 'demo';
+  /** Name of the statement file this row was imported from, so the whole import can be removed in one step. */
+  file?: string;
 }
 
 export type RiskProfile = 'conservative' | 'moderate' | 'aggressive';

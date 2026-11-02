@@ -48,14 +48,22 @@ const check = (ok, msg) => {
   }
 
   await nav('Transactions').click();
-  await page.locator('textarea').fill(csv);
-  await page.getByRole('button', { name: 'Read pasted text' }).click();
-  check(await page.getByText('8 rows read').isVisible(), 'CSV: 8 rows read');
-  await page.getByRole('button', { name: /Import 8 transactions/ }).click();
-  check(await page.getByText('Imported 8 transactions.').isVisible(), 'CSV: imported');
-  await page.locator('textarea').fill(csv);
-  await page.getByRole('button', { name: 'Read pasted text' }).click();
-  check(await page.getByText('8 already imported').isVisible(), 'CSV: re-import detected as duplicates');
+  const upload = async (name, text) => {
+    const chooser = page.waitForEvent('filechooser', { timeout: 8000 });
+    await page.getByRole('button', { name: 'Import', exact: true }).click();
+    await (await chooser).setFiles({ name, mimeType: 'text/csv', buffer: Buffer.from(text) });
+  };
+  await upload('statement.csv', csv);
+  check(await page.getByText('Imported 8 transactions from statement.csv').waitFor({ timeout: 6000 }).then(() => true, () => false), 'CSV: clicking Import opens the file chooser and imports straight away');
+  check((await page.locator('textarea').count()) === 0 && (await page.getByRole('button', { name: 'Import', exact: true }).getAttribute('aria-expanded')) === null, 'CSV: no import box opens');
+  const fileRow = page.getByRole('list', { name: 'Imported files' }).getByRole('listitem').filter({ hasText: 'statement.csv' });
+  check(await fileRow.isVisible() && (await fileRow.innerText()).includes('8 transactions'), 'CSV: the imported file is listed with its row count');
+  await upload('statement.csv', csv);
+  check(await page.getByText('Nothing new: all 8 rows in statement.csv are already here.').waitFor({ timeout: 6000 }).then(() => true, () => false), 'CSV: re-import detected as duplicates');
+  await page.getByRole('button', { name: 'Remove statement.csv' }).click();
+  check(await page.getByText('Removed 8 transactions from statement.csv.').waitFor({ timeout: 6000 }).then(() => true, () => false) && (await page.getByRole('list', { name: 'Imported files' }).count()) === 0, 'CSV: Remove takes the whole imported file out');
+  await page.locator('.toast-btn', { hasText: 'Undo' }).click();
+  check(await fileRow.isVisible(), 'CSV: Undo brings the imported file back');
 
   await nav('Dashboard').click();
   let t = await main();

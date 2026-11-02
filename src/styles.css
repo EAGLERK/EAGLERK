@@ -637,3 +637,18 @@ dialog.modal { border: 1px solid var(--border); border-radius: var(--r-lg); box-
   :root { --control: 36px; }
   .pill-toggle button { min-height: 32px; }
 }
+
+/* Import: a header with one button, then one row per imported file */
+.card > .card-head:last-child { margin-bottom: 0; }
+.card-titles details { margin-top: 2px; }
+ul.files { gap: 0; }
+ul.files li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); }
+ul.files li:first-child { margin-top: 0; }
+ul.files .file-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+ul.files .file-info b { font-weight: 500; overflow-wrap: anywhere; }
+ul.files svg { color: var(--text-muted); flex: none; }
+@media (min-width: 600px) {
+  .card > .card-head { flex-wrap: nowrap; }
+  .card > .card-head > .card-titles { flex: 1; min-width: 0; }
+}
+.card-titles summary { color: var(--accent-text); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
