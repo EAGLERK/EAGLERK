@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { ConfirmProvider, ToastProvider } from './components/feedback';
 import { Icon, type IconName } from './components/icons';
+import { Logo } from './components/Logo';
 import { features } from './features';
 import { Dashboard } from './views/Dashboard';
 import { Goals } from './views/Goals';
@@ -34,9 +35,6 @@ const ShowcasePage = lazy(() => import('./three/ShowcasePage'));
 
 type Theme = 'auto' | 'light' | 'dark';
 
-const Mark = ({ size = 18 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden><path d="M7 22l6-7 4 4 8-10" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
-);
 
 function Shell() {
   const { state, dispatch } = useStore();
@@ -104,7 +102,7 @@ function Shell() {
       <button className="skip" onClick={() => mainRef.current?.focus()}>Skip to main content</button>
       <div className="shell">
         <aside className="sidebar">
-          <div className="brand"><span className="brand-mark"><Mark /></span>MyMoney</div>
+          <div className="brand"><Logo />MyMoney</div>
           <nav aria-label="Sections" className="side-group">
             {ALL.map((t) => (
               <button key={t.id} className="side-link" aria-current={tab === t.id ? 'page' : undefined} onClick={() => go(t.id)}>

@@ -59,6 +59,9 @@ Recharts, styled like shadcn charts: horizontal grid only, no axis lines or tick
 ### Import
 One card with an Import button at the top right. Clicking it opens the file chooser straight away and imports on selection, with no box, preview or confirm step. Each imported file then appears as a row (name, row count, date range) with its own Remove button; Remove deletes that file's rows and offers Undo in a toast. Files that cannot be read show one inline warning. Rows carry the file name in `Txn.file`, so rows imported before this change stay in the list but have no file row.
 
+### Logo
+A blocky "M" (two pillars under a stepped bar, a block hanging between them), in `src/components/Logo.tsx` on a 100-unit grid. App icon form: mint `#34d399` M on a near-black `#0a0a0a` tile with a faint inner ring, the same in light and dark mode. Plain forms live in `docs/brand/`: `logo-mark.svg` (tile), `logo-glyph-mint.svg` (on dark), `logo-glyph-green.svg` (`#0d7a4e`, on light), and `logo-preview.png`. The browser tab icon in `index.html` is the same tile. It is an original construction inspired by the owner's reference image, which carries a registered-trademark sign; do not copy that reference's exact shape or its ®.
+
 ### Forms
 Label above the field, required fields marked, Cancel beside Save, and a visible reason when Save is disabled. Password boxes have the show/hide eye inside the field.
 
@@ -85,6 +88,7 @@ All motion is GSAP (3.15, core only), written in `src/motion/index.ts`. Do not a
 
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Logo is a blocky M in mint on a dark tile, replacing the line-chart icon | Owner supplied a mint M reference in the brand colour; drawn as an original vector, not traced | 2026-11-02 |
 | Import opens the file chooser directly; imported files are listed with a Remove button | Owner asked: no box to open, and a way to take an import back from the same place | 2026-11-02 |
 | Look aligned with shadcn/ui: neutral surfaces, 14px cards with border and shadow, 36px controls, tab-style toggles, flat sidebar | Owner asked; values taken from shadcn's own registry source rather than memory | 2026-11-02 |
 | Primary colour stays green; chart data colours stay as they were | Brand colour, and the chart colours carry meaning | 2026-11-02 |

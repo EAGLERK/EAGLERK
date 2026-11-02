@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { authFeatures } from './supabase';
+import { Logo } from '../components/Logo';
 import { PasswordInput } from '../components/ui';
 
 const GoogleG = () => (
@@ -12,18 +13,13 @@ const GoogleG = () => (
   </svg>
 );
 
-const Mark = () => (
-  <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden>
-    <path d="M7 22l6-7 4 4 8-10" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
 
 function Shell({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
   return (
     <div className="authwrap">
       <div className="authcard card">
         <div className="brand" style={{ padding: 0 }}>
-          <span className="brand-mark"><Mark /></span>MyMoney
+          <Logo />MyMoney
         </div>
         <div>
           <h1 style={{ marginBottom: 4 }}>{title}</h1>

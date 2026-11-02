@@ -200,6 +200,11 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     check(await shown(p.getByRole('dialog')), 'Erase all data asks for confirmation in the page');
     await p.getByRole('button', { name: 'Cancel' }).last().click();
 
+    // ---------- brand: the M mark in mint on a dark tile ----------
+    const logo = await p.locator('.sidebar .brand-mark').evaluate((e) => ({ bg: getComputedStyle(e).backgroundColor, fg: getComputedStyle(e).color, path: e.querySelector('svg path')?.getAttribute('d') || '' }));
+    check(logo.path.startsWith('M6 94V34') && logo.bg === 'rgb(10, 10, 10)' && logo.fg === 'rgb(52, 211, 153)', `the sidebar shows the M mark in mint on a near-black tile (${logo.fg} on ${logo.bg})`);
+    check((await p.evaluate(() => document.querySelector('link[rel=icon]').href)).includes('M6%2094V34') || (await p.evaluate(() => document.querySelector('link[rel=icon]').href)).includes('M6 94V34'), 'the browser tab icon is the same M');
+
     // ---------- theme switcher: three labelled icon buttons ----------
     const themeBtns = p.getByRole('group', { name: 'Colour theme' }).getByRole('button');
     check((await themeBtns.count()) === 3, 'the theme switcher has three buttons');
