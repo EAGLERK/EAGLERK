@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { ConfirmProvider, ToastProvider } from './components/feedback';
 import { Icon, type IconName } from './components/icons';
+import { DraftsProvider, useDrafts } from './components/Drafts';
 import { Logo } from './components/Logo';
 import { Notifications } from './components/Notifications';
 import { Tour } from './components/Tour';
@@ -46,7 +47,14 @@ function suggestedName(user: { user_metadata?: Record<string, unknown> } | null 
   return full.trim();
 }
 
+/** Unsaved transactions live here, above the screens, so leaving Transactions can ask what to do with them. */
 function Shell() {
+  return <DraftsProvider><ShellInner /></DraftsProvider>;
+}
+
+const screenOf = (route: string) => (route === 'add-transaction' ? 'transactions' : route);
+
+function ShellInner() {
   const { state, dispatch } = useStore();
   const auth = useAuth();
   const sync = useSync();
@@ -56,6 +64,11 @@ function Shell() {
   // A link to a screen that is switched off (or does not exist) lands on the Dashboard instead of a blank page.
   const tab = ALL.some((t) => t.id === wanted) ? wanted : 'dashboard';
   const mainRef = useRef<HTMLElement>(null);
+  const drafts = useDrafts();
+  const draftsRef = useRef(drafts);
+  draftsRef.current = drafts;
+  const routeRef = useRef(route);
+  routeRef.current = route;
   const [theme, setTheme] = useState<Theme>(() => {
     try { return ((localStorage.getItem('mymoney:theme') ?? localStorage.getItem('eaglerk:theme')) as Theme) || 'auto'; } catch { return 'auto'; }
   });
@@ -71,7 +84,16 @@ function Shell() {
   }, [theme]);
 
   useEffect(() => {
-    const on = () => setRoute(location.hash.slice(1) || 'dashboard');
+    const on = () => {
+      const next = location.hash.slice(1) || 'dashboard';
+      // Back, forward or a typed address while there are unsaved transactions: stay put until the person decides.
+      if (draftsRef.current.isDirty() && screenOf(next) !== 'transactions') {
+        history.replaceState(null, '', `#${routeRef.current}`);
+        draftsRef.current.guard(() => { location.hash = next; });
+        return;
+      }
+      setRoute(next);
+    };
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
@@ -79,7 +101,10 @@ function Shell() {
   // One set of listeners gives every control its press and hover motion.
   useEffect(() => installControlMotion(), []);
 
-  const go = (t: string) => { location.hash = t; setRoute(t); window.scrollTo({ top: 0 }); };
+  const go = (t: string) => {
+    const run = () => { location.hash = t; setRoute(t); window.scrollTo({ top: 0 }); };
+    if (screenOf(t) === 'transactions') run(); else drafts.guard(run);
+  };
 
   // After moving to another screen, put keyboard and screen-reader focus on the new content.
   // Compare with the previous screen instead of using a "first render" flag, which React's dev double-run defeats.
@@ -116,7 +141,7 @@ function Shell() {
                     <i />{sync.status === 'saved' ? 'All changes saved' : sync.status === 'saving' ? 'Saving...' : sync.status === 'conflict' ? 'Needs your attention' : 'Not saved'}
                   </span>
                 )}
-                <button className="btn small" onClick={() => void (sync ? sync.signOutSafely() : auth.signOut())}>Sign out</button>
+                <button className="btn small" onClick={() => drafts.guard(() => void (sync ? sync.signOutSafely() : auth.signOut()))}>Sign out</button>
               </>
             ) : (
               <>

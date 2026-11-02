@@ -13,6 +13,7 @@
     "e2e": "node e2e/flow.cjs",
     "e2e:auth": "node e2e/auth.cjs",
     "e2e:welcome": "node e2e/welcome.cjs",
+    "e2e:edit": "node e2e/edit.cjs",
     "dev:auth-demo": "node scripts/dev-auth-demo.cjs",
     "check:supabase": "node scripts/check-supabase.cjs",
     "e2e:ui": "node e2e/ui.cjs"

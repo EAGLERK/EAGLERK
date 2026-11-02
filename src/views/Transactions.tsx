@@ -6,14 +6,23 @@ import { readStatementFile } from '../engine/statementFile';
 import type { Txn } from '../engine/types';
 import { Icon } from '../components/icons';
 import { Callout, Card, Field, Num } from '../components/ui';
+import { rowProblem, useDrafts } from '../components/Drafts';
 import { useConfirm, useToast } from '../components/feedback';
 import { inr, monthLabel, todayISO, uid } from '../lib/format';
 import { useStore } from '../store';
 
 const PAGE = 100;
 
+/** Opens the browser's calendar when the date box is clicked (browsers otherwise open it only from the small icon). */
+const openCalendar = (e: { currentTarget: HTMLInputElement }) => {
+  try { e.currentTarget.showPicker?.(); } catch { /* not allowed right now: the box still works by typing */ }
+};
+
+type RowStatus = 'new' | 'edited' | 'saved';
+
 export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolean; onCloseAdd?: () => void }) {
   const { state, dispatch } = useStore();
+  const drafts = useDrafts();
   const confirm = useConfirm();
   const { toast } = useToast();
   const [month, setMonth] = useState('all');
@@ -27,12 +36,16 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
     if (openAdd) setAdding(true);
   }, [openAdd]);
 
+  // Saved rows with their unsaved edits applied, filtered; new unsaved rows are pinned above them so they are never hidden by a filter.
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return state.txns
+      .map((t) => (drafts.edits[t.id] ? { ...t, ...drafts.edits[t.id] } : t))
       .filter((t) => (month === 'all' || t.date.startsWith(month)) && (category === 'all' || t.category === category) && (!needle || t.description.toLowerCase().includes(needle)))
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [state.txns, month, category, q]);
+  }, [state.txns, drafts.edits, month, category, q]);
+  const pinned = useMemo(() => [...drafts.added].sort((a, b) => b.date.localeCompare(a.date)), [drafts.added]);
+  const list = useMemo(() => [...pinned.map((t) => ({ t, status: 'new' as RowStatus })), ...rows.map((t) => ({ t, status: (drafts.edits[t.id] ? 'edited' : 'saved') as RowStatus }))], [pinned, rows, drafts.edits]);
 
   const filtered = month !== 'all' || category !== 'all' || q.trim() !== '';
   const totals = rows.reduce((a, t) => ({ in: a.in + (t.type === 'income' ? t.amount : 0), out: a.out + (t.type === 'expense' ? t.amount : 0) }), { in: 0, out: 0 });
@@ -42,9 +55,12 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
     onCloseAdd?.();
   };
 
-  const remove = (t: Txn) => {
+  const remove = (t: Txn, status: RowStatus) => {
+    if (status === 'new') { drafts.dropAdded([t.id]); return; }
+    const original = state.txns.find((x) => x.id === t.id) ?? t;
+    drafts.forget(t.id);
     dispatch({ type: 'deleteTxn', id: t.id });
-    toast('Transaction deleted', { undo: () => dispatch({ type: 'addTxns', txns: [t] }) });
+    toast('Transaction deleted', { undo: () => dispatch({ type: 'addTxns', txns: [original] }) });
   };
 
   const removeAll = async () => {
@@ -60,6 +76,9 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
     toast(`Deleted ${n} transactions`);
   };
 
+  const shown = list.slice(0, limit);
+  const unsavedNote = drafts.added.length ? ` · ${drafts.added.length} not saved yet` : '';
+
   return (
     <div className="page">
       <div className="page-head">
@@ -67,7 +86,8 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
           <h1>Transactions</h1>
           <div className="sub">Everything you earned and spent, from statements or added by hand</div>
         </div>
-        <button className="btn primary" aria-expanded={adding} onClick={() => setAdding(true)}>
+        {/* One primary action per screen: while there are unsaved changes, Save changes is the primary one. */}
+        <button className={`btn ${drafts.dirty ? '' : 'primary'}`} aria-expanded={adding} onClick={() => setAdding(true)}>
           <Icon name="plus" size={18} />Add transaction
         </button>
       </div>
@@ -77,7 +97,7 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
 
       <Card
         title="All transactions"
-        sub={`${rows.length} shown · in ${inr(totals.in)} · out ${inr(totals.out)}`}
+        sub={`${rows.length} shown${unsavedNote} · in ${inr(totals.in)} · out ${inr(totals.out)}`}
       >
         <div className="form-grid filters" style={{ marginBottom: 12 }}>
           <Field label="Month"><select value={month} onChange={(e) => { setMonth(e.target.value); setLimit(PAGE); }}><option value="all">All months</option>{months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}</select></Field>
@@ -85,34 +105,20 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
           <Field label="Search"><input value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE); }} placeholder="swiggy, rent, ..." /></Field>
         </div>
 
-        {rows.length === 0 ? (
+        {list.length === 0 ? (
           <div className="empty-cta">
             <p className="sub">{filtered ? 'No transactions match these filters.' : 'No transactions yet. Add one with the button above, or import a bank statement.'}</p>
             {filtered && <button className="btn" onClick={() => { setMonth('all'); setCategory('all'); setQ(''); }}>Clear filters</button>}
           </div>
         ) : (
           <div className="table-wrap">
-            <table className="table cards txn">
+            <table className="table cards txn editable">
               <thead><tr><th>Date</th><th>Description</th><th>Category</th><th className="r">Amount</th><th><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>
-                {rows.slice(0, limit).map((t) => (
-                  <tr key={t.id}>
-                    <td data-label="Date" className="num" style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
-                    <td className="title" style={{ maxWidth: 360, overflowWrap: 'anywhere' }}>{t.description}</td>
-                    <td data-label="Category">
-                      <select className="inline-input" aria-label={`Category for ${t.description}`} value={t.category} onChange={(e) => dispatch({ type: 'updateTxn', id: t.id, patch: { category: e.target.value } })}>
-                        {(t.type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map((c) => <option key={c}>{c}</option>)}
-                      </select>
-                    </td>
-                    <td data-label="Amount" className={`r num ${t.type === 'income' ? 'good' : ''}`} style={{ whiteSpace: 'nowrap' }}>{t.type === 'income' ? '+' : '-'}{inr(t.amount)}</td>
-                    <td className="actions">
-                      <button className="btn icon small ghost" aria-label={`Delete ${t.description}`} title="Delete" onClick={() => remove(t)}><Icon name="trash" size={18} /><span className="icon-label">Delete</span></button>
-                    </td>
-                  </tr>
-                ))}
+                {shown.map(({ t, status }) => <TxnRow key={t.id} t={t} status={status} onDelete={() => remove(t, status)} />)}
               </tbody>
             </table>
-            {rows.length > limit && <div className="row" style={{ justifyContent: 'center', marginTop: 10 }}><button className="btn" onClick={() => setLimit(limit + PAGE)}>Show {Math.min(PAGE, rows.length - limit)} more</button></div>}
+            {list.length > limit && <div className="row" style={{ justifyContent: 'center', marginTop: 10 }}><button className="btn" onClick={() => setLimit(limit + PAGE)}>Show {Math.min(PAGE, list.length - limit)} more</button></div>}
           </div>
         )}
         {state.txns.length > 0 && (
@@ -122,12 +128,71 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
           </div>
         )}
       </Card>
+
+      {drafts.dirty && <SaveBar />}
     </div>
   );
 }
 
+/** Appears whenever there is anything unsaved. */
+function SaveBar() {
+  const drafts = useDrafts();
+  const edited = Object.keys(drafts.edits).length;
+  const bits = [drafts.added.length ? `${drafts.added.length} new` : '', edited ? `${edited} changed` : ''].filter(Boolean).join(' and ');
+  return (
+    <div className="savebar" role="region" aria-label="Unsaved changes">
+      <div className="savebar-text">
+        <b>{drafts.count} unsaved {drafts.count === 1 ? 'change' : 'changes'}</b>
+        <span className="sub">{bits}. Highlighted rows are not saved yet.</span>
+        {drafts.invalid > 0 && <span className="why bad" role="status">{drafts.invalid} {drafts.invalid === 1 ? 'row needs' : 'rows need'} a valid date and an amount above 0 before saving.</span>}
+      </div>
+      <div className="row">
+        <button className="btn" onClick={drafts.discard}>Discard</button>
+        <button className="btn primary" disabled={drafts.invalid > 0} onClick={() => drafts.save()}>Save changes</button>
+      </div>
+    </div>
+  );
+}
+
+function TxnRow({ t, status, onDelete }: { t: Txn; status: RowStatus; onDelete: () => void }) {
+  const drafts = useDrafts();
+  const bad = rowProblem(t);
+  const dateBad = bad === 'a valid date';
+  const amountBad = bad === 'an amount above 0';
+  const label = t.description || 'this transaction';
+  const flip = () => {
+    const type = t.type === 'income' ? 'expense' : 'income';
+    drafts.edit(t.id, { type, category: categorize(t.description, type) });
+  };
+  return (
+    <tr className={status === 'saved' ? undefined : 'unsaved'}>
+      <td data-label="Date">
+        {status !== 'saved' && <span className="sr-only">{status === 'new' ? 'Unsaved new transaction. ' : 'Unsaved change. '}</span>}
+        <input className="cell-input num" type="date" aria-label={`Date for ${label}`} aria-invalid={dateBad || undefined} value={t.date} onClick={openCalendar} onChange={(e) => drafts.edit(t.id, { date: e.target.value })} />
+      </td>
+      <td className="title">
+        <input className="cell-input" aria-label={`Description for ${label}`} value={t.description} placeholder="Description" onChange={(e) => drafts.edit(t.id, { description: e.target.value })} />
+      </td>
+      <td data-label="Category">
+        <select className="inline-input cell-input" aria-label={`Category for ${label}`} value={t.category} onChange={(e) => drafts.edit(t.id, { category: e.target.value })}>
+          {(t.type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map((c) => <option key={c}>{c}</option>)}
+        </select>
+      </td>
+      <td data-label="Amount" className="r">
+        <div className={`amt ${t.type === 'income' ? 'good' : ''}`}>
+          <button type="button" className="sign" aria-label={t.type === 'income' ? `Money in for ${label}. Change to money out` : `Money out for ${label}. Change to money in`} title={t.type === 'income' ? 'Money in. Click to change to money out.' : 'Money out. Click to change to money in.'} onClick={flip}>{t.type === 'income' ? '+' : '\u2212'}</button>
+          <input className="cell-input num" type="number" inputMode="decimal" min={0} step="0.01" aria-label={`Amount for ${label}`} aria-invalid={amountBad || undefined} value={t.amount ? t.amount : ''} placeholder="0.00" onChange={(e) => drafts.edit(t.id, { amount: e.target.value === '' ? 0 : Number(e.target.value) })} />
+        </div>
+      </td>
+      <td className="actions">
+        <button className="btn icon small ghost" aria-label={`Delete ${label}`} title="Delete" onClick={onDelete}><Icon name="trash" size={18} /><span className="icon-label">Delete</span></button>
+      </td>
+    </tr>
+  );
+}
+
 function AddForm({ onDone }: { onDone: () => void }) {
-  const { dispatch } = useStore();
+  const drafts = useDrafts();
   const { toast } = useToast();
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [date, setDate] = useState(todayISO());
@@ -136,21 +201,21 @@ function AddForm({ onDone }: { onDone: () => void }) {
   const [cat, setCat] = useState('');
   const auto = categorize(desc, type);
   const chosen = cat && (type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).includes(cat) ? cat : auto;
-  const missing = !amount ? 'Enter an amount to save.' : !date ? 'Choose a date to save.' : null;
+  const missing = !amount ? 'Enter an amount to add it.' : !date ? 'Choose a date to add it.' : null;
 
-  const save = () => {
+  const add = () => {
     const t: Txn = { id: uid(), date, description: desc || chosen, amount, type, category: chosen, source: 'manual' };
-    dispatch({ type: 'addTxns', txns: [t] });
-    toast(`${type === 'income' ? 'Income' : 'Expense'} of ${inr(amount)} added`);
+    drafts.stage([t]);
+    toast(`${type === 'income' ? 'Income' : 'Expense'} of ${inr(amount)} added to the list. Press Save changes to keep it.`);
     onDone();
   };
 
   return (
-    <Card title="New transaction" sub="Fields marked * are required">
-      <form onSubmit={(e) => { e.preventDefault(); if (!missing) save(); }}>
+    <Card title="New transaction" sub="Fields marked * are required. It is added to the list below and kept when you press Save changes.">
+      <form onSubmit={(e) => { e.preventDefault(); if (!missing) add(); }}>
         <div className="form-grid">
           <Field label="Type"><select value={type} onChange={(e) => { setType(e.target.value as 'income' | 'expense'); setCat(''); }}><option value="expense">Expense</option><option value="income">Income</option></select></Field>
-          <Field label="Date" required><input type="date" value={date} max={todayISO()} onChange={(e) => setDate(e.target.value)} /></Field>
+          <Field label="Date" required><input type="date" value={date} max={todayISO()} onClick={openCalendar} onChange={(e) => setDate(e.target.value)} /></Field>
           <Field label="Description"><input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="UPI-Swiggy, Salary, ..." /></Field>
           <Num label="Amount (₹)" value={amount} onChange={setAmount} min={0} required />
           <Field label="Category" hint={cat ? undefined : 'Picked from the description'}>
@@ -158,7 +223,7 @@ function AddForm({ onDone }: { onDone: () => void }) {
           </Field>
         </div>
         <div className="form-actions">
-          <button className="btn primary" type="submit" disabled={!!missing}>Save transaction</button>
+          <button className={`btn ${drafts.dirty ? '' : 'primary'}`} type="submit" disabled={!!missing}>Add to list</button>
           <button className="btn" type="button" onClick={onDone}>Cancel</button>
           {missing && <span className="why" role="status">{missing}</span>}
         </div>
@@ -169,6 +234,7 @@ function AddForm({ onDone }: { onDone: () => void }) {
 
 function ImportCard() {
   const { state, dispatch } = useStore();
+  const drafts = useDrafts();
   const { toast } = useToast();
   const picker = useRef<HTMLInputElement>(null);
   const [warning, setWarning] = useState<string | null>(null);
@@ -176,17 +242,20 @@ function ImportCard() {
 
   // Every imported file, with how many rows it brought and the dates they cover.
   const files = useMemo(() => {
-    const by = new Map<string, { count: number; from: string; to: string }>();
-    for (const t of state.txns) {
-      if (!t.file) continue;
-      const f = by.get(t.file) ?? { count: 0, from: t.date, to: t.date };
+    const by = new Map<string, { count: number; from: string; to: string; unsaved: number }>();
+    const add = (t: Txn, unsaved: boolean) => {
+      if (!t.file) return;
+      const f = by.get(t.file) ?? { count: 0, from: t.date, to: t.date, unsaved: 0 };
       f.count += 1;
+      if (unsaved) f.unsaved += 1;
       if (t.date < f.from) f.from = t.date;
       if (t.date > f.to) f.to = t.date;
       by.set(t.file, f);
-    }
+    };
+    state.txns.forEach((t) => add(t, false));
+    drafts.added.forEach((t) => add(t, true));
     return [...by.entries()];
-  }, [state.txns]);
+  }, [state.txns, drafts.added]);
 
   const importFile = async (f: File) => {
     setWarning(null);
@@ -196,20 +265,26 @@ function ImportCard() {
       setWarning(result.warnings[0] ?? `Nothing could be read from ${f.name}.`);
       return;
     }
-    const have = new Set(state.txns.map((t) => t.id));
+    const have = new Set([...state.txns, ...drafts.added].map((t) => t.id));
     const fresh = result.rows.filter((r) => !have.has(r.id)).map((r) => ({ ...r, file: f.name }));
     if (!fresh.length) {
       toast(`Nothing new: all ${result.rows.length} rows in ${f.name} are already here.`);
       return;
     }
-    dispatch({ type: 'addTxns', txns: fresh });
+    drafts.stage(fresh);
     const already = result.rows.length - fresh.length;
-    toast(`Imported ${fresh.length} transactions from ${f.name}${already ? `, ${already} were already here` : ''}. Check any marked Other.`);
+    toast(`Read ${fresh.length} transactions from ${f.name}${already ? `, ${already} were already here` : ''}. Check them, fix anything that is off, then press Save changes.`);
     if (result.warnings.length) setWarning(result.warnings.join(' '));
     setNotes(result.notes);
   };
 
   const remove = (name: string) => {
+    const unsaved = drafts.added.filter((t) => t.file === name);
+    if (unsaved.length) {
+      drafts.dropAdded(unsaved.map((t) => t.id));
+      toast(`Dropped ${unsaved.length} unsaved transactions from ${name}.`);
+      return;
+    }
     const gone = state.txns.filter((t) => t.file === name);
     dispatch({ type: 'removeFile', file: name });
     toast(`Removed ${gone.length} transactions from ${name}.`, { undo: () => dispatch({ type: 'addTxns', txns: gone }) });
@@ -254,7 +329,7 @@ function ImportCard() {
               <Icon name="file" size={18} />
               <div className="file-info">
                 <b>{name}</b>
-                <span className="sub">{f.count} transactions &middot; {f.from} to {f.to}</span>
+                <span className="sub">{f.count} transactions &middot; {f.from} to {f.to}{f.unsaved > 0 && <> &middot; <b className="unsaved-tag">{f.unsaved === f.count ? 'not saved yet' : `${f.unsaved} not saved yet`}</b></>}</span>
               </div>
               <button className="btn small danger" aria-label={`Remove ${name}`} onClick={() => remove(name)}><Icon name="trash" size={16} />Remove</button>
             </li>

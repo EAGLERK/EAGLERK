@@ -82,10 +82,10 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     await nav('Dashboard');
     await p.getByRole('button', { name: 'Add transaction' }).click();
     check(await shown(p.getByRole('heading', { name: 'New transaction' })), 'dashboard "Add transaction" opens the Transactions form directly');
-    const save = p.getByRole('button', { name: 'Save transaction' });
-    check(await save.isDisabled() && await shown(p.getByText('Enter an amount to save.')), 'Save is disabled and says why');
-    await p.getByLabel(/^Amount/).fill('250');
-    check(await save.isEnabled(), 'Save enables once the required amount is entered');
+    const save = p.getByRole('button', { name: 'Add to list' });
+    check(await save.isDisabled() && await shown(p.getByText('Enter an amount to add it.')), 'Add to list is disabled and says why');
+    await p.getByLabel(/^Amount \(/).fill('250');
+    check(await save.isEnabled(), 'Add to list enables once the required amount is entered');
     await p.getByRole('button', { name: 'Cancel' }).first().click();
     check(!(await p.getByRole('heading', { name: 'New transaction' }).isVisible()), 'Cancel closes the form');
     check((await p.evaluate(() => location.hash)) === '#transactions', 'closing the form leaves a plain #transactions address');

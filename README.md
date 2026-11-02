@@ -38,9 +38,13 @@ Click **Explore with sample data** on first launch to see every screen populated
 - **Browser alerts:** Settings, Notifications. Important alerts that appear while MyMoney is open in a background tab also show as system notifications. There is no push service, so nothing arrives when the app is closed; adding that would need a small server, a service worker and a push key.
 - Tests: `npm run e2e:welcome`.
 
+## Editing and saving transactions
+
+Every transaction can be edited in the list: date (click it for a calendar), description, category, amount, and money in or out. Anything imported, typed in or changed is a **draft** until you press **Save changes**: it is highlighted, it does not count on the Dashboard, and leaving the screen asks whether to save, leave without saving, or keep editing. Closing or reloading the tab shows the browser's own warning. Tests: `npm run e2e:edit`.
+
 ## Importing a bank statement
 
-Transactions has one Import button. Choose a file and it is read at once; each imported file is listed with a Remove button.
+Transactions has one Import button. Choose a file and it is read at once into drafts for you to check and save; each imported file is listed with a Remove button.
 
 - **Formats:** CSV, TSV, semicolon or pipe separated text; Excel `.xlsx`; HTML tables saved with an `.xls` name (some banks do this). Text in UTF-8, UTF-16 or older Windows encodings.
 - **No fixed layout needed.** Column names are used when they are recognisable (Date, Narration, Withdrawal, Deposit, Debit, Credit, Amount, Balance, Dr/Cr and common variants). When they are not, or there is no header at all, the date column is the one full of dates, the description is the longest text, and the money columns are told apart by how they are filled and by how the running balance moves. A balance column also fixes money in versus money out when there is a single unsigned amount column, and works whether the statement lists oldest or newest first.

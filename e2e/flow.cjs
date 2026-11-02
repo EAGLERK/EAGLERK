@@ -61,17 +61,28 @@ const check = (ok, msg) => {
     await page.getByRole('button', { name: 'Import', exact: true }).click();
     await (await chooser).setFiles({ name, mimeType: 'text/csv', buffer: Buffer.from(text) });
   };
+  const saveBtn = page.getByRole('button', { name: 'Save changes' });
+  const sawText = (txt, t = 6000) => page.getByText(txt).first().waitFor({ timeout: t }).then(() => true, () => false);
   await upload('statement.csv', csv);
-  check(await page.getByText('Imported 8 transactions from statement.csv').waitFor({ timeout: 6000 }).then(() => true, () => false), 'CSV: clicking Import opens the file chooser and imports straight away');
+  check(await sawText('Read 8 transactions from statement.csv'), 'CSV: clicking Import opens the file chooser and reads the file straight away');
   check((await page.locator('textarea').count()) === 0 && (await page.getByRole('button', { name: 'Import', exact: true }).getAttribute('aria-expanded')) === null, 'CSV: no import box opens');
   const fileRow = page.getByRole('list', { name: 'Imported files' }).getByRole('listitem').filter({ hasText: 'statement.csv' });
-  check(await fileRow.isVisible() && (await fileRow.innerText()).includes('8 transactions'), 'CSV: the imported file is listed with its row count');
+  check(await fileRow.isVisible() && (await fileRow.innerText()).includes('8 transactions') && (await fileRow.innerText()).includes('not saved yet'), 'CSV: the file is listed with its row count and marked not saved yet');
+  check(await page.getByText('8 unsaved changes', { exact: true }).isVisible() && await saveBtn.isEnabled() && (await page.locator('tr.unsaved').count()) === 8, 'CSV: a Save bar appears and the 8 new rows are highlighted');
   await upload('statement.csv', csv);
-  check(await page.getByText('Nothing new: all 8 rows in statement.csv are already here.').waitFor({ timeout: 6000 }).then(() => true, () => false), 'CSV: re-import detected as duplicates');
+  check(await sawText('Nothing new: all 8 rows in statement.csv are already here.'), 'CSV: re-reading the same file is detected against the unsaved rows');
   await page.getByRole('button', { name: 'Remove statement.csv' }).click();
-  check(await page.getByText('Removed 8 transactions from statement.csv.').waitFor({ timeout: 6000 }).then(() => true, () => false) && (await page.getByRole('list', { name: 'Imported files' }).count()) === 0, 'CSV: Remove takes the whole imported file out');
+  check(await sawText('Dropped 8 unsaved transactions from statement.csv.') && (await page.getByRole('list', { name: 'Imported files' }).count()) === 0 && (await saveBtn.count()) === 0, 'CSV: Remove on an unsaved file drops it and the Save bar goes away');
+  await upload('statement.csv', csv);
+  await page.getByText('8 unsaved changes', { exact: true }).waitFor({ timeout: 6000 });
+  await saveBtn.click();
+  check(await sawText('Saved 8 new transactions.') && (await saveBtn.count()) === 0 && !(await fileRow.innerText()).includes('not saved yet'), 'CSV: Save changes keeps them and clears the unsaved marks');
+  await upload('statement.csv', csv);
+  check(await sawText('Nothing new: all 8 rows in statement.csv are already here.'), 'CSV: re-import detected as duplicates once saved');
+  await page.getByRole('button', { name: 'Remove statement.csv' }).click();
+  check(await sawText('Removed 8 transactions from statement.csv.') && (await page.getByRole('list', { name: 'Imported files' }).count()) === 0, 'CSV: Remove takes a saved file out');
   await page.locator('.toast-btn', { hasText: 'Undo' }).click();
-  check(await fileRow.isVisible(), 'CSV: Undo brings the imported file back');
+  check(await fileRow.isVisible(), 'CSV: Undo brings the saved file back');
 
   // A real Excel file with true date cells, and a CSV whose columns have no recognisable names at all.
   const uploadPath = async (path) => {
@@ -80,13 +91,15 @@ const check = (ok, msg) => {
     await (await chooser).setFiles(path);
   };
   await uploadPath(require('path').join(__dirname, '..', 'tests', 'fixtures', 'statement-openpyxl.xlsx'));
-  check(await page.getByText('Imported 4 transactions from statement-openpyxl.xlsx').waitFor({ timeout: 8000 }).then(() => true, () => false), 'Excel: an .xlsx statement imports');
+  check(await sawText('Read 4 transactions from statement-openpyxl.xlsx', 8000), 'Excel: an .xlsx statement is read');
+  await saveBtn.click();
+  await sawText('Saved 4 new transactions.');
   await page.getByRole('button', { name: 'Remove statement-openpyxl.xlsx' }).click();
-  check(await page.getByText('Removed 4 transactions from statement-openpyxl.xlsx.').waitFor({ timeout: 6000 }).then(() => true, () => false), 'Excel: removing that file leaves the CSV import alone');
+  check(await sawText('Removed 4 transactions from statement-openpyxl.xlsx.'), 'Excel: removing that file leaves the CSV import alone');
   await upload('unlabelled.csv', '03/10/26,UPI-ZEPTO ORDER,260.00,,40000.00\n04/10/26,NEFT-REFUND,,500.00,40500.00\n05/10/26,UPI-CAFE,120.00,,40380.00\n');
-  check(await page.getByText('Imported 3 transactions from unlabelled.csv').waitFor({ timeout: 6000 }).then(() => true, () => false) && (await page.getByText('worked out which is which').count()) >= 1, 'CSV: a file with no column names still imports, and says how it was read');
+  check(await sawText('Read 3 transactions from unlabelled.csv') && (await page.getByText('worked out which is which').count()) >= 1, 'CSV: a file with no column names is still read, and says how');
   await page.getByRole('button', { name: 'Remove unlabelled.csv' }).click();
-  await page.getByText('Removed 3 transactions from unlabelled.csv.').waitFor({ timeout: 6000 }).catch(() => {});
+  await sawText('Dropped 3 unsaved transactions from unlabelled.csv.');
 
   await nav('Dashboard').click();
   let t = await main();
@@ -140,7 +153,7 @@ const check = (ok, msg) => {
   });
   await legacyPage.goto(URL);
   await legacyPage.getByRole('navigation').getByRole('button', { name: 'Transactions' }).click();
-  check((await legacyPage.locator('main').innerText()).includes('Legacy coffee'), 'data saved under the old key (eaglerk) still loads');
+  check(await legacyPage.getByLabel('Description for Legacy coffee').waitFor({ timeout: 6000 }).then(() => true, () => false), 'data saved under the old key (eaglerk) still loads');
   if (investing) {
     await legacyPage.getByRole('navigation').getByRole('button', { name: 'Investments' }).click();
     check((await legacyPage.locator('main').innerText()).includes('Old savings'), 'old-key investments still load too');

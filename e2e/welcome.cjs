@@ -119,7 +119,8 @@ async function importCsv(page, name, text) {
     await p.getByRole('navigation').getByRole('button', { name: 'Transactions', exact: true }).click();
     const month = prevMonthCsv();
     await importCsv(p, 'rent-month.csv', month.csv);
-    await p.getByText('Imported 2 transactions').waitFor({ timeout: 8000 }).catch(() => {});
+    await p.getByText('Read 2 transactions').waitFor({ timeout: 8000 }).catch(() => {});
+    await p.getByRole('button', { name: 'Save changes' }).click();
     await p.waitForTimeout(500);
     const notes = await p.evaluate(() => window.__notes);
     check(notes.some((n) => n.title === `You spent more than you earned in ${month.label}`), 'with the tab in the background, a new important alert becomes a system notification');

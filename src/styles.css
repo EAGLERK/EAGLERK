@@ -702,3 +702,45 @@ dialog.modal.welcome { width: min(420px, calc(100vw - 32px)); }
   .welcome-card { padding: 24px 20px; }
   .tour-count { flex-basis: 100%; }
 }
+
+/* ===== Editable transactions, unsaved rows and the Save bar ===== */
+.cell-input { width: 100%; min-width: 0; min-height: var(--control); padding: 4px 8px; font: inherit; color: var(--text); background: transparent; border: 1px solid transparent; border-radius: var(--r-md); }
+.cell-input.num { font-variant-numeric: tabular-nums; }
+.cell-input::placeholder { color: var(--text-muted); }
+.cell-input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
+.cell-input[type='number']::-webkit-inner-spin-button, .cell-input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.cell-input[type='date'] { min-width: 150px; cursor: pointer; }
+.cell-input[aria-invalid='true'] { border-color: var(--bad-text); background: var(--bad-bg); }
+@media (min-width: 600px) and (pointer: fine) { .cell-input:hover { border-color: var(--axis); } }
+.table.editable td { vertical-align: middle; padding-top: 6px; padding-bottom: 6px; }
+.table.editable td.title { min-width: 200px; }
+.table.editable td.r { white-space: nowrap; }
+
+.amt { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; }
+.amt input { width: 120px; text-align: right; }
+.amt .sign { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-size: 16px; font-weight: 600; line-height: 1; cursor: pointer; }
+.amt.good .sign, .amt.good input { color: var(--good-text); }
+
+tr.unsaved { background: color-mix(in srgb, var(--accent) 7%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+.unsaved-tag { color: var(--accent-text); font-weight: 500; }
+
+.savebar { position: sticky; bottom: 16px; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.14), 0 4px 6px -4px rgb(0 0 0 / 0.14); }
+.savebar-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.why.bad { color: var(--bad-text); }
+
+@media (max-width: 899px) { .savebar { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 599px) {
+  .savebar { padding: 12px; }
+  .savebar .row { width: 100%; }
+  .savebar .row .btn { flex: 1; }
+  .table.cards tr.unsaved { box-shadow: inset 3px 0 0 var(--accent); }
+  .table.editable.cards td .cell-input { text-align: right; border-color: var(--border); }
+  .table.editable.cards td.title .cell-input { text-align: left; font-weight: 600; }
+  .amt input { width: 100%; }
+  .amt { flex: 1; }
+}
+@media (pointer: coarse), (max-width: 599px) { .amt .sign { width: var(--tap); height: var(--tap); } }
+
+dialog.modal.leave { width: min(540px, calc(100vw - 32px)); }
+body[data-savebar='1'] .toasts { bottom: 104px; }
+@media (max-width: 899px) { body[data-savebar='1'] .toasts { bottom: calc(76px + 140px + env(safe-area-inset-bottom, 0px)); } }

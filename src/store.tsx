@@ -44,6 +44,8 @@ export type Action =
   | { type: 'profile'; patch: Partial<Profile> }
   | { type: 'addTxns'; txns: Txn[] }
   | { type: 'updateTxn'; id: string; patch: Partial<Txn> }
+  /** Saves a reviewed batch in one step: new rows plus edits to saved rows. */
+  | { type: 'commitTxns'; added: Txn[]; edits: Record<string, Partial<Txn>> }
   | { type: 'deleteTxn'; id: string }
   | { type: 'clearTxns'; source?: Txn['source'] }
   | { type: 'removeFile'; file: string }
@@ -69,6 +71,10 @@ function reducer(s: AppState, a: Action): AppState {
     case 'addTxns': {
       const have = new Set(s.txns.map((t) => t.id));
       return { ...s, txns: [...s.txns, ...a.txns.filter((t) => !have.has(t.id))] };
+    }
+    case 'commitTxns': {
+      const have = new Set(s.txns.map((t) => t.id));
+      return { ...s, txns: [...s.txns.map((t) => (a.edits[t.id] ? { ...t, ...a.edits[t.id] } : t)), ...a.added.filter((t) => !have.has(t.id))] };
     }
     case 'updateTxn': return { ...s, txns: s.txns.map((t) => (t.id === a.id ? { ...t, ...a.patch } : t)) };
     case 'deleteTxn': return { ...s, txns: s.txns.filter((t) => t.id !== a.id) };

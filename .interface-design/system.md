@@ -56,6 +56,13 @@ No header band, hairline row separators, muted 14px heads. On phones `.table.car
 ### Chart
 Recharts, styled like shadcn charts: horizontal grid only, no axis lines or ticks, 12px muted tick labels, a bordered tooltip with 10px colour chips, and a plain muted legend. Data colours are the five `--s*` tokens.
 
+### Editing transactions, drafts and the Save bar
+Every cell of a transaction row is editable in place: date (a date box that opens the browser's calendar when clicked), description, category, amount, and a round +/- button that switches money out and money in. Cells look like plain text until hovered or focused on mouse devices, and always show a border on touch screens.
+
+Anything imported, typed in (Add transaction -> "Add to list") or changed is a **draft** until Save changes is pressed: drafts are highlighted with an accent bar and a tint, are not counted anywhere else in the app, and are not stored or synced. New rows are pinned above the list so a filter cannot hide them. A Save bar (sticky, above the tab bar on phones) shows the count with Discard (offers Undo) and Save changes, the only green button on the screen while it shows. A date that is not valid or an amount that is not above 0 is flagged and blocks saving, with the reason beside the button. Putting a value back to what is saved removes the change. Deleting a saved row stays immediate, with Undo.
+
+Leaving Transactions with drafts (sidebar, tab bar, bell actions, sign out, browser Back or a typed address) opens a popup with Keep editing, Leave without saving and Save and leave (blocked, with the reason, while a row is invalid). Closing or reloading the tab triggers the browser's own warning. Logic: `src/components/Drafts.tsx`; the store action is `commitTxns`.
+
 ### Import
 One card with an Import button at the top right. Clicking it opens the file chooser straight away and imports on selection, with no box, preview or confirm step. Each imported file then appears as a row (name, row count, date range) with its own Remove button; Remove deletes that file's rows and offers Undo in a toast. Files that cannot be read show one inline warning. Rows carry the file name in `Txn.file`, so rows imported before this change stay in the list but have no file row.
 
@@ -98,6 +105,7 @@ All motion is GSAP (3.15, core only), written in `src/motion/index.ts`. Do not a
 | Decision | Rationale | Date |
 |----------|-----------|------|
 | Logo is a blocky M in mint on a dark tile, replacing the line-chart icon | Owner supplied a mint M reference in the brand colour; drawn as an original vector, not traced | 2026-11-02 |
+| Transactions are editable in place; imports, typed-in rows and edits are drafts until Save changes, and leaving the screen asks | Owner asked | 2026-11-02 |
 | Welcome is a modal popup over the Dashboard, a six-tip tour follows, and a notification bell with data-driven alerts and optional browser alerts was added | Owner asked | 2026-11-02 |
 | The first screen asks for a name; the Dashboard greets "Hi, <name>" at the left of its header | Owner asked | 2026-11-02 |
 | Import opens the file chooser directly; imported files are listed with a Remove button | Owner asked: no box to open, and a way to take an import back from the same place | 2026-11-02 |
