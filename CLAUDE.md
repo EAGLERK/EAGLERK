@@ -22,6 +22,14 @@ Copied from https://github.com/anthropics/skills (commit `ca45fc4`, Apache-2.0, 
 
 All animation uses GSAP through `src/motion/index.ts`. Do not add CSS transitions, animations or keyframes, and do not call `requestAnimationFrame` for visuals; use `gsap.ticker`. Respect reduced motion by going through the helpers in that file. Details and timings are in `.interface-design/system.md`. GSAP's licence is free for this use ("no charge" standard licence, https://gsap.com/standard-license), but read it before shipping a product whose main purpose is a visual animation builder.
 
+## Supabase from a cloud session
+
+Supabase project hosts (`*.supabase.co`) are reachable from the cloud sandbox, but only through its proxy, and Node's `fetch` ignores the proxy by default, so a plain `npm run check:supabase` fails with a misleading `ENOTFOUND`. Run it as:
+
+`NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt npm run check:supabase`
+
+On a normal machine, no prefix is needed. `.env.local` (git-ignored) holds the project URL and the public anon key. Never put a `service_role` key anywhere in the repo or chat.
+
 ## Checks before pushing
 
 `npx tsc --noEmit -p .`, `npx vitest run`, and the e2e suites against a running dev server. Investing is hidden by default; run the suites a second time with `VITE_FEATURE_INVESTING=1` on the server and `INVESTING=1` on the test command.
