@@ -6,7 +6,7 @@ export function Card({ title, sub, right, children, className = '' }: { title?: 
     <section className={`card ${className}`}>
       {(title || right) && (
         <div className="card-head">
-          <div>
+          <div className="card-titles">
             {title && <h2>{title}</h2>}
             {sub && <div className="sub">{sub}</div>}
           </div>

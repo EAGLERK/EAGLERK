@@ -4,7 +4,7 @@ import { inr, inrCompact } from '../lib/format';
 import { Toggle } from './ui';
 
 const tick = { fill: 'var(--text-muted)', fontSize: 12 };
-const axisLine = { stroke: 'var(--axis)' };
+const axisLine = false as const;
 
 /** Compact axis labels: 50000 -> 50k, 250000 -> 2.5L */
 const axisMoney = (n: number) => {
@@ -67,7 +67,7 @@ export function IncomeSpendChart({ data }: { data: IncomeSpendRow[] }) {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} barGap={2} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid vertical={false} stroke="var(--grid)" />
-                <XAxis dataKey="label" tick={tick} axisLine={axisLine} tickLine={false} />
+                <XAxis dataKey="label" tick={tick} axisLine={axisLine} tickLine={false} tickMargin={8} />
                 <YAxis tick={tick} axisLine={false} tickLine={false} tickFormatter={axisMoney} width={44} />
                 <Tooltip content={<Tip />} cursor={{ fill: 'var(--surface-2)' }} />
                 <Bar isAnimationActive={false} dataKey="income" name="Income" fill="var(--s1)" radius={[4, 4, 0, 0]} maxBarSize={22} />
@@ -161,7 +161,7 @@ export function ProjectionChart({ data }: { data: ProjPoint[] }) {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid vertical={false} stroke="var(--grid)" />
-                <XAxis dataKey="year" tick={tick} axisLine={axisLine} tickLine={false} tickFormatter={(y) => `${y}y`} />
+                <XAxis dataKey="year" tick={tick} axisLine={axisLine} tickLine={false} tickMargin={8} tickFormatter={(y) => `${y}y`} />
                 <YAxis tick={tick} axisLine={false} tickLine={false} tickFormatter={axisMoney} width={48} />
                 <Tooltip content={<Tip titleFormat={(l) => `After ${l} years`} />} />
                 <Line isAnimationActive={false} type="monotone" dataKey="high" name="Optimistic (+2.5 pts)" stroke="var(--text-muted)" strokeDasharray="4 4" strokeWidth={1.5} dot={false} />

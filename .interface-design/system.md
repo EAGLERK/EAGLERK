@@ -1,96 +1,104 @@
 # MyMoney design system
 
-Written from `src/styles.css` and the tested UI rules on 2026-10-31. If this file and the CSS disagree, the CSS is right; fix this file.
+Written from `src/styles.css` and the tested UI rules, updated 2026-11-02 when the look was aligned with shadcn/ui. If this file and the CSS disagree, the CSS is right; fix this file.
 
 ## Direction
 
-**Personality:** Sophistication & Trust, with warmth. A personal-money app people open on a phone, often once a day, to see what is left.
+**Personality:** calm, neutral and trustworthy, in the shadcn/ui style: neutral surfaces, hairline borders, small shadows, one accent. A personal-money app people open on a phone, often once a day, to see what is left.
 
-**Foundation:** neutral grey-green. Page `#e6eaed`, white shell, `#f3f5f5` panel, white cards. Dark mode follows the system and has a manual switch (three icon buttons: monitor = match my device, sun = light, moon = dark).
+**Source of the values:** shadcn/ui's "new-york" registry (`card.tsx`, `button.tsx`, `input.tsx`, `table.tsx`, `badge.tsx`, `chart.tsx`, `globals.css`), read from its repo. MyMoney copies the look, not the library: it is plain CSS, with no Tailwind, no Radix and no shadcn components. Do not add them without being asked.
 
-**Dark mode** is near-black with a green cast, modelled on the owner's second reference: page `#040605`, shell `#070a08`, panel `#0a0e0c`, cards `#0e1311` with 9% white borders, one soft mint glow at the panel's top-right (`--glow`), primary buttons in bright mint `#34d399` with near-black ink `#04130c` (9.9:1), active sidebar item as a bordered dark pill instead of the light mode's black one, and the Left over card as a dark card with a mint bloom in its corner instead of a green fill. Muted text is 6.5:1 on cards. Dark and light values are tokens in `:root`, so screens must not hard-code colours.
+**What is MyMoney's own, on purpose:** the green accent as the primary colour (shadcn's default primary is black), the sign-in screens, the 44px phone targets, the GSAP motion, and the data colours in charts (blue needs, orange wants, green investing), which carry meaning.
 
-**Depth:** borders first (1px `--border`, 8% black), one soft shadow only on the chart tooltip. One gradient is allowed: the green "feature" card (`--feature-a` to `--feature-b`) and the brand mark. Do not add more.
+**Foundation:** neutral. Light: white page, `#fafafa` sidebar, white cards, `#f5f5f5` muted. Dark: `#0a0a0a` page, `#0f0f0f` sidebar, `#171717` cards, `#262626` muted, with one faint mint glow at the top right of the page (`--glow`). Dark mode follows the device and has a manual switch of three icon buttons (monitor, sun, moon).
+
+**Depth:** 1px borders plus `--shadow-sm` on cards and `--shadow-xs` on outline buttons and inputs. Popovers (chart tooltip, toast, dialog) use a larger shadow. One tint is allowed: the "Left over" card fades from 9% (light) or 12% (dark) accent into the card colour.
 
 ## Tokens
 
 ### Spacing
-Base 4px, in practice 4, 8, 12, 16, 20 (card padding), 22 (panel side padding). Page rhythm is a 20px gap between blocks, 16px between summary cards.
+Cards: 24px padding and a 24px gap between header and content (16px on phones). Page sections 24px apart (20px on phones); card grids 16px. Panel 24px by 32px. Within a card header, title and description 6px apart.
 
-### Colors (light / dark in `:root`, `:root[data-theme='dark']`)
+### Colors (`:root` light, `:root[data-theme='dark']` and the device-dark media block)
 ```
---text #0b0b0b          --text-2 #52514e       --text-muted #6d6b66
---surface #fff          --surface-2 #f0f2f2    --panel #f3f5f5    --page #e6eaed
---accent #0d7a4e        --accent-text #0d7a4e  --accent-ink #fff
---good-text #006300     --bad-text #b02a2a     --watch-text #8a5a00
---good-bg #e6f3e6       --bad-bg #fbe9e9       --watch-bg #fdf1d6  --info-bg #e9f0fa
---danger #c93535
-chart series --s1 blue #2a78d6, --s2 orange #eb6834, --s3 aqua #1baf7a, --s4 yellow #eda100, --s5 magenta #e87ba4
+light   --text #0a0a0a   --text-2 #525252   --text-muted #666666 (AA on white and on #f5f5f5)
+        --surface #fff   --surface-2 #f5f5f5   --border #e5e5e5   --axis #d4d4d4 (input borders)   --sidebar-bg #fafafa
+dark    --text #fafafa   --text-2 #d4d4d4   --text-muted #a3a3a3
+        --surface #171717   --surface-2 #262626   --border white 10%   --axis white 18%   --sidebar-bg #0f0f0f
+accent  light #0d7a4e / dark #34d399, ink #fff / #04130c (9.9:1 in dark)
+status  good #006300 / #4cc24c, bad #b02a2a / #ff8a8a, watch #8a5a00 / #f0b84a, each with a tinted background
+chart   --s1 blue, --s2 orange, --s3 aqua, --s4 yellow, --s5 magenta
 ```
-Status is never colour alone: always an icon or label next to it (check, cross, "short by").
-Blue marks needs, orange marks wants, green marks investing in the spending bars.
+Status is never colour alone: always an icon or label next to it. Screens must not hard-code colours.
 
 ### Radius
-Pills for buttons, badges and toggles (999px). 8px inputs, 10px callouts and table header ends, 12px icon tiles, 14px stacked table cards, 18px cards, 22px panel, 28px shell.
+`--r-sm 6` (small bars, chart legend chips), `--r-md 8` (buttons, inputs, sidebar rows, tabs), `--r-lg 10` (tab track, alerts, dialog, toast, tooltip, icon tiles), `--r-xl 14` (cards, goal chooser, phone table cards). Badges and progress bars are fully round.
 
 ### Typography
-System font stack (`system-ui, -apple-system, 'Segoe UI', sans-serif`). Headline figures 30px / 650 with -0.01em tracking, card titles 17px / 600, body 14-15px, table heads and badges 12px / 600. Numbers use Indian grouping (₹1,25,430) and `inrCompact` (L, Cr) on charts.
+System font stack. Base 14px. Page title 24px/600, tracking -0.02em. Card title 16px/600. Description and secondary text 14px muted. Big figures 30px/600 (summary cards) and 24px/600 (stat tiles), tracking -0.02em, tabular numbers. Table heads 14px/500 muted, sentence case. Field labels 14px/500. Numbers use Indian grouping (₹1,25,430) and `inrCompact` (L, Cr) on charts.
 
 ## Patterns
 
 ### Button
-- Height `--control`: 40px on desktop, 44px on phones. `--tap` is 44px for everything tappable (tab bar, checkboxes, summaries, link buttons).
-- Pill, 8px 16px padding, 550 weight, 8px gap between icon and label.
-- **One primary (green) button per screen**, placed in the page header beside the title. Everything else is the plain pill.
-- Destructive buttons use `--danger` and never sit next to the primary.
+- 36px tall on desktop with a mouse (`--control`), 44px on phones and touch (`--tap`), `small` is 32px on desktop. 8px radius, 14px/500, 8px 16px padding, `--shadow-xs`.
+- **One primary (green, no border or shadow) per screen**, beside the page title. Everything else is the outline button. Ghost has no border. Destructive is outline-red, or solid red inside a confirm dialog.
+- Focus: no outline; the border turns accent and a 3px soft accent ring appears (shadcn's focus ring).
 
-### Summary card (`.sumcard`)
-Icon tile 44px, title 17/600, one big figure, one status pill, one sentence, and a full-width footer action. The first card on the Dashboard is the green feature card. Title blocks have `min-height: 64px` so the three figures sit on one line.
+### Card
+Border, `--r-xl`, `--shadow-sm`, 24px padding. Header = title (h2) over a description, with an action on the right. Footer actions use a top hairline. Summary cards (`.sumcard`) have no padding of their own: an icon tile, a title, one big figure, one status pill, one sentence, and a footer link with a top border.
+
+### Tabs (segmented control)
+Muted track with 3px padding and a raised white (card-coloured) active segment with a small shadow, 32px tall on desktop. On phones the segments fill the track and are 44px tall, because the segment is the tap target. Used for chart ranges, chart/table, risk, and the theme switch.
 
 ### Table
-Uppercase 12px muted heads on a `--surface-2` band, 11px 12px cell padding, hairline row rules. On phones `.table.cards` turns each row into a stacked card using `data-label`, `td.title` and `td.actions`.
+No header band, hairline row separators, muted 14px heads. On phones `.table.cards` turns each row into a stacked card using `data-label`, `td.title` and `td.actions`. The category menu inside transaction rows has no border until hover or focus on mouse devices.
+
+### Chart
+Recharts, styled like shadcn charts: horizontal grid only, no axis lines or ticks, 12px muted tick labels, a bordered tooltip with 10px colour chips, and a plain muted legend. Data colours are the five `--s*` tokens.
 
 ### Forms
-Required fields marked, Cancel always beside Save, and a visible reason ("Enter an amount to save.") when Save is disabled.
+Label above the field, required fields marked, Cancel beside Save, and a visible reason when Save is disabled. Password boxes have the show/hide eye inside the field.
 
 ### Feedback
-No `window.confirm`. Single deletes show a toast with Undo. Bulk or irreversible actions open an in-page `<dialog>` with Cancel focused first. Destructive settings live in a separate "Danger zone".
+No `window.confirm`. Single deletes show a toast (card-coloured, bordered, like Sonner) with Undo. Bulk or irreversible actions open an in-page dialog with Cancel focused first. Destructive settings live in a separate Danger zone.
 
 ### Navigation
-Flat list, no group headings: Dashboard, Transactions, Goals, Settings (Investments and Plan return when `VITE_FEATURE_INVESTING=1`). Sidebar on desktop, bottom tab bar on phones. Focus moves to `<main>` on every route change; first Tab stop is "Skip to main content".
+Flat list, no group headings: Dashboard, Transactions, Goals, Settings (Investments and Plan return with `VITE_FEATURE_INVESTING=1`). 256px sidebar on desktop with a hairline on its right; the active row has a muted background, not a dark pill. Bottom tab bar on phones. Focus moves to `<main>` on every screen change; the first Tab stop is "Skip to main content".
 
 ## Motion
 
-All motion is GSAP (3.15, core only, no plugins), written in `src/motion/index.ts`. Do not add CSS `transition`, `animation` or `@keyframes`; `e2e/ui.cjs` fails if any CSS transition or animation runs on hover, press, toast or dialog.
+All motion is GSAP (3.15, core only), written in `src/motion/index.ts`. Do not add CSS `transition`, `animation` or `@keyframes`; `e2e/ui.cjs` fails if any CSS motion runs on hover, press, toast or dialog.
 
 - **Press:** buttons, choice cards and tabs scale to 0.97 in 120ms and settle back with a small overshoot. Sidebar links 0.985, tab bar 0.94.
-- **Hover (mouse and pen only, never touch):** GSAP animates a `--hv` value from 0 to 1 in 160ms and CSS derives the look from it (brighter primary, tinted pill, border on choice cards). New hoverable controls need to be added to `HOVERABLE` in the motion file and read `--hv` in CSS.
-- **Screens:** content fades in over 200ms. Opacity only, so nothing moves under a cursor that is already heading for a button.
-- **Dashboard:** the summary cards fade in 60ms apart, once per visit. This is the one orchestrated moment.
-- **Toasts:** rise 10px while fading in (220ms), leave faster (160ms).
-- **Confirm dialog:** grows from 97% while the backdrop fades up (`--bd`).
-- **3D scene:** each model turns on a looping GSAP tween, the pedestals rise in once, and GSAP's ticker is the render loop. Stills for the PNG illustrations render one frame.
-- **Reduced motion:** every function returns early when the device asks for reduced motion, and the 3D scene stays still.
-- Instant on purpose: keyboard focus rings, and the borderless-until-hover category menus in the transaction list.
+- **Hover (mouse and pen only):** GSAP animates `--hv` from 0 to 1 in 160ms and CSS derives the look from it. New hoverable controls go in `HOVERABLE` in the motion file and read `--hv` in CSS.
+- **Screens:** content fades in over 200ms, opacity only.
+- **Dashboard:** summary cards fade in 60ms apart, once per visit.
+- **Toasts:** rise 10px while fading in, leave faster. **Dialog:** grows from 97% while the backdrop fades up (`--bd`).
+- **3D scene:** looping GSAP spin tweens, a one-time rise-in, GSAP's ticker as the render loop.
+- **Reduced motion:** every helper returns early; the 3D scene stays still.
+- Instant on purpose: focus rings and the borderless-until-hover category menus.
 
 ## Decisions
 
 | Decision | Rationale | Date |
 |----------|-----------|------|
-| Layout and look follow the dashboard reference the owner supplied | Rounded shell, green feature card, summary cards with footer actions | 2026-10 |
-| 44px minimum tap size, enforced in `e2e/ui.cjs` | Used on phones; small targets were failing | 2026-10 |
-| One primary button per screen, enforced in `e2e/ui.cjs` | Several screens had competing green buttons | 2026-10 |
-| In-page dialogs and Undo toasts | `window.confirm` is silently blocked in embedded viewers | 2026-10 |
-| Goals leads with the verdict ("All goals together"), the 3D scene follows | The scene filled the first screen and pushed the answer below the fold | 2026-10-31 |
-| "Delete all" moved from the Transactions header to a footer after the list | A destructive button above the filters was the first thing on a phone | 2026-10-31 |
-| Row category menus are borderless until hover or focus (mouse devices only) | 197 bordered boxes buried the amounts; touch keeps visible borders | 2026-10-31 |
-| Dark mode redrawn from the owner's dark dashboard reference | Near-black surfaces, mint accent, corner glow; contrast measured (all text pairs above 6:1) | 2026-10-31 |
-| Theme switcher is three icon buttons with spoken names | Owner asked for icons; each is 44px on phones and tested in `e2e/ui.cjs` | 2026-10-31 |
-| All animation moved to GSAP, none left in CSS | Owner asked; one file holds timings and curves, and a test fails if CSS motion returns | 2026-11-02 |
+| Look aligned with shadcn/ui: neutral surfaces, 14px cards with border and shadow, 36px controls, tab-style toggles, flat sidebar | Owner asked; values taken from shadcn's own registry source rather than memory | 2026-11-02 |
+| Primary colour stays green; chart data colours stay as they were | Brand colour, and the chart colours carry meaning | 2026-11-02 |
+| `--text-muted` is `#666666` in light mode, not shadcn's `#737373` | Keeps 4.5:1 on the muted `#f5f5f5` | 2026-11-02 |
+| Input borders use `--axis` (darker than shadcn's) | shadcn's input border is about 1.2:1 against white, too faint to find a field | 2026-11-02 |
+| The green gradient "Left over" card became a soft tint | shadcn cards are flat; the tint keeps a focal card without a heavy fill | 2026-11-02 |
+| On phones tab segments fill the track instead of floating inside padding | 44px minimum tap size, enforced in `e2e/ui.cjs` | 2026-11-02 |
+| All animation moved to GSAP, none left in CSS | Owner asked; one file holds timings and curves | 2026-11-02 |
+| Dark mode redrawn from the owner's dark dashboard reference, then neutralised to shadcn's greys | Near-black surfaces, mint accent, faint corner glow kept | 2026-11-02 |
+| Theme switcher is three icon buttons with spoken names | Owner asked; 44px on phones | 2026-10-31 |
+| Goals leads with the verdict, the 3D scene follows | The scene filled the first screen and pushed the answer below the fold | 2026-10-31 |
+| "Delete all" lives in a footer after the transaction list | A destructive button above the filters was the first thing on a phone | 2026-10-31 |
 | Sidebar headings (Track / Plan / General) removed | Owner asked for one flat list | 2026-10-31 |
 | Investing hidden behind `VITE_FEATURE_INVESTING` | Owner asked to remove it for now; nothing deleted | 2026-10-30 |
+| In-page dialogs and Undo toasts | `window.confirm` is silently blocked in embedded viewers | 2026-10 |
+| One primary button per screen, 44px minimum tap size, both enforced in `e2e/ui.cjs` | Competing green buttons and small targets were failing | 2026-10 |
 
 ## Known gaps
 
-- Table heads use uppercase tracked labels, which several of the installed design skills discourage. Left as is; changing them is a visual decision for the owner.
-- Radius has seven values. Collapse only if a screen looks uneven; no test depends on them.
+- The stylesheet carries older rules that the shadcn block at the end now overrides. They are dead weight; collapse them when next touching the file.
+- Sample data is generated relative to today's date, so early in a month the Dashboard shows a nearly empty latest month.

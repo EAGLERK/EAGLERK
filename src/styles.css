@@ -1,16 +1,16 @@
 :root {
   color-scheme: light;
-  --page: #e6eaed;
+  --page: #ffffff;
   --shell: #ffffff;
-  --panel: #f3f5f5;
+  --panel: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f0f2f2;
-  --text: #0b0b0b;
-  --text-2: #52514e;
-  --text-muted: #6d6b66;
-  --grid: #e4e7e6;
-  --axis: #c3c8c6;
-  --border: rgba(11, 11, 11, 0.08);
+  --surface-2: #f5f5f5;
+  --text: #0a0a0a;
+  --text-2: #525252;
+  --text-muted: #666666;
+  --grid: #e5e5e5;
+  --axis: #d4d4d4;
+  --border: #e5e5e5;
   --good-text: #006300;
   --bad-text: #b02a2a;
   --watch-text: #8a5a00;
@@ -29,28 +29,36 @@
   --s4: #eda100; /* yellow */
   --s5: #e87ba4; /* magenta */
   --glow: none;
-  --side-active-bg: var(--text);
-  --side-active-fg: var(--shell);
+  --sidebar-bg: #fafafa;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 10px;
+  --r-xl: 14px;
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --ring-soft: color-mix(in srgb, var(--accent) 35%, transparent);
+  --side-active-bg: var(--surface-2);
+  --side-active-fg: var(--text);
   --side-active-ring: transparent;
-  --feature-bg: linear-gradient(135deg, var(--feature-a), var(--feature-b));
-  --feature-border: transparent;
+  --feature-bg: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--surface)), var(--surface) 75%);
+  --feature-border: var(--border);
   --radius: 12px;
   --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme='light'])) {
     color-scheme: dark;
-    --page: #040605;
-    --shell: #070a08;
-    --panel: #0a0e0c;
-    --surface: #0e1311;
-    --surface-2: #151b18;
-    --text: #f0efec;
-    --text-2: #c3c2b7;
-    --text-muted: #9a988f;
-    --grid: #1d2420;
-    --axis: #2c3530;
-    --border: rgba(255, 255, 255, 0.09);
+    --page: #0a0a0a;
+    --shell: #0a0a0a;
+    --panel: #0a0a0a;
+    --surface: #171717;
+    --surface-2: #262626;
+    --text: #fafafa;
+    --text-2: #d4d4d4;
+    --text-muted: #a3a3a3;
+    --grid: rgba(255, 255, 255, 0.08);
+    --axis: rgba(255, 255, 255, 0.18);
+    --border: rgba(255, 255, 255, 0.10);
     --good-text: #4cc24c;
     --bad-text: #ff8a8a;
     --watch-text: #f0b84a;
@@ -68,27 +76,28 @@
     --s3: #199e70;
     --s4: #c98500;
     --s5: #d55181;
-    --glow: radial-gradient(55% 45% at 88% 0%, rgba(52, 211, 153, 0.20), transparent 70%), radial-gradient(40% 35% at 0% 100%, rgba(52, 211, 153, 0.07), transparent 70%);
+    --glow: radial-gradient(50% 40% at 90% 0%, rgba(52, 211, 153, 0.13), transparent 70%);
+    --sidebar-bg: #0f0f0f;
     --side-active-bg: var(--surface-2);
     --side-active-fg: var(--text);
     --side-active-ring: var(--border);
-    --feature-bg: radial-gradient(90% 120% at 100% 100%, rgba(52, 211, 153, 0.30), transparent 62%), var(--surface);
+    --feature-bg: linear-gradient(180deg, color-mix(in srgb, var(--accent) 12%, var(--surface)), var(--surface) 75%);
     --feature-border: var(--border);
   }
 }
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --page: #040605;
-  --shell: #070a08;
-  --panel: #0a0e0c;
-  --surface: #0e1311;
-  --surface-2: #151b18;
-  --text: #f0efec;
-  --text-2: #c3c2b7;
-  --text-muted: #9a988f;
-  --grid: #1d2420;
-  --axis: #2c3530;
-  --border: rgba(255, 255, 255, 0.09);
+  --page: #0a0a0a;
+  --shell: #0a0a0a;
+  --panel: #0a0a0a;
+  --surface: #171717;
+  --surface-2: #262626;
+  --text: #fafafa;
+  --text-2: #d4d4d4;
+  --text-muted: #a3a3a3;
+  --grid: rgba(255, 255, 255, 0.08);
+  --axis: rgba(255, 255, 255, 0.18);
+  --border: rgba(255, 255, 255, 0.10);
   --good-text: #4cc24c;
   --bad-text: #ff8a8a;
   --watch-text: #f0b84a;
@@ -106,11 +115,12 @@
   --s3: #199e70;
   --s4: #c98500;
   --s5: #d55181;
-  --glow: radial-gradient(55% 45% at 88% 0%, rgba(52, 211, 153, 0.20), transparent 70%), radial-gradient(40% 35% at 0% 100%, rgba(52, 211, 153, 0.07), transparent 70%);
+  --glow: radial-gradient(50% 40% at 90% 0%, rgba(52, 211, 153, 0.13), transparent 70%);
+  --sidebar-bg: #0f0f0f;
   --side-active-bg: var(--surface-2);
   --side-active-fg: var(--text);
   --side-active-ring: var(--border);
-  --feature-bg: radial-gradient(90% 120% at 100% 100%, rgba(52, 211, 153, 0.30), transparent 62%), var(--surface);
+  --feature-bg: linear-gradient(180deg, color-mix(in srgb, var(--accent) 12%, var(--surface)), var(--surface) 75%);
   --feature-border: var(--border);
 }
 
@@ -481,3 +491,149 @@ main:focus { outline: none; }
 /* Sign-in: the forgot-password link sits right under the password box; the second action is a full-width secondary button. */
 .pw-aside { display: flex; justify-content: flex-end; margin-top: -6px; }
 .btn.block { width: 100%; border-color: var(--axis); }
+
+/* ===== shadcn/ui alignment =====
+   Shapes, spacing and type follow shadcn/ui's "new-york" values (from its registry source): 10px base radius, cards at 14px with a 1px border,
+   shadow-sm and 24px padding and gaps, 36px controls with 8px corners, 14px text, tab-style segmented controls, a ring on focus, flat sidebar with a
+   subtle active row. Colour stays MyMoney's: neutral surfaces with the green accent as the primary colour.
+   This block comes last on purpose; the phone rules that must still win are repeated at its end. */
+html, body { font-size: 14px; }
+h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+h2 { font-size: 16px; font-weight: 600; line-height: 1.1; }
+h3 { font-size: 14px; font-weight: 600; }
+.sub { font-size: 14px; color: var(--text-muted); }
+.small { font-size: 13px; }
+
+/* Layout: sidebar on the left with a hairline, content on the page itself */
+.frame { max-width: none; padding: 0; }
+.shell { background: var(--glow) no-repeat, var(--page); border-radius: 0; padding: 0; gap: 0; box-shadow: none; grid-template-columns: 256px minmax(0, 1fr); min-height: 100vh; }
+.sidebar { position: sticky; top: 0; height: 100vh; max-height: 100vh; align-self: start; padding: 16px 12px; gap: 16px; border-right: 1px solid var(--border); background: var(--sidebar-bg); }
+.brand { font-size: 16px; font-weight: 600; padding: 0 8px; min-height: 36px; }
+.brand-mark { width: 28px; height: 28px; border-radius: var(--r-md); }
+.side-link { min-height: 36px; padding: 0 8px; gap: 8px; border-radius: var(--r-md); font-size: 14px; font-weight: 500; color: var(--text); }
+.side-link[aria-current='page'] { box-shadow: none; }
+.side-foot { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 12px; font-size: 13px; }
+.panel { background: transparent; border-radius: 0; padding: 24px 32px 56px; }
+.crumbs { padding-bottom: 20px; }
+.page { gap: 24px; }
+
+/* Cards: CardHeader (title, description, action), CardContent, CardFooter */
+.card { border-radius: var(--r-xl); padding: 24px; box-shadow: var(--shadow-sm); }
+.card > .card-head { align-items: flex-start; margin-bottom: 24px; }
+.card > .card-head > .card-titles { display: flex; flex-direction: column; gap: 6px; }
+.stat .label { font-size: 14px; color: var(--text-muted); }
+.stat .value { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+
+/* Summary cards on the Dashboard */
+.sumcard { padding: 0; }
+.sumcard .body { padding: 24px 24px 16px; gap: 16px; }
+.sumcard .title { font-size: 14px; font-weight: 500; }
+.sumcard .subtitle { font-size: 13px; color: var(--text-muted); }
+.sumcard .big { font-size: 30px; font-weight: 600; letter-spacing: -0.02em; }
+.sumcard .foot { background: transparent; border: 0; border-top: 1px solid var(--border); padding: 14px 24px; font-size: 14px; font-weight: 500; }
+.icon-tile { width: 40px; height: 40px; border-radius: var(--r-lg); }
+.sumcard.feature { color: var(--text); border-color: var(--feature-border); }
+.sumcard.feature .subtitle, .sumcard.feature .more { color: var(--text-muted); }
+.sumcard.feature .icon-tile { background: var(--surface-2); color: var(--accent-text); }
+.sumcard.feature .foot { background: transparent; color: var(--text); }
+.sumcard.feature .mini { color: var(--text-muted); }
+.sumcard.feature .mini b { color: var(--text); font-weight: 600; }
+.feature .dpill, .feature .dpill.watch, .feature .dpill.bad { background: var(--good-bg); color: var(--good-text); }
+.feature .dpill.watch { background: var(--watch-bg); color: var(--watch-text); }
+.feature .dpill.bad { background: var(--bad-bg); color: var(--bad-text); }
+.dpill { font-weight: 500; }
+.bigfig { font-weight: 600; letter-spacing: -0.02em; }
+
+/* Buttons: outline by default, filled for the primary action */
+.btn { border-radius: var(--r-md); border-color: var(--axis); font-size: 14px; font-weight: 500; padding: 8px 16px; box-shadow: var(--shadow-xs); }
+.btn.primary { border-color: transparent; box-shadow: none; font-weight: 500; }
+.btn.ghost { box-shadow: none; }
+.btn.small { min-height: 32px; padding: 4px 12px; font-size: 14px; }
+.btn.icon, .btn.icon.small { padding: 0; }
+.btn.icon.small { width: 32px; min-width: 32px; }
+.btn.danger-solid { box-shadow: none; }
+.btn.block { border-color: var(--axis); }
+.gbtn { border-radius: var(--r-md); font-weight: 500; font-size: 14px; padding: 8px 16px; min-height: var(--control); box-shadow: var(--shadow-xs); }
+.linkbtn { font-size: 14px; }
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .side-link:focus-visible, .tab:focus-visible, .choice:focus-visible, .gbtn:focus-visible, .pw-eye:focus-visible, .toast-btn:focus-visible, .toast-x:focus-visible {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring-soft);
+}
+.linkbtn:focus-visible, summary:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring-soft); }
+
+/* Inputs: Label above, 36px field */
+.field { font-size: 14px; color: var(--text); gap: 8px; }
+.field > label, label.field > span:first-child { font-weight: 500; color: var(--text); }
+.field .hint { font-weight: 400; color: var(--text-muted); font-size: 13px; }
+.field input, .field select, .field textarea, .inline-input { border-radius: var(--r-md); border-color: var(--axis); padding: 4px 12px; font-size: 14px; box-shadow: var(--shadow-xs); background: var(--surface); }
+.pw-eye { border-radius: var(--r-sm); }
+.form-grid { gap: 16px; }
+
+/* Tables: no header band, hairline rows */
+.table th { background: none; text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 500; color: var(--text-muted); padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.table th:first-child, .table th:last-child { border-radius: 0; }
+.table td { padding: 12px; border-bottom: 1px solid var(--border); }
+.table tr:last-child td { border-bottom: 0; }
+.table.cards tr { border-color: var(--border); border-radius: var(--r-xl); }
+
+/* Badges, alerts, progress */
+.badge { font-weight: 500; }
+.cat-pill { font-weight: 500; }
+.callout { border-radius: var(--r-lg); padding: 12px 16px; border: 1px solid transparent; }
+.callout.good { border-color: color-mix(in srgb, var(--good-text) 22%, transparent); }
+.callout.bad { border-color: color-mix(in srgb, var(--bad-text) 22%, transparent); }
+.callout.watch { border-color: color-mix(in srgb, var(--watch-text) 22%, transparent); }
+.callout.info { border-color: color-mix(in srgb, var(--accent) 22%, transparent); }
+.hbar-track, .progress { height: 8px; border-radius: 999px; }
+.hbar-fill, .progress > div { border-radius: 999px; }
+.stackbar { border-radius: var(--r-sm); }
+
+/* Segmented controls look like shadcn Tabs: a muted track with a raised active segment */
+.pill-toggle { background: var(--surface-2); border: 0; border-radius: var(--r-lg); padding: 3px; gap: 2px; }
+.pill-toggle button { border-radius: var(--r-md); font-size: 14px; font-weight: 500; color: var(--text-muted); padding: 4px 12px; }
+.pill-toggle button[aria-pressed='true'] { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--border); }
+
+/* Chart tooltip: shadcn ChartTooltip */
+.tip { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 6px 10px; font-size: 12px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+.tip .t { font-weight: 500; margin-bottom: 4px; }
+.tip i { width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; }
+.legend { font-size: 12px; color: var(--text-muted); }
+.legend i { border-radius: 2px; }
+
+/* Toasts (Sonner style) and Dialog */
+.toast { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+.toast-btn { background: color-mix(in srgb, var(--text) calc(var(--hv, 0) * 8%), transparent); color: var(--accent-text); font-weight: 500; }
+.toast-x { background: color-mix(in srgb, var(--text) calc(var(--hv, 0) * 8%), transparent); color: var(--text-muted); }
+dialog.modal { border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+.modal-body { padding: 24px; gap: 16px; }
+.choice { border-radius: var(--r-xl); }
+.authcard { padding: 24px; }
+.disclaimer { border-top-color: var(--border); }
+
+/* Phones and touch screens: the rules above must not undo these */
+@media (max-width: 899px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { display: none; }
+  .panel { padding: 16px 16px 96px; }
+  .page { gap: 20px; }
+}
+@media (max-width: 599px) {
+  .card { padding: 16px; }
+  .card > .card-head { margin-bottom: 16px; }
+  .sumcard .body { padding: 20px 16px 12px; }
+  .sumcard .foot { padding: 12px 16px; }
+  .sumcard { padding: 0; }
+  .g4 > .card, .g4 > .stat { padding: 14px; }
+  .pill-toggle { padding: 0; gap: 0; border: 0; box-shadow: none; }
+  .crumbs .pill-toggle button { padding: 0 9px; font-size: 14px; }
+}
+@media (pointer: coarse), (max-width: 599px) {
+  :root { --control: 44px; }
+  .btn.small { min-height: var(--tap); padding: 8px 16px; }
+  .btn.icon.small { width: var(--tap); min-width: var(--tap); padding: 0; }
+  .field input, .field select, .field textarea, .inline-input { font-size: 16px; }
+  .pill-toggle button { min-height: var(--tap); }
+}
+@media (min-width: 600px) and (pointer: fine) {
+  :root { --control: 36px; }
+  .pill-toggle button { min-height: 32px; }
+}
