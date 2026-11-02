@@ -147,6 +147,7 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     p = await newPage(browser);
     await signUp(p, 'ann@test.dev');
     await p.getByRole('button', { name: 'Explore with sample data' }).click();
+    await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
     check(await savedChip(p), 'after sign-up the app shows "All changes saved"');
     const s1 = await until(async () => { const s = await state(); const r = s.rows[0]; return r && r.data.txns.length > 100 ? s : false; });
     check(!!s1, 'sample data was saved to the account row on the server');
@@ -276,6 +277,7 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     p = await newPage(browser);
     await signUp(p, 'dup@test.dev');
     await p.getByRole('button', { name: 'Explore with sample data' }).click().catch(() => {});
+    await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 4000 }).catch(() => {});
     await savedChip(p);
     await p.getByRole('button', { name: 'Sign out' }).first().click();
     await p.getByRole('heading', { name: 'Sign in to MyMoney' }).waitFor();
@@ -320,6 +322,7 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     check(!p.url().includes('code='), 'the one-time code is removed from the address bar');
     await p.getByLabel('What should we call you?').fill('Asha');
     await p.getByRole('button', { name: 'Start with my own data' }).click();
+    await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
     await nav(p, 'Settings');
     check(await shown(p.getByText('Signed in with Google.')), 'Settings says the account uses Google');
     check((await shown(p.getByText('there is no MyMoney password to change'))) && (await p.getByRole('button', { name: 'Change password' }).count()) === 0, 'a Google-only account is not offered a password change');
@@ -332,6 +335,7 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     await signUp(p, 'rita@test.dev');
     await p.getByLabel('What should we call you?').fill('Asha');
     await p.getByRole('button', { name: 'Start with my own data' }).click();
+    await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
     await savedChip(p);
     await p.getByRole('button', { name: 'Sign out' }).first().click();
     await p.getByRole('heading', { name: 'Sign in to MyMoney' }).waitFor({ timeout: 8000 });
@@ -376,6 +380,7 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     check(await p.getByRole('button', { name: 'Start with my own data' }).waitFor({ timeout: 8000 }).then(() => true, () => false), 'the right code signs the user in');
     await p.getByLabel('What should we call you?').fill('Asha');
     await p.getByRole('button', { name: 'Start with my own data' }).click();
+    await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
     check(await p.getByText('+919876543210').first().waitFor({ timeout: 8000 }).then(() => true, () => false), 'the sidebar shows the phone number, not a blank');
     await savedChip(p);
     await p.getByRole('button', { name: 'Sign out' }).first().click();

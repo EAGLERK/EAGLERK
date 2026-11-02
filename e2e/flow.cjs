@@ -44,6 +44,7 @@ const check = (ok, msg) => {
   check(await page.getByRole('heading', { name: 'Hi, Asha' }).waitFor({ timeout: 6000 }).then(() => true, () => false), 'dashboard greets the person by name');
   const place = await page.evaluate(() => { const h = document.querySelector('.page-head h1').getBoundingClientRect(); const m = document.querySelector('main').getBoundingClientRect(); return h.left - m.left < 8 && h.left < m.left + m.width / 3; });
   check(place, 'the greeting is on the left of the dashboard header');
+  await page.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
   check(await page.getByText('Nothing here yet').isVisible(), 'empty dashboard shows onboarding card');
 
   if (investing) {

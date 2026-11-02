@@ -2,6 +2,9 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { ConfirmProvider, ToastProvider } from './components/feedback';
 import { Icon, type IconName } from './components/icons';
 import { Logo } from './components/Logo';
+import { Notifications } from './components/Notifications';
+import { Tour } from './components/Tour';
+import { WelcomeDialog } from './components/WelcomeDialog';
 import { features } from './features';
 import { Dashboard } from './views/Dashboard';
 import { Goals } from './views/Goals';
@@ -41,30 +44,6 @@ function suggestedName(user: { user_metadata?: Record<string, unknown> } | null 
   const m = user?.user_metadata ?? {};
   const full = (typeof m.full_name === 'string' && m.full_name) || (typeof m.name === 'string' && m.name) || '';
   return full.trim();
-}
-
-/** First screen: asks what to call you, then starts empty or with sample data. */
-function Welcome({ suggestedName: suggested, onStart, onDemo }: { suggestedName: string; onStart: (name: string) => void; onDemo: (name: string) => void }) {
-  const [name, setName] = useState(suggested);
-  const ready = name.trim().length > 0;
-  return (
-    <div className="frame">
-      <form className="card hero" style={{ marginTop: 48 }} onSubmit={(e) => { e.preventDefault(); if (ready) onStart(name); }}>
-        <Logo />
-        <h1>Welcome to MyMoney</h1>
-        <p>See where your money goes each month, plan a car, house and bike, {features.investing ? 'and find out what to do with the surplus: FD, RD, PPF, mutual funds, or paying down debt.' : 'and see what each one will cost you.'} Everything stays in this browser.</p>
-        <div className="field welcome-name">
-          <label htmlFor="your-name">What should we call you?</label>
-          <input id="your-name" autoFocus autoComplete="given-name" placeholder="Your name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <div className="row" style={{ justifyContent: 'center' }}>
-          <button className="btn primary" type="submit" disabled={!ready}>Start with my own data</button>
-          <button className="btn" type="button" onClick={() => onDemo(name)}>Explore with sample data</button>
-        </div>
-        {!ready && <p className="why" role="status">Enter your name to start with your own data.</p>}
-      </form>
-    </div>
-  );
 }
 
 function Shell() {
@@ -113,9 +92,7 @@ function Shell() {
   }, [tab]);
   const current = ALL.find((t) => t.id === tab) ?? ALL[0];
 
-  if (!state.onboarded) {
-    return <Welcome suggestedName={suggestedName(auth?.user)} onStart={(name) => dispatch({ type: 'startFresh', name })} onDemo={(name) => dispatch({ type: 'loadDemo', name })} />;
-  }
+  const startTour = () => { go('dashboard'); dispatch({ type: 'tour', done: false }); };
 
   return (
     <div className="frame">
@@ -125,7 +102,7 @@ function Shell() {
           <div className="brand"><Logo />MyMoney</div>
           <nav aria-label="Sections" className="side-group">
             {ALL.map((t) => (
-              <button key={t.id} className="side-link" aria-current={tab === t.id ? 'page' : undefined} onClick={() => go(t.id)}>
+              <button key={t.id} className="side-link" data-tour={`nav-${t.id}`} aria-current={tab === t.id ? 'page' : undefined} onClick={() => go(t.id)}>
                 <Icon name={t.icon} />{t.label}
               </button>
             ))}
@@ -155,7 +132,8 @@ function Shell() {
           <div className="crumbs">
             <div className="path">MyMoney<span className="crumb-rest"> &rsaquo; <b>{current.label}</b></span></div>
             {state.txns.some((t) => t.source === 'demo') && <span className="badge watch">Sample data</span>}
-            <div className="pill-toggle theme-switch" role="group" aria-label="Colour theme">
+            {state.onboarded && <Notifications go={go} onTour={startTour} />}
+            <div className="pill-toggle theme-switch" data-tour="theme" role="group" aria-label="Colour theme">
               {THEMES.map(({ id, label, icon }) => <button key={id} aria-pressed={theme === id} aria-label={label} title={label} onClick={() => setTheme(id)}><Icon name={icon} size={18} /></button>)}
             </div>
           </div>
@@ -172,11 +150,14 @@ function Shell() {
 
       <nav className="tabbar" aria-label="Sections">
         {ALL.map((t) => (
-          <button key={t.id} className="tab" aria-current={tab === t.id ? 'page' : undefined} onClick={() => go(t.id)}>
+          <button key={t.id} className="tab" data-tour={`nav-${t.id}`} aria-current={tab === t.id ? 'page' : undefined} onClick={() => go(t.id)}>
             <Icon name={t.icon} size={22} />{t.short}
           </button>
         ))}
       </nav>
+
+      {!state.onboarded && <WelcomeDialog suggestedName={suggestedName(auth?.user)} onStart={(name) => dispatch({ type: 'startFresh', name })} onDemo={(name) => dispatch({ type: 'loadDemo', name })} />}
+      {state.onboarded && !state.tourDone && <Tour onFinish={() => dispatch({ type: 'tour', done: true })} />}
     </div>
   );
 }

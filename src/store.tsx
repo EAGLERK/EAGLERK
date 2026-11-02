@@ -17,6 +17,12 @@ export interface AppState {
   /** User overrides keyed by assumption key. */
   overrides: Record<string, number>;
   onboarded: boolean;
+  /** The first-time tour has been finished or skipped. */
+  tourDone?: boolean;
+  /** Ids of alerts the person has read. */
+  alertsRead?: string[];
+  /** When a backup file was last downloaded (YYYY-MM-DD), for the backup reminder. */
+  lastBackupAt?: string;
 }
 
 export const EMPTY_PROFILE: Profile = {
@@ -50,6 +56,9 @@ export type Action =
   | { type: 'override'; key: string; value: number | null }
   | { type: 'loadDemo'; name?: string }
   | { type: 'startFresh'; name?: string }
+  | { type: 'tour'; done: boolean }
+  | { type: 'readAlerts'; ids: string[] }
+  | { type: 'backedUp'; at: string }
   | { type: 'replace'; state: AppState };
 
 const upsert = <T extends { id: string }>(list: T[], item: T) => (list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item]);
@@ -80,9 +89,12 @@ function reducer(s: AppState, a: Action): AppState {
     case 'loadDemo': {
       const demo = demoData();
       const name = a.name?.trim();
-      return { ...s, ...demo, profile: name ? { ...demo.profile, name } : demo.profile, onboarded: true };
+      return { ...s, ...demo, profile: name ? { ...demo.profile, name } : demo.profile, onboarded: true, tourDone: s.tourDone, alertsRead: s.alertsRead };
     }
-    case 'startFresh': return { ...initial, profile: { ...initial.profile, name: a.name?.trim() ?? '' }, onboarded: true };
+    case 'startFresh': return { ...initial, profile: { ...initial.profile, name: a.name?.trim() ?? '' }, onboarded: true, tourDone: s.tourDone, alertsRead: s.alertsRead };
+    case 'tour': return { ...s, tourDone: a.done };
+    case 'readAlerts': return { ...s, alertsRead: [...new Set([...(s.alertsRead ?? []), ...a.ids])].slice(-300) };
+    case 'backedUp': return { ...s, lastBackupAt: a.at };
     case 'replace': return a.state;
   }
 }

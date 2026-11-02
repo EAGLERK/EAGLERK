@@ -62,8 +62,14 @@ One card with an Import button at the top right. Clicking it opens the file choo
 ### Logo
 A blocky "M" (two pillars under a stepped bar, a block hanging between them), in `src/components/Logo.tsx` on a 100-unit grid. App icon form: mint `#34d399` M on a near-black `#0a0a0a` tile with a faint inner ring, the same in light and dark mode. Plain forms live in `docs/brand/`: `logo-mark.svg` (tile), `logo-glyph-mint.svg` (on dark), `logo-glyph-green.svg` (`#0d7a4e`, on light), and `logo-preview.png`. The browser tab icon in `index.html` is the same tile. It is an original construction inspired by the owner's reference image, which carries a registered-trademark sign; do not copy that reference's exact shape or its ®.
 
-### Welcome and greeting
-The first screen asks "What should we call you?" before anything else. "Start with my own data" stays disabled with a visible reason until a name is entered; "Explore with sample data" keeps the typed name. Google accounts offer their name as a suggestion. The Dashboard header's left side then reads "Hi, <name>" over "Overview of your money for <month>", on both the filled and the empty Dashboard. With no name it reads "Overview". Erasing all data or replacing it with sample data keeps the name.
+### Welcome popup and greeting
+After sign-up (or on the first visit without an account) a modal popup opens over the Dashboard, built like the sign-in card: logo, title ("Let's set up your profile"), one line of purpose, a "What should we call you?" field, a primary "Start with my own data" and a full-width secondary "Explore with sample data". It cannot be dismissed (Escape and the backdrop do nothing); Start stays disabled with a visible reason until a name is entered, and sample data keeps the typed name. Google accounts offer their name as a suggestion. The Dashboard header's left side then reads "Hi, <name>" over "Overview of your money for <month>", filled or empty. Erasing or replacing data keeps the name.
+
+### First-time tour
+Six tooltips with a highlight ring and an arrow, shown once right after setup and replayable from Settings or from the welcome alert: the green button, Transactions (import), Goals, the bell, the theme switch, Settings. They point at real controls (sidebar on desktop, tab bar on phones, first visible match) and stay on screen. Next, Back, Skip tour, Escape. Done or skipped is saved in the account data (`tourDone`), so it does not repeat on another device. Tips that do not exist on a screen are left out.
+
+### Notifications
+A bell in the header, beside the theme switch, with an unread count. The panel lists alerts newest-priority first (important, heads up, info), each with a reason and an action; "Mark all as read"; read state is saved (`alertsRead`). Alerts are worked out from the data in `src/engine/alerts.ts`, never invented: overspending in the last complete month, categories well above the person's own average, EMIs over 40% of income, goals needing more than the surplus, many "Other" rows, no new transactions for 35 days, a backup older than 30 days (local-only users with 20+ transactions), account saving problems, a welcome note, and "add your first transactions". Sample data does not trigger import or backup reminders. Browser alerts (Settings): system notifications for important alerts that appear while the tab is in the background; they work only while MyMoney is open in a tab, because there is no push service.
 
 ### Forms
 Label above the field, required fields marked, Cancel beside Save, and a visible reason when Save is disabled. Password boxes have the show/hide eye inside the field.
@@ -92,6 +98,7 @@ All motion is GSAP (3.15, core only), written in `src/motion/index.ts`. Do not a
 | Decision | Rationale | Date |
 |----------|-----------|------|
 | Logo is a blocky M in mint on a dark tile, replacing the line-chart icon | Owner supplied a mint M reference in the brand colour; drawn as an original vector, not traced | 2026-11-02 |
+| Welcome is a modal popup over the Dashboard, a six-tip tour follows, and a notification bell with data-driven alerts and optional browser alerts was added | Owner asked | 2026-11-02 |
 | The first screen asks for a name; the Dashboard greets "Hi, <name>" at the left of its header | Owner asked | 2026-11-02 |
 | Import opens the file chooser directly; imported files are listed with a Remove button | Owner asked: no box to open, and a way to take an import back from the same place | 2026-11-02 |
 | Look aligned with shadcn/ui: neutral surfaces, 14px cards with border and shadow, 36px controls, tab-style toggles, flat sidebar | Owner asked; values taken from shadcn's own registry source rather than memory | 2026-11-02 |

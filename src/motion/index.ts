@@ -106,4 +106,16 @@ export function dialogIn(el: HTMLElement) {
   gsap.fromTo(el, { opacity: 0, y: 12, scale: 0.97, '--bd': 0 }, { opacity: 1, y: 0, scale: 1, '--bd': 1, duration: DUR.enter, clearProps: 'opacity,transform,--bd' });
 }
 
+/** A popover (notifications, tour tip) fades in from just beside where it will rest. */
+export function popIn(el: HTMLElement, from: { x?: number; y?: number } = { y: 6 }) {
+  if (reducedMotion()) return;
+  gsap.fromTo(el, { opacity: 0, x: from.x ?? 0, y: from.y ?? 0, scale: 0.98 }, { opacity: 1, x: 0, y: 0, scale: 1, duration: DUR.enter, clearProps: 'opacity,transform' });
+}
+
+/** The tour spotlight glides to the next target instead of jumping. */
+export function moveRing(el: HTMLElement, rect: { left: number; top: number; width: number; height: number }, instant: boolean) {
+  if (instant || reducedMotion()) gsap.set(el, rect);
+  else gsap.to(el, { ...rect, duration: 0.3, overwrite: 'auto' });
+}
+
 export { gsap };

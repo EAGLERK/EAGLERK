@@ -8,6 +8,7 @@ const investing = process.env.INVESTING === '1';
 
 let failed = 0;
 const check = (ok, msg) => { console.log((ok ? 'PASS ' : 'FAIL ') + msg); if (!ok) failed++; };
+const skipTour = (pg) => pg.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
 const shown = (loc) => loc.waitFor({ timeout: 6000 }).then(() => true, () => false);
 
 /** Interactive controls inside <main> (and the tab bar) that are smaller than `min` px tall. A checkbox counts as its label row. */
@@ -32,6 +33,7 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     const ph = await phoneCtx.newPage();
     await ph.goto(URL);
     await ph.getByRole('button', { name: 'Explore with sample data' }).click();
+    await skipTour(ph);
     const phoneTabs = investing ? ['Home', 'Activity', 'Goals', 'Invest', 'Plan', 'Settings'] : ['Home', 'Activity', 'Goals', 'Settings'];
     for (const tab of phoneTabs) {
       await ph.getByRole('navigation').getByRole('button', { name: tab, exact: true }).click();
@@ -55,6 +57,7 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     p.on('pageerror', (e) => errors.push(e.message));
     await p.goto(URL);
     await p.getByRole('button', { name: 'Explore with sample data' }).click();
+    await skipTour(p);
     const nav = (n) => p.getByRole('navigation').getByRole('button', { name: n, exact: true }).click();
 
     const deskTabs = investing ? ['Dashboard', 'Transactions', 'Goals', 'Investments', 'Settings'] : ['Dashboard', 'Transactions', 'Goals', 'Settings'];
@@ -125,6 +128,7 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     const cp = await calm.newPage();
     await cp.goto(URL);
     await cp.getByRole('button', { name: 'Explore with sample data' }).click();
+    await skipTour(cp);
     const cb = cp.getByRole('button', { name: 'Add transaction' });
     const cbox = await cb.boundingBox();
     await cp.mouse.move(cbox.x + cbox.width / 2, cbox.y + cbox.height / 2);

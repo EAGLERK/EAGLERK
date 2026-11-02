@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { Assumption } from '../engine/assumptions';
 import { Badge, Callout, Card, Field, Num, NumInput, PasswordInput, Toggle } from '../components/ui';
+import { NotificationSettings } from '../components/Notifications';
 import { pct } from '../lib/format';
 import { Icon } from '../components/icons';
 import { useConfirm, useToast } from '../components/feedback';
@@ -53,6 +54,7 @@ export function Settings() {
     a.download = `mymoney-backup-${d.today}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
+    dispatch({ type: 'backedUp', at: d.today });
   };
 
   const restore = (text: string) => {
@@ -73,6 +75,7 @@ export function Settings() {
     setBackupText(text);
     try {
       await navigator.clipboard.writeText(text);
+      dispatch({ type: 'backedUp', at: d.today });
       setMsg({ tone: 'good', text: 'Backup copied. Paste it somewhere safe.' });
     } catch {
       setMsg({ tone: 'good', text: 'Select the text below and copy it.' });
@@ -127,6 +130,12 @@ export function Settings() {
             </div>
           ))}
         </div>
+      </Card>
+
+      <NotificationSettings />
+
+      <Card title="Quick tour" sub="Six short tips that point at the main controls. They appear once; you can replay them here.">
+        <button className="btn" onClick={() => { location.hash = 'dashboard'; dispatch({ type: 'tour', done: false }); }}>Take the tour again</button>
       </Card>
 
       <Card title="Your data" sub={auth?.user ? 'Stored in your MyMoney account and synced across your devices. Other users cannot read it.' : 'Everything is stored in this browser only. Nothing is sent anywhere.'}>

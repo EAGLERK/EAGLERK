@@ -30,6 +30,14 @@ npm run dev:auth-demo   # try the sign-in screens at http://localhost:5177 with 
 
 Click **Explore with sample data** on first launch to see every screen populated.
 
+## First run, tour and alerts
+
+- **Welcome popup:** the first time, a popup over the Dashboard asks what to call you, then starts empty or with sample data.
+- **Tour:** six tooltips point at the main controls once. Replay them from Settings, Quick tour.
+- **Bell:** alerts worked out from your own data (overspending, goals that do not fit, heavy EMIs, uncategorised rows, stale data, backup and sync problems), each with a reason and a button. The rules are in `src/engine/alerts.ts` with tests in `tests/alerts.test.ts`.
+- **Browser alerts:** Settings, Notifications. Important alerts that appear while MyMoney is open in a background tab also show as system notifications. There is no push service, so nothing arrives when the app is closed; adding that would need a small server, a service worker and a push key.
+- Tests: `npm run e2e:welcome`.
+
 ## Importing a bank statement
 
 Transactions has one Import button. Choose a file and it is read at once; each imported file is listed with a Remove button.
