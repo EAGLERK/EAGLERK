@@ -59,6 +59,20 @@ No `window.confirm`. Single deletes show a toast with Undo. Bulk or irreversible
 ### Navigation
 Flat list, no group headings: Dashboard, Transactions, Goals, Settings (Investments and Plan return when `VITE_FEATURE_INVESTING=1`). Sidebar on desktop, bottom tab bar on phones. Focus moves to `<main>` on every route change; first Tab stop is "Skip to main content".
 
+## Motion
+
+All motion is GSAP (3.15, core only, no plugins), written in `src/motion/index.ts`. Do not add CSS `transition`, `animation` or `@keyframes`; `e2e/ui.cjs` fails if any CSS transition or animation runs on hover, press, toast or dialog.
+
+- **Press:** buttons, choice cards and tabs scale to 0.97 in 120ms and settle back with a small overshoot. Sidebar links 0.985, tab bar 0.94.
+- **Hover (mouse and pen only, never touch):** GSAP animates a `--hv` value from 0 to 1 in 160ms and CSS derives the look from it (brighter primary, tinted pill, border on choice cards). New hoverable controls need to be added to `HOVERABLE` in the motion file and read `--hv` in CSS.
+- **Screens:** content fades in over 200ms. Opacity only, so nothing moves under a cursor that is already heading for a button.
+- **Dashboard:** the summary cards fade in 60ms apart, once per visit. This is the one orchestrated moment.
+- **Toasts:** rise 10px while fading in (220ms), leave faster (160ms).
+- **Confirm dialog:** grows from 97% while the backdrop fades up (`--bd`).
+- **3D scene:** each model turns on a looping GSAP tween, the pedestals rise in once, and GSAP's ticker is the render loop. Stills for the PNG illustrations render one frame.
+- **Reduced motion:** every function returns early when the device asks for reduced motion, and the 3D scene stays still.
+- Instant on purpose: keyboard focus rings, and the borderless-until-hover category menus in the transaction list.
+
 ## Decisions
 
 | Decision | Rationale | Date |
@@ -72,6 +86,7 @@ Flat list, no group headings: Dashboard, Transactions, Goals, Settings (Investme
 | Row category menus are borderless until hover or focus (mouse devices only) | 197 bordered boxes buried the amounts; touch keeps visible borders | 2026-10-31 |
 | Dark mode redrawn from the owner's dark dashboard reference | Near-black surfaces, mint accent, corner glow; contrast measured (all text pairs above 6:1) | 2026-10-31 |
 | Theme switcher is three icon buttons with spoken names | Owner asked for icons; each is 44px on phones and tested in `e2e/ui.cjs` | 2026-10-31 |
+| All animation moved to GSAP, none left in CSS | Owner asked; one file holds timings and curves, and a test fails if CSS motion returns | 2026-11-02 |
 | Sidebar headings (Track / Plan / General) removed | Owner asked for one flat list | 2026-10-31 |
 | Investing hidden behind `VITE_FEATURE_INVESTING` | Owner asked to remove it for now; nothing deleted | 2026-10-30 |
 

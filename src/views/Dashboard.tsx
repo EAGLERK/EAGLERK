@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { addMonths, insights, series, summarize } from '../engine/cashflow';
 import { planGoal } from '../engine/goals';
 import { Icon, type IconName } from '../components/icons';
@@ -6,6 +6,7 @@ import { Badge, Callout, Card, Delta, Empty, Toggle } from '../components/ui';
 import { HBars, IncomeSpendChart, StackedBar } from '../components/charts';
 import { inr, inrCompact, monthLabel, monthsText, pct } from '../lib/format';
 import { features } from '../features';
+import { cascade } from '../motion';
 import { useStore } from '../store';
 
 export const GROUP_COLOR = { income: 'var(--s1)', needs: 'var(--s1)', wants: 'var(--s2)', savings: 'var(--s3)' } as const;
@@ -55,6 +56,9 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
   const trend = useMemo(() => series(state.txns, month, Number(range)), [state.txns, month, range]);
   const notes = useMemo(() => insights(state.txns, month), [state.txns, month]);
   const recent = useMemo(() => [...state.txns].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8), [state.txns]);
+  const page = useRef<HTMLDivElement>(null);
+  // The summary cards arrive one after another, once each time the Dashboard opens (not when the month changes).
+  useEffect(() => { if (page.current) cascade(page.current.querySelectorAll('.sumgrid > *')); }, []);
 
   if (state.txns.length === 0 && (!features.investing || state.investments.length === 0) && state.goals.length === 0) {
     return (
@@ -81,7 +85,7 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
   const goalPlan = nextGoal ? planGoal(nextGoal, ctx) : null;
 
   return (
-    <div className="page">
+    <div className="page" ref={page}>
       <div className="page-head">
         <div>
           <h1>Overview</h1>

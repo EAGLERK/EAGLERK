@@ -18,6 +18,10 @@ Copied from https://github.com/anthropics/skills (commit `ca45fc4`, Apache-2.0, 
 - When the design skills disagree, prefer `.interface-design/system.md`, then `interface-design`.
 - `frontend-design`, `design-taste-frontend`, `hallmark` and `ui-ux-pro-max` overlap. If both load for one task, follow the design system first, then use one of them, not both.
 
+## Motion
+
+All animation uses GSAP through `src/motion/index.ts`. Do not add CSS transitions, animations or keyframes, and do not call `requestAnimationFrame` for visuals; use `gsap.ticker`. Respect reduced motion by going through the helpers in that file. Details and timings are in `.interface-design/system.md`. GSAP's licence is free for this use ("no charge" standard licence, https://gsap.com/standard-license), but read it before shipping a product whose main purpose is a visual animation builder.
+
 ## Checks before pushing
 
 `npx tsc --noEmit -p .`, `npx vitest run`, and the e2e suites against a running dev server. Investing is hidden by default; run the suites a second time with `VITE_FEATURE_INVESTING=1` on the server and `INVESTING=1` on the test command.

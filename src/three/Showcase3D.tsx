@@ -5,6 +5,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { buildBike, buildCar, buildHouse, disposeTree } from './models';
+import { gsap, reducedMotion } from '../motion';
 
 export type Which = 'all' | 'car' | 'house' | 'bike';
 
@@ -69,6 +70,7 @@ export default function Showcase3D({ only = 'all', still = false }: Props) {
     ];
     const shown = items.filter((i) => only === 'all' || i.key === only);
     const spinners: Array<{ obj: Group; speed: number }> = [];
+    const holders: Group[] = [];
     const disposables: Group[] = [];
     shown.forEach((it, i) => {
       const holder = new Group();
@@ -79,6 +81,7 @@ export default function Showcase3D({ only = 'all', still = false }: Props) {
       obj.scale.setScalar(it.scale);
       holder.add(obj);
       scene.add(holder);
+      holders.push(holder);
       disposables.push(holder);
       spinners.push({ obj, speed: 0.35 + i * 0.05 });
     });
@@ -119,21 +122,26 @@ export default function Showcase3D({ only = 'all', still = false }: Props) {
     const ro = new ResizeObserver(fit);
     ro.observe(el);
 
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    let raf = 0;
-    let last = performance.now();
-    const frame = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
-      if (!still && !reduce) for (const s of spinners) s.obj.rotation.y += s.speed * dt;
+    // GSAP drives everything that moves: each model turns on a looping tween, the pedestals rise in once,
+    // and the render loop is GSAP's ticker. Stills (used for the PNG illustrations) render a single frame.
+    const tweens: gsap.core.Animation[] = [];
+    if (!still && !reducedMotion()) {
+      spinners.forEach((sp) => tweens.push(gsap.to(sp.obj.rotation, { y: `+=${Math.PI * 2}`, duration: (Math.PI * 2) / sp.speed, ease: 'none', repeat: -1 })));
+      holders.forEach((h, i) => {
+        tweens.push(gsap.from(h.position, { y: -1.4, duration: 0.9, delay: 0.08 + i * 0.12, ease: 'power3.out' }));
+        tweens.push(gsap.from(h.scale, { x: 0.82, y: 0.82, z: 0.82, duration: 0.9, delay: 0.08 + i * 0.12, ease: 'back.out(1.4)' }));
+      });
+    }
+    const frame = () => {
       controls?.update();
       renderer.render(scene, camera);
-      if (!still) raf = requestAnimationFrame(frame);
+      if (still) gsap.ticker.remove(frame);
     };
-    raf = requestAnimationFrame(frame);
+    gsap.ticker.add(frame);
 
     return () => {
-      cancelAnimationFrame(raf);
+      gsap.ticker.remove(frame);
+      tweens.forEach((t) => t.kill());
       ro.disconnect();
       controls?.dispose();
       disposables.forEach(disposeTree);

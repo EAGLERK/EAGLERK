@@ -87,6 +87,54 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     check(!(await p.getByRole('heading', { name: 'New transaction' }).isVisible()), 'Cancel closes the form');
     check((await p.evaluate(() => location.hash)) === '#transactions', 'closing the form leaves a plain #transactions address');
 
+    // ---------- motion: all of it comes from GSAP, none from CSS ----------
+    const cssMotion = () => p.evaluate(() => document.getAnimations().filter((a) => a instanceof CSSTransition || a instanceof CSSAnimation).length);
+    await nav('Dashboard');
+    await p.waitForTimeout(700);
+    const addBtn = p.getByRole('button', { name: 'Add transaction' });
+    const box = await addBtn.boundingBox();
+    const look = () => addBtn.evaluate((e) => ({ transform: getComputedStyle(e).transform, filter: getComputedStyle(e).filter, hv: e.style.getPropertyValue('--hv') }));
+    await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await p.waitForTimeout(350);
+    const hovered = await look();
+    check(hovered.filter === 'brightness(1.08)' && Number(hovered.hv) === 1, `hover: the primary button brightens (${hovered.filter}), driven by GSAP`);
+    check((await cssMotion()) === 0, 'hover: no CSS transition is running');
+    await p.mouse.down();
+    await p.waitForTimeout(250);
+    const pressedLook = await look();
+    check(/^matrix\(0\.9[5-8]/.test(pressedLook.transform), `press: the button shrinks slightly (${pressedLook.transform})`);
+    check((await cssMotion()) === 0, 'press: no CSS transition is running');
+    await p.mouse.move(2, 2); // leave before releasing, so nothing is clicked
+    await p.mouse.up();
+    await p.waitForTimeout(600);
+    const rest = await look();
+    check(rest.transform === 'none' && rest.hv === '', 'release: the button returns to rest and GSAP leaves no inline styles behind');
+
+    await p.getByRole('navigation').getByRole('button', { name: 'Transactions', exact: true }).click();
+    await p.waitForTimeout(400);
+    await p.locator('button[aria-label^="Delete "]').first().click();
+    check(await shown(p.locator('.toast', { hasText: 'Transaction deleted' })) && (await cssMotion()) === 0, 'toast: appears with no CSS animation');
+    await p.getByRole('button', { name: 'Dismiss notification' }).first().click();
+    await p.waitForTimeout(800);
+    check((await p.locator('.toast').count()) === 0, 'toast: leaves the page after its exit animation');
+    await p.getByRole('button', { name: 'Delete all' }).click();
+    check(await shown(p.getByRole('dialog')) && (await cssMotion()) === 0, 'dialog: opens with no CSS animation');
+    await p.keyboard.press('Escape');
+
+    const calm = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+    const cp = await calm.newPage();
+    await cp.goto(URL);
+    await cp.getByRole('button', { name: 'Explore with sample data' }).click();
+    const cb = cp.getByRole('button', { name: 'Add transaction' });
+    const cbox = await cb.boundingBox();
+    await cp.mouse.move(cbox.x + cbox.width / 2, cbox.y + cbox.height / 2);
+    await cp.mouse.down();
+    await cp.waitForTimeout(300);
+    check((await cb.evaluate((e) => getComputedStyle(e).transform)) === 'none' && (await cb.evaluate((e) => e.style.getPropertyValue('--hv'))) === '', 'reduced motion: no press or hover movement at all');
+    await cp.mouse.move(2, 2);
+    await cp.mouse.up();
+    await calm.close();
+
     // ---------- undo a single delete ----------
     const before = await count(p);
     await p.locator('button[aria-label^="Delete "]').first().click();

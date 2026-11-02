@@ -13,6 +13,7 @@ import { AuthGate } from './auth/AuthGate';
 import { CloudStore, useSync } from './auth/CloudStore';
 import { authFeatures } from './auth/supabase';
 import { StoreProvider, useStore } from './store';
+import { installControlMotion, routeIn } from './motion';
 
 interface Tab { id: string; label: string; short: string; icon: IconName }
 const THEMES: Array<{ id: Theme; label: string; icon: IconName }> = [
@@ -67,6 +68,9 @@ function Shell() {
     return () => window.removeEventListener('hashchange', on);
   }, []);
 
+  // One set of listeners gives every control its press and hover motion.
+  useEffect(() => installControlMotion(), []);
+
   const go = (t: string) => { location.hash = t; setRoute(t); window.scrollTo({ top: 0 }); };
 
   // After moving to another screen, put keyboard and screen-reader focus on the new content.
@@ -76,6 +80,7 @@ function Shell() {
     if (prevTab.current === tab) return;
     prevTab.current = tab;
     mainRef.current?.focus({ preventScroll: true });
+    routeIn(mainRef.current);
   }, [tab]);
   const current = ALL.find((t) => t.id === tab) ?? ALL[0];
 

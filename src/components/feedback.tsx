@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Icon } from './icons';
+import { dialogIn, toastIn, toastOut } from '../motion';
 
 /* ---------- Toasts: brief confirmation, with Undo for single deletes ---------- */
 
@@ -20,7 +21,18 @@ export const useToast = (): ToastApi => useContext(ToastCtx);
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
   const next = useRef(1);
-  const dismiss = useCallback((id: number) => setItems((l) => l.filter((t) => t.id !== id)), []);
+  const els = useRef(new Map<number, HTMLElement>());
+  const leaving = useRef(new Set<number>());
+  // Leaves with a short exit animation; a second call for the same toast (timer, then a click) is ignored.
+  const dismiss = useCallback((id: number) => {
+    if (leaving.current.has(id)) return;
+    leaving.current.add(id);
+    toastOut(els.current.get(id), () => {
+      leaving.current.delete(id);
+      els.current.delete(id);
+      setItems((l) => l.filter((t) => t.id !== id));
+    });
+  }, []);
   const toast = useCallback<ToastApi['toast']>(
     (message, opts = {}) => {
       const id = next.current++;
@@ -38,7 +50,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {/* The live region exists before any message does, so screen readers announce new toasts without stealing focus. */}
       <div className="toasts" aria-live="polite" aria-label="Notifications">
         {items.map((t) => (
-          <div className="toast" key={t.id}>
+          <div className="toast" key={t.id} ref={(el) => { if (!el) return; if (!els.current.has(t.id)) toastIn(el); els.current.set(t.id, el); }}>
             <span>{t.message}</span>
             {t.undo && (
               <button className="toast-btn" onClick={() => { t.undo?.(); dismiss(t.id); }}>Undo</button>
@@ -74,7 +86,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const d = dialog.current;
-    if (state && d && !d.open) d.showModal(); // native modal: traps focus, Esc cancels, page behind is inert
+    if (state && d && !d.open) { d.showModal(); dialogIn(d); } // native modal: traps focus, Esc cancels, page behind is inert
   }, [state]);
 
   const close = (answer: boolean) => {
