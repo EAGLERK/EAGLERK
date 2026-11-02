@@ -65,6 +65,21 @@ const check = (ok, msg) => {
   await page.locator('.toast-btn', { hasText: 'Undo' }).click();
   check(await fileRow.isVisible(), 'CSV: Undo brings the imported file back');
 
+  // A real Excel file with true date cells, and a CSV whose columns have no recognisable names at all.
+  const uploadPath = async (path) => {
+    const chooser = page.waitForEvent('filechooser', { timeout: 8000 });
+    await page.getByRole('button', { name: 'Import', exact: true }).click();
+    await (await chooser).setFiles(path);
+  };
+  await uploadPath(require('path').join(__dirname, '..', 'tests', 'fixtures', 'statement-openpyxl.xlsx'));
+  check(await page.getByText('Imported 4 transactions from statement-openpyxl.xlsx').waitFor({ timeout: 8000 }).then(() => true, () => false), 'Excel: an .xlsx statement imports');
+  await page.getByRole('button', { name: 'Remove statement-openpyxl.xlsx' }).click();
+  check(await page.getByText('Removed 4 transactions from statement-openpyxl.xlsx.').waitFor({ timeout: 6000 }).then(() => true, () => false), 'Excel: removing that file leaves the CSV import alone');
+  await upload('unlabelled.csv', '03/10/26,UPI-ZEPTO ORDER,260.00,,40000.00\n04/10/26,NEFT-REFUND,,500.00,40500.00\n05/10/26,UPI-CAFE,120.00,,40380.00\n');
+  check(await page.getByText('Imported 3 transactions from unlabelled.csv').waitFor({ timeout: 6000 }).then(() => true, () => false) && (await page.getByText('worked out which is which').count()) >= 1, 'CSV: a file with no column names still imports, and says how it was read');
+  await page.getByRole('button', { name: 'Remove unlabelled.csv' }).click();
+  await page.getByText('Removed 3 transactions from unlabelled.csv.').waitFor({ timeout: 6000 }).catch(() => {});
+
   await nav('Dashboard').click();
   let t = await main();
   check(t.includes('Oct 2026') && t.includes('₹1,00,000'), 'dashboard: latest month, Indian number format');

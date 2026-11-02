@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEFAULT_CATEGORIES, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../engine/categories';
 import { categorize } from '../engine/categorize';
 import { monthsWithData } from '../engine/cashflow';
-import { parseStatement } from '../engine/csv';
+import { readStatementFile } from '../engine/statementFile';
 import type { Txn } from '../engine/types';
 import { Icon } from '../components/icons';
 import { Callout, Card, Field, Num } from '../components/ui';
@@ -172,6 +172,7 @@ function ImportCard() {
   const { toast } = useToast();
   const picker = useRef<HTMLInputElement>(null);
   const [warning, setWarning] = useState<string | null>(null);
+  const [notes, setNotes] = useState<string[]>([]);
 
   // Every imported file, with how many rows it brought and the dates they cover.
   const files = useMemo(() => {
@@ -189,7 +190,8 @@ function ImportCard() {
 
   const importFile = async (f: File) => {
     setWarning(null);
-    const result = parseStatement(await f.text());
+    setNotes([]);
+    const result = await readStatementFile(f);
     if (!result.rows.length) {
       setWarning(result.warnings[0] ?? `Nothing could be read from ${f.name}.`);
       return;
@@ -204,6 +206,7 @@ function ImportCard() {
     const already = result.rows.length - fresh.length;
     toast(`Imported ${fresh.length} transactions from ${f.name}${already ? `, ${already} were already here` : ''}. Check any marked Other.`);
     if (result.warnings.length) setWarning(result.warnings.join(' '));
+    setNotes(result.notes);
   };
 
   const remove = (name: string) => {
@@ -217,12 +220,12 @@ function ImportCard() {
       title="Import a bank statement"
       sub={(
         <>
-          <div>Works with any bank that lets you download a CSV.</div>
+          <div>Works with CSV and Excel statements from any bank. I work out the columns myself.</div>
           <details>
             <summary>Why not connect my bank account directly?</summary>
             <div className="stack sub" style={{ marginTop: 8 }}>
               <p>In India, a live feed of your bank transactions has to go through the RBI&rsquo;s Account Aggregator framework: you consent to an AA, and the data goes only to regulated financial-information users. A personal app cannot plug into that on its own.</p>
-              <p>So this app does not pretend to do it. Download a statement from net banking each month (CSV or Excel saved as CSV) and import it. Re-importing the same file will not create duplicates.</p>
+              <p>So this app does not pretend to do it. Download a statement from net banking each month (CSV or Excel) and import it. Re-importing the same file will not create duplicates.</p>
               <p>If you want live sync later, the clean path is to put an AA gateway provider behind a small backend and feed its output into the same import function used here.</p>
             </div>
           </details>
@@ -235,7 +238,7 @@ function ImportCard() {
             hidden
             type="file"
             aria-label="Choose a statement file"
-            accept=".csv,.txt,text/csv"
+            accept=".csv,.tsv,.txt,.xlsx,.xls,.htm,.html,.pdf,text/csv,text/plain"
             onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void importFile(f); }}
           />
           <button className="btn small" onClick={() => picker.current?.click()}><Icon name="upload" size={16} />Import</button>
@@ -243,6 +246,7 @@ function ImportCard() {
       )}
     >
       {warning && <Callout tone="watch">{warning}</Callout>}
+      {notes.length > 0 && <Callout tone="info"><span>{notes.join(' ')}</span></Callout>}
       {files.length > 0 && (
         <ul className="clean files" aria-label="Imported files">
           {files.map(([name, f]) => (

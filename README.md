@@ -30,6 +30,17 @@ npm run dev:auth-demo   # try the sign-in screens at http://localhost:5177 with 
 
 Click **Explore with sample data** on first launch to see every screen populated.
 
+## Importing a bank statement
+
+Transactions has one Import button. Choose a file and it is read at once; each imported file is listed with a Remove button.
+
+- **Formats:** CSV, TSV, semicolon or pipe separated text; Excel `.xlsx`; HTML tables saved with an `.xls` name (some banks do this). Text in UTF-8, UTF-16 or older Windows encodings.
+- **No fixed layout needed.** Column names are used when they are recognisable (Date, Narration, Withdrawal, Deposit, Debit, Credit, Amount, Balance, Dr/Cr and common variants). When they are not, or there is no header at all, the date column is the one full of dates, the description is the longest text, and the money columns are told apart by how they are filled and by how the running balance moves. A balance column also fixes money in versus money out when there is a single unsigned amount column, and works whether the statement lists oldest or newest first.
+- **Also handled:** notes before the header, an opening-balance or total line, narrations that wrap onto the next line, quoted cells with line breaks, Excel day-number dates, day-first and month-first dates, `(500)`, `450 Dr` and `-450` style amounts, Indian digit grouping.
+- **Cannot read:** PDF statements and the old binary `.xls` format. The app says so and asks for a CSV or `.xlsx`; Excel and Google Sheets can save a sheet as either.
+- When the app had to guess how the columns work, it says so under the import button.
+- Tests: `tests/statements.test.ts` covers HDFC, ICICI, SBI, Axis and Kotak style layouts, several unlabelled layouts, and two real `.xlsx` files in `tests/fixtures/`. If a real statement still fails, add a copy of its first rows (with the personal details changed) as a test case.
+
 ## Investing is switched off
 
 For now MyMoney covers cash flow (income, spend, transactions) and goals (car, house, bike, with your loans on the Goals screen). The Investments tab, net worth, holdings and the Plan tab are hidden.
