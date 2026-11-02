@@ -36,7 +36,14 @@ const check = (ok, msg) => {
   const main = () => page.locator('main').innerText();
 
   await page.goto(URL);
-  await page.getByRole('button', { name: 'Start with my own data' }).click();
+  const startBtn = page.getByRole('button', { name: 'Start with my own data' });
+  check(await startBtn.isDisabled() && await page.getByText('Enter your name to start with your own data.').isVisible(), 'welcome: starting is disabled until a name is entered, and it says why');
+  await page.getByLabel('What should we call you?').fill('Asha');
+  check(await startBtn.isEnabled(), 'welcome: entering a name enables Start');
+  await startBtn.click();
+  check(await page.getByRole('heading', { name: 'Hi, Asha' }).waitFor({ timeout: 6000 }).then(() => true, () => false), 'dashboard greets the person by name');
+  const place = await page.evaluate(() => { const h = document.querySelector('.page-head h1').getBoundingClientRect(); const m = document.querySelector('main').getBoundingClientRect(); return h.left - m.left < 8 && h.left < m.left + m.width / 3; });
+  check(place, 'the greeting is on the left of the dashboard header');
   check(await page.getByText('Nothing here yet').isVisible(), 'empty dashboard shows onboarding card');
 
   if (investing) {

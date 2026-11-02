@@ -29,14 +29,14 @@ export function Settings() {
   const replaceWithSample = async () => {
     const ok = await confirm({ title: 'Replace your data with sample data?', body: `Everything in ${where} is replaced by made-up example transactions, investments and goals. Download a backup first if you want to keep yours.`, confirmLabel: 'Replace with sample data', danger: true });
     if (!ok) return;
-    dispatch({ type: 'loadDemo' });
+    dispatch({ type: 'loadDemo', name: state.profile.name });
     toast('Sample data loaded');
   };
 
   const eraseAll = async () => {
-    const ok = await confirm({ title: 'Erase all your data?', body: `Every transaction, investment, goal and setting in ${where} is deleted. This cannot be undone. Download a backup first if you might want it back.`, confirmLabel: 'Erase all data', danger: true });
+    const ok = await confirm({ title: 'Erase all your data?', body: `Every transaction, investment, goal and setting in ${where} is deleted. Your name is kept. This cannot be undone. Download a backup first if you might want it back.`, confirmLabel: 'Erase all data', danger: true });
     if (!ok) return;
-    dispatch({ type: 'startFresh' });
+    dispatch({ type: 'startFresh', name: state.profile.name });
     toast('All data erased');
   };
   const file = useRef<HTMLInputElement>(null);

@@ -318,6 +318,7 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     await p.goto(APP + '?code=abc123');
     check(await p.getByRole('button', { name: 'Start with my own data' }).waitFor({ timeout: 8000 }).then(() => true, () => false), 'returning from Google signs the user in');
     check(!p.url().includes('code='), 'the one-time code is removed from the address bar');
+    await p.getByLabel('What should we call you?').fill('Asha');
     await p.getByRole('button', { name: 'Start with my own data' }).click();
     await nav(p, 'Settings');
     check(await shown(p.getByText('Signed in with Google.')), 'Settings says the account uses Google');
@@ -329,6 +330,7 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     await reset();
     p = await newPage(browser);
     await signUp(p, 'rita@test.dev');
+    await p.getByLabel('What should we call you?').fill('Asha');
     await p.getByRole('button', { name: 'Start with my own data' }).click();
     await savedChip(p);
     await p.getByRole('button', { name: 'Sign out' }).first().click();
@@ -372,6 +374,7 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     await p.getByLabel('SMS code').fill('123456');
     await p.getByRole('button', { name: 'Verify code' }).click();
     check(await p.getByRole('button', { name: 'Start with my own data' }).waitFor({ timeout: 8000 }).then(() => true, () => false), 'the right code signs the user in');
+    await p.getByLabel('What should we call you?').fill('Asha');
     await p.getByRole('button', { name: 'Start with my own data' }).click();
     check(await p.getByText('+919876543210').first().waitFor({ timeout: 8000 }).then(() => true, () => false), 'the sidebar shows the phone number, not a blank');
     await savedChip(p);

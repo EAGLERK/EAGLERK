@@ -36,6 +36,37 @@ const ShowcasePage = lazy(() => import('./three/ShowcasePage'));
 type Theme = 'auto' | 'light' | 'dark';
 
 
+/** A first name to offer when the account already has one (Google supplies it). */
+function suggestedName(user: { user_metadata?: Record<string, unknown> } | null | undefined): string {
+  const m = user?.user_metadata ?? {};
+  const full = (typeof m.full_name === 'string' && m.full_name) || (typeof m.name === 'string' && m.name) || '';
+  return full.trim();
+}
+
+/** First screen: asks what to call you, then starts empty or with sample data. */
+function Welcome({ suggestedName: suggested, onStart, onDemo }: { suggestedName: string; onStart: (name: string) => void; onDemo: (name: string) => void }) {
+  const [name, setName] = useState(suggested);
+  const ready = name.trim().length > 0;
+  return (
+    <div className="frame">
+      <form className="card hero" style={{ marginTop: 48 }} onSubmit={(e) => { e.preventDefault(); if (ready) onStart(name); }}>
+        <Logo />
+        <h1>Welcome to MyMoney</h1>
+        <p>See where your money goes each month, plan a car, house and bike, {features.investing ? 'and find out what to do with the surplus: FD, RD, PPF, mutual funds, or paying down debt.' : 'and see what each one will cost you.'} Everything stays in this browser.</p>
+        <div className="field welcome-name">
+          <label htmlFor="your-name">What should we call you?</label>
+          <input id="your-name" autoFocus autoComplete="given-name" placeholder="Your name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="row" style={{ justifyContent: 'center' }}>
+          <button className="btn primary" type="submit" disabled={!ready}>Start with my own data</button>
+          <button className="btn" type="button" onClick={() => onDemo(name)}>Explore with sample data</button>
+        </div>
+        {!ready && <p className="why" role="status">Enter your name to start with your own data.</p>}
+      </form>
+    </div>
+  );
+}
+
 function Shell() {
   const { state, dispatch } = useStore();
   const auth = useAuth();
@@ -83,18 +114,7 @@ function Shell() {
   const current = ALL.find((t) => t.id === tab) ?? ALL[0];
 
   if (!state.onboarded) {
-    return (
-      <div className="frame">
-        <div className="card hero" style={{ marginTop: 48 }}>
-          <h1>MyMoney</h1>
-          <p>See where your money goes each month, plan a car, house and bike, {features.investing ? 'and find out what to do with the surplus: FD, RD, PPF, mutual funds, or paying down debt.' : 'and see what each one will cost you.'} Everything stays in this browser.</p>
-          <div className="row" style={{ justifyContent: 'center' }}>
-            <button className="btn primary" onClick={() => dispatch({ type: 'startFresh' })}>Start with my own data</button>
-            <button className="btn" onClick={() => dispatch({ type: 'loadDemo' })}>Explore with sample data</button>
-          </div>
-        </div>
-      </div>
-    );
+    return <Welcome suggestedName={suggestedName(auth?.user)} onStart={(name) => dispatch({ type: 'startFresh', name })} onDemo={(name) => dispatch({ type: 'loadDemo', name })} />;
   }
 
   return (

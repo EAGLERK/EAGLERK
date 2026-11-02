@@ -48,8 +48,8 @@ export type Action =
   | { type: 'upsertLiability'; liability: Liability }
   | { type: 'deleteLiability'; id: string }
   | { type: 'override'; key: string; value: number | null }
-  | { type: 'loadDemo' }
-  | { type: 'startFresh' }
+  | { type: 'loadDemo'; name?: string }
+  | { type: 'startFresh'; name?: string }
   | { type: 'replace'; state: AppState };
 
 const upsert = <T extends { id: string }>(list: T[], item: T) => (list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item]);
@@ -77,8 +77,12 @@ function reducer(s: AppState, a: Action): AppState {
       else o[a.key] = a.value;
       return { ...s, overrides: o };
     }
-    case 'loadDemo': return { ...s, ...demoData(), onboarded: true };
-    case 'startFresh': return { ...initial, onboarded: true };
+    case 'loadDemo': {
+      const demo = demoData();
+      const name = a.name?.trim();
+      return { ...s, ...demo, profile: name ? { ...demo.profile, name } : demo.profile, onboarded: true };
+    }
+    case 'startFresh': return { ...initial, profile: { ...initial.profile, name: a.name?.trim() ?? '' }, onboarded: true };
     case 'replace': return a.state;
   }
 }

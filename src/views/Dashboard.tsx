@@ -57,18 +57,27 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
   const notes = useMemo(() => insights(state.txns, month), [state.txns, month]);
   const recent = useMemo(() => [...state.txns].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8), [state.txns]);
   const page = useRef<HTMLDivElement>(null);
+  const greeting = state.profile.name.trim() ? `Hi, ${state.profile.name.trim()}` : 'Overview';
   // The summary cards arrive one after another, once each time the Dashboard opens (not when the month changes).
   useEffect(() => { if (page.current) cascade(page.current.querySelectorAll('.sumgrid > *')); }, []);
 
   if (state.txns.length === 0 && (!features.investing || state.investments.length === 0) && state.goals.length === 0) {
     return (
-      <Empty title="Nothing here yet">
-        <p style={{ marginBottom: 14 }}>Add your transactions, investments and goals, or load sample data to see how the numbers look.</p>
-        <div className="row" style={{ justifyContent: 'center' }}>
-          <button className="btn primary" onClick={() => dispatch({ type: 'loadDemo' })}>Load sample data</button>
-          <button className="btn" onClick={() => go('transactions')}>Import a bank statement</button>
+      <div className="page">
+        <div className="page-head">
+          <div>
+            <h1>{greeting}</h1>
+            <div className="sub">Add something below and this page fills in.</div>
+          </div>
         </div>
-      </Empty>
+        <Empty title="Nothing here yet">
+          <p style={{ marginBottom: 14 }}>Add your transactions, investments and goals, or load sample data to see how the numbers look.</p>
+          <div className="row" style={{ justifyContent: 'center' }}>
+            <button className="btn primary" onClick={() => dispatch({ type: 'loadDemo', name: state.profile.name })}>Load sample data</button>
+            <button className="btn" onClick={() => go('transactions')}>Import a bank statement</button>
+          </div>
+        </Empty>
+      </div>
     );
   }
 
@@ -88,8 +97,8 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
     <div className="page" ref={page}>
       <div className="page-head">
         <div>
-          <h1>Overview</h1>
-          <div className="sub">Summary of your money for {monthLabel(month)}</div>
+          <h1>{greeting}</h1>
+          <div className="sub">Overview of your money for {monthLabel(month)}</div>
         </div>
         <div className="row" style={{ gap: 12 }}>
           <div className="row" style={{ gap: 6 }}>
