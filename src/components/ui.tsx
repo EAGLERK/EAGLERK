@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { Icon } from './icons';
 
 export function Card({ title, sub, right, children, className = '' }: { title?: ReactNode; sub?: ReactNode; right?: ReactNode; children: ReactNode; className?: string }) {
   return (
@@ -114,3 +115,16 @@ export const Delta = ({ now, before, upIsGood, fmt }: { now: number; before: num
     </span>
   );
 };
+
+/** A password box with the show/hide eye inside it. Pair it with a <label htmlFor={id}> next to it, not around it, so the eye's name never becomes part of the field's label. */
+export function PasswordInput({ id, value, onChange, autoComplete, placeholder, required }: { id: string; value: string; onChange: (v: string) => void; autoComplete: string; placeholder?: string; required?: boolean }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="pw">
+      <input id={id} type={show ? 'text' : 'password'} value={value} onChange={(e) => onChange(e.target.value)} autoComplete={autoComplete} placeholder={placeholder} required={required} />
+      <button type="button" className="pw-eye" aria-label={show ? 'Hide password' : 'Show password'} title={show ? 'Hide password' : 'Show password'} onClick={() => setShow((v) => !v)}>
+        <Icon name={show ? 'eyeOff' : 'eye'} size={18} />
+      </button>
+    </div>
+  );
+}

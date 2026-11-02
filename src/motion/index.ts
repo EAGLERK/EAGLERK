@@ -16,7 +16,7 @@ export const reducedMotion = (): boolean => !!window.matchMedia?.('(prefers-redu
 /* ---------- Press and hover feedback, for every control, from one set of listeners ---------- */
 
 /** What gets hover feedback. CSS reads `--hv` (0 to 1) and decides how the control looks at that value. */
-const HOVERABLE = '.btn, .side-link, .choice, .sumcard .foot, .toast-btn, .toast-x, .gbtn';
+const HOVERABLE = '.btn, .side-link, .choice, .sumcard .foot, .toast-btn, .toast-x, .gbtn, .pw-eye';
 /** What shrinks slightly while pressed, and by how much. */
 const PRESSABLE: Array<[string, number]> = [['.btn, .gbtn, .choice', 0.97], ['.side-link', 0.985], ['.tab', 0.94]];
 

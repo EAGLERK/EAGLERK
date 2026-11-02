@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { authFeatures } from './supabase';
+import { PasswordInput } from '../components/ui';
 
 const GoogleG = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
@@ -35,14 +36,10 @@ function Shell({ title, sub, children }: { title: string; sub?: string; children
 }
 
 function Password({ id, label, value, onChange, autoComplete, hint }: { id: string; label: string; value: string; onChange: (v: string) => void; autoComplete: string; hint?: string }) {
-  const [show, setShow] = useState(false);
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      <div className="pwrow">
-        <input id={id} type={show ? 'text' : 'password'} value={value} onChange={(e) => onChange(e.target.value)} autoComplete={autoComplete} required />
-        <button type="button" className="btn small" aria-pressed={show} onClick={() => setShow((s) => !s)}>{show ? 'Hide' : 'Show'}</button>
-      </div>
+      <PasswordInput id={id} value={value} onChange={onChange} autoComplete={autoComplete} required />
       {hint && <span className="hint">{hint}</span>}
     </div>
   );

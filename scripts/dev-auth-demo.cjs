@@ -14,7 +14,7 @@ const APP_PORT = 5177;
   const app = spawn('npx', ['vite', '--port', String(APP_PORT), '--strictPort'], {
     stdio: 'inherit',
     detached: true,
-    env: { ...process.env, VITE_SUPABASE_URL: `http://localhost:${MOCK_PORT}`, VITE_SUPABASE_ANON_KEY: 'demo-key', VITE_AUTH_PHONE: '1' },
+    env: { ...process.env, VITE_SUPABASE_URL: `http://localhost:${MOCK_PORT}`, VITE_SUPABASE_ANON_KEY: 'demo-key', VITE_AUTH_GOOGLE: '1', VITE_AUTH_PHONE: '1' },
   });
   const quit = async () => {
     try { process.kill(-app.pid, 'SIGTERM'); } catch { /* already gone */ }

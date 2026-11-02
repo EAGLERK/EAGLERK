@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { Assumption } from '../engine/assumptions';
-import { Badge, Callout, Card, Field, Num, NumInput, Toggle } from '../components/ui';
+import { Badge, Callout, Card, Field, Num, NumInput, PasswordInput, Toggle } from '../components/ui';
 import { pct } from '../lib/format';
 import { Icon } from '../components/icons';
 import { useConfirm, useToast } from '../components/feedback';
@@ -209,9 +209,10 @@ function AccountCard() {
 
         {hasPassword ? (
           <div className="form-grid" style={{ alignItems: 'end' }}>
-            <Field label="New password">
-              <input type="password" autoComplete="new-password" placeholder="At least 8 characters" value={pw} onChange={(e) => setPw(e.target.value)} />
-            </Field>
+            <div className="field">
+              <label htmlFor="new-password">New password</label>
+              <PasswordInput id="new-password" value={pw} onChange={setPw} autoComplete="new-password" placeholder="At least 8 characters" />
+            </div>
             <div><button className="btn" disabled={busy || !pw} onClick={changePassword}>Change password</button></div>
           </div>
         ) : (

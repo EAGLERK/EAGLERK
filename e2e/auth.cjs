@@ -36,7 +36,7 @@ async function startApp(port = APP_PORT, extraEnv = {}) {
   const taken = await fetch(`http://localhost:${port}/`).then(() => true, () => false);
   if (taken) throw new Error(`port ${port} is already in use; stop whatever is serving it and rerun`);
   const proc = spawn('npx', ['vite', '--port', String(port), '--strictPort'], {
-    env: { ...process.env, VITE_SUPABASE_URL: MOCK, VITE_SUPABASE_ANON_KEY: 'anon-test-key', ...extraEnv },
+    env: { ...process.env, VITE_SUPABASE_URL: MOCK, VITE_SUPABASE_ANON_KEY: 'anon-test-key', VITE_AUTH_GOOGLE: '1', VITE_AUTH_PHONE: '0', VITE_FEATURE_INVESTING: '0', ...extraEnv },
     stdio: 'ignore',
     detached: true, // its own process group, so the whole tree (npx and vite) can be stopped together
   });
@@ -106,6 +106,26 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     await p.getByRole('button', { name: 'Mobile number' }).click();
     check(await shown(p.getByText('not switched on yet').first()), 'phone sign-in is clearly marked as not switched on');
     check((await p.locator('form').count()) === 0, 'no phone form is offered while it is off');
+    await p.context().close();
+
+    // 3b. The show/hide control is an eye icon inside the password box
+    p = await newPage(browser);
+    const pwBox = p.getByLabel('Password', { exact: true });
+    const eye = p.getByRole('button', { name: 'Show password' });
+    check(await shown(eye) && (await eye.innerText()).trim() === '' && (await eye.locator('svg').count()) === 1, 'the password box has an eye icon button with no visible text');
+    check((await p.getByRole('button', { name: /^(Show|Hide)$/ }).count()) === 0, 'the old text "Show" button is gone');
+    const inside = await p.evaluate(() => { const i = document.getElementById('password') || document.querySelector('input[type=password]'); const b = document.querySelector('.pw-eye'); const a = i.getBoundingClientRect(), c = b.getBoundingClientRect(); return c.left >= a.left && c.right <= a.right && c.top >= a.top - 1 && c.bottom <= a.bottom + 1; });
+    check(inside, 'the eye sits inside the password box');
+    await pwBox.fill('green-river-9');
+    check((await pwBox.getAttribute('type')) === 'password', 'the password is hidden by default');
+    await eye.click();
+    check((await pwBox.getAttribute('type')) === 'text' && await shown(p.getByRole('button', { name: 'Hide password' })), 'the eye shows the password and its name changes to Hide password');
+    check((await pwBox.inputValue()) === 'green-river-9', 'showing it keeps what was typed');
+    await p.getByRole('button', { name: 'Hide password' }).click();
+    check((await pwBox.getAttribute('type')) === 'password', 'clicking again hides it');
+    await pwBox.focus();
+    await p.keyboard.press('Tab');
+    check(await p.evaluate(() => document.activeElement && document.activeElement.classList.contains('pw-eye')), 'the eye is reachable with the keyboard right after the password box');
     await p.context().close();
 
     // 4. Validation happens before any request is sent
