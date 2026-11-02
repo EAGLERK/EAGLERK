@@ -103,9 +103,12 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
 
     // 3. Phone is gated until an SMS provider is configured
     p = await newPage(browser);
-    await p.getByRole('button', { name: 'Mobile number' }).click();
-    check(await shown(p.getByText('not switched on yet').first()), 'phone sign-in is clearly marked as not switched on');
-    check((await p.locator('form').count()) === 0, 'no phone form is offered while it is off');
+    check(await shown(p.getByRole('button', { name: 'Sign in', exact: true })), 'the sign-in form is shown');
+    check((await p.getByRole('group', { name: 'Sign-in method' }).count()) === 0 && (await p.getByRole('button', { name: 'Mobile number' }).count()) === 0, 'no Email / Mobile number tabs while phone sign-in is off');
+    check((await p.getByLabel('Mobile number').count()) === 0, 'no phone field is offered while it is off');
+    const order = await p.evaluate(() => { const y = (el) => el.getBoundingClientRect().top; const pw = document.getElementById('auth-password'); const forgot = [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Forgot password?'); const signIn = [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Sign in'); const create = [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Create an account'); return { forgotUnderPassword: y(forgot) > y(pw) && y(forgot) < y(signIn), createAfterSignIn: y(create) > y(signIn), createIsSecondary: create.classList.contains('btn') && !create.classList.contains('primary'), primaries: document.querySelectorAll('.btn.primary').length }; });
+    check(order.forgotUnderPassword, 'Forgot password? sits directly under the password, above Sign in');
+    check(order.createAfterSignIn && order.createIsSecondary && order.primaries === 1, 'Create an account is a secondary button below Sign in, and Sign in is the only primary');
     await p.context().close();
 
     // 3b. The show/hide control is an eye icon inside the password box

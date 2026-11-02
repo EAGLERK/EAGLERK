@@ -477,3 +477,7 @@ main:focus { outline: none; }
 /* Theme switcher: three icon buttons. */
 .theme-switch button { display: inline-flex; align-items: center; justify-content: center; padding: 5px 10px; }
 @media (pointer: coarse), (max-width: 599px) { .theme-switch button { min-width: var(--tap); padding: 0; } }
+
+/* Sign-in: the forgot-password link sits right under the password box; the second action is a full-width secondary button. */
+.pw-aside { display: flex; justify-content: flex-end; margin-top: -6px; }
+.btn.block { width: 100%; border-color: var(--axis); }

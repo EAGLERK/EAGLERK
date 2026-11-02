@@ -128,7 +128,7 @@ export function AuthScreen() {
         </>
       )}
 
-      {mode !== 'forgot' && (
+      {mode !== 'forgot' && authFeatures.phone && (
         <div className="pill-toggle" role="group" aria-label="Sign-in method" style={{ alignSelf: 'flex-start' }}>
           {(['email', 'phone'] as Method[]).map((m) => (
             <button key={m} type="button" aria-pressed={method === m} onClick={() => { setMethod(m); setError(null); setNotice(null); setAwaitingCode(false); }}>
@@ -165,6 +165,10 @@ export function AuthScreen() {
             />
           )}
 
+          {mode === 'signin' && method === 'email' && (
+            <div className="pw-aside"><button type="button" className="linkbtn" onClick={() => reset('forgot')}>Forgot password?</button></div>
+          )}
+
           {awaitingCode && (
             <div className="field">
               <label htmlFor="auth-code">SMS code</label>
@@ -181,16 +185,9 @@ export function AuthScreen() {
         </form>
       )}
 
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        {mode === 'signin' && (
-          <>
-            <button type="button" className="linkbtn" onClick={() => reset('signup')}>Create an account</button>
-            {method === 'email' && <button type="button" className="linkbtn" onClick={() => reset('forgot')}>Forgot password?</button>}
-          </>
-        )}
-        {mode === 'signup' && <button type="button" className="linkbtn" onClick={() => reset('signin')}>I already have an account</button>}
-        {mode === 'forgot' && <button type="button" className="linkbtn" onClick={() => reset('signin')}>Back to sign in</button>}
-      </div>
+      {mode === 'signin' && <button type="button" className="btn block" onClick={() => reset('signup')}>Create an account</button>}
+      {mode === 'signup' && <button type="button" className="btn block" onClick={() => reset('signin')}>I already have an account</button>}
+      {mode === 'forgot' && <button type="button" className="btn block" onClick={() => reset('signin')}>Back to sign in</button>}
     </Shell>
   );
 }
