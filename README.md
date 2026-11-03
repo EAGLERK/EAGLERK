@@ -33,10 +33,14 @@ Click **Explore with sample data** on first launch to see every screen populated
 ## First run, tour and alerts
 
 - **Welcome popup:** the first time, a popup over the Dashboard asks what to call you, then starts empty or with sample data.
-- **Tour:** six tooltips point at the main controls once. Replay them from Settings, Quick tour.
+- **Tour:** seven tooltips point at the main controls once. Replay them from Settings, Quick tour.
 - **Bell:** alerts worked out from your own data (overspending, goals that do not fit, heavy EMIs, uncategorised rows, stale data, backup and sync problems), each with a reason and a button. The rules are in `src/engine/alerts.ts` with tests in `tests/alerts.test.ts`.
 - **Browser alerts:** Settings, Notifications. Important alerts that appear while MyMoney is open in a background tab also show as system notifications. There is no push service, so nothing arrives when the app is closed; adding that would need a small server, a service worker and a push key.
 - Tests: `npm run e2e:welcome`.
+
+## Notes
+
+The Notes tab keeps lists for yourself, such as things to buy or sell. A note is a title and any mix of **text**, **tables** (add rows and columns; numeric columns get a total) and **to-do lists** with checkboxes. Start from Things to buy, Things to sell or a blank note. Notes save as you type, sync with your account and are part of your backup. Tests: `npm run e2e:notes`.
 
 ## Editing and saving transactions
 

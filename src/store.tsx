@@ -3,8 +3,9 @@ import { DEFAULT_ASSUMPTIONS, ratesFromAssumptions, type Assumption } from './en
 import { averages, monthsWithData, addMonths } from './engine/cashflow';
 import { buildPortfolio, type Portfolio } from './engine/portfolio';
 import { marginalRate } from './engine/tax';
-import type { Goal, Investment, Liability, Profile, Rates, Txn } from './engine/types';
+import type { Note, Goal, Investment, Liability, Profile, Rates, Txn } from './engine/types';
 import { demoData } from './demo';
+import { demoNotes } from './engine/notes';
 import { todayISO } from './lib/format';
 
 export interface AppState {
@@ -17,6 +18,8 @@ export interface AppState {
   /** User overrides keyed by assumption key. */
   overrides: Record<string, number>;
   onboarded: boolean;
+  /** Notes: lists, tables and text the person keeps for themselves. */
+  notes?: Note[];
   /** The first-time tour has been finished or skipped. */
   tourDone?: boolean;
   /** Ids of alerts the person has read. */
@@ -58,6 +61,8 @@ export type Action =
   | { type: 'override'; key: string; value: number | null }
   | { type: 'loadDemo'; name?: string }
   | { type: 'startFresh'; name?: string }
+  | { type: 'upsertNote'; note: Note }
+  | { type: 'deleteNote'; id: string }
   | { type: 'tour'; done: boolean }
   | { type: 'readAlerts'; ids: string[] }
   | { type: 'backedUp'; at: string }
@@ -95,9 +100,14 @@ function reducer(s: AppState, a: Action): AppState {
     case 'loadDemo': {
       const demo = demoData();
       const name = a.name?.trim();
-      return { ...s, ...demo, profile: name ? { ...demo.profile, name } : demo.profile, onboarded: true, tourDone: s.tourDone, alertsRead: s.alertsRead };
+      return { ...s, ...demo, notes: s.notes?.length ? s.notes : demoNotes(), profile: name ? { ...demo.profile, name } : demo.profile, onboarded: true, tourDone: s.tourDone, alertsRead: s.alertsRead };
     }
     case 'startFresh': return { ...initial, profile: { ...initial.profile, name: a.name?.trim() ?? '' }, onboarded: true, tourDone: s.tourDone, alertsRead: s.alertsRead };
+    case 'upsertNote': {
+      const notes = s.notes ?? [];
+      return { ...s, notes: notes.some((n) => n.id === a.note.id) ? notes.map((n) => (n.id === a.note.id ? a.note : n)) : [a.note, ...notes] };
+    }
+    case 'deleteNote': return { ...s, notes: (s.notes ?? []).filter((n) => n.id !== a.id) };
     case 'tour': return { ...s, tourDone: a.done };
     case 'readAlerts': return { ...s, alertsRead: [...new Set([...(s.alertsRead ?? []), ...a.ids])].slice(-300) };
     case 'backedUp': return { ...s, lastBackupAt: a.at };

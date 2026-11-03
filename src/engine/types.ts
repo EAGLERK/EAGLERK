@@ -100,3 +100,20 @@ export interface Liability {
 export interface Rates {
   [key: string]: number;
 }
+
+/* ---------- Notes: pages made of text, tables and to-do lists ---------- */
+
+export interface TodoItem { id: string; text: string; done: boolean }
+export type NoteBlock =
+  | { id: string; type: 'text'; text: string }
+  | { id: string; type: 'todo'; title: string; items: TodoItem[] }
+  /** `columns` are the header cells; every row has one cell per column. */
+  | { id: string; type: 'table'; title: string; columns: string[]; rows: string[][] };
+
+export interface Note {
+  id: string;
+  title: string;
+  /** ISO timestamp of the last edit, used to sort the list. */
+  updatedAt: string;
+  blocks: NoteBlock[];
+}

@@ -35,7 +35,7 @@ export function Settings() {
   };
 
   const eraseAll = async () => {
-    const ok = await confirm({ title: 'Erase all your data?', body: `Every transaction, investment, goal and setting in ${where} is deleted. Your name is kept. This cannot be undone. Download a backup first if you might want it back.`, confirmLabel: 'Erase all data', danger: true });
+    const ok = await confirm({ title: 'Erase all your data?', body: `Every transaction, investment, goal, note and setting in ${where} is deleted. Your name is kept. This cannot be undone. Download a backup first if you might want it back.`, confirmLabel: 'Erase all data', danger: true });
     if (!ok) return;
     dispatch({ type: 'startFresh', name: state.profile.name });
     toast('All data erased');
@@ -134,7 +134,7 @@ export function Settings() {
 
       <NotificationSettings />
 
-      <Card title="Quick tour" sub="Six short tips that point at the main controls. They appear once; you can replay them here.">
+      <Card title="Quick tour" sub="Seven short tips that point at the main controls. They appear once; you can replay them here.">
         <button className="btn" onClick={() => { location.hash = 'dashboard'; dispatch({ type: 'tour', done: false }); }}>Take the tour again</button>
       </Card>
 

@@ -9,6 +9,7 @@ import { WelcomeDialog } from './components/WelcomeDialog';
 import { features } from './features';
 import { Dashboard } from './views/Dashboard';
 import { Goals } from './views/Goals';
+import { Notes } from './views/Notes';
 import { Investments } from './views/Investments';
 import { Plan } from './views/Plan';
 import { Settings } from './views/Settings';
@@ -32,6 +33,7 @@ const ALL: Tab[] = [
   { id: 'goals', label: 'Goals', short: 'Goals', icon: 'goals' },
   // Investing is switched off for now (see src/features.ts).
   ...(features.investing ? [{ id: 'investments', label: 'Investments', short: 'Invest', icon: 'investments' } as Tab, { id: 'plan', label: 'Plan', short: 'Plan', icon: 'plan' } as Tab] : []),
+  { id: 'notes', label: 'Notes', short: 'Notes', icon: 'notes' },
   { id: 'settings', label: 'Settings', short: 'Settings', icon: 'settings' },
 ];
 
@@ -165,6 +167,7 @@ function ShellInner() {
           <main ref={mainRef} tabIndex={-1} id="main">
             {tab === 'transactions' ? <Transactions openAdd={route === 'add-transaction'} onCloseAdd={() => { location.hash = 'transactions'; setRoute('transactions'); }} />
               : tab === 'goals' ? <Goals />
+              : tab === 'notes' ? <Notes />
               : features.investing && tab === 'investments' ? <Investments />
               : features.investing && tab === 'plan' ? <Plan go={go} />
               : tab === 'settings' ? <Settings />

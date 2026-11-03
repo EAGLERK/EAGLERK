@@ -25,6 +25,13 @@ const PATHS: Record<string, string> = {
   upload: 'M12 16V4M7 9l5-5 5 5M4 20h16',
   file: 'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5',
   bell: 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0',
+  notes: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h4',
+  text: 'M5 6V4h14v2M12 4v16M9 20h6',
+  table: 'M3 5h18v14H3zM3 10h18M3 15h18M9 5v14M15 5v14',
+  todo: 'M4 6l2 2 3-3M12 7h8M4 14l2 2 3-3M12 15h8',
+  up: 'M6 15l6-6 6 6',
+  down: 'M6 9l6 6 6-6',
+  back: 'M19 12H5M11 6l-6 6 6 6',
   bike: 'M5.5 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18.5 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 15h5l2.5-6H12M13 15l-2.5-4H8M15.5 9l1-3h2.5',
 };
 

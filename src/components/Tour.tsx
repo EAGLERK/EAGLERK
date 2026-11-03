@@ -8,6 +8,7 @@ const STEPS: Step[] = [
   { target: 'main .btn.primary', title: 'Your main action', body: 'The green button is what you do most on each screen. On the Dashboard it adds a transaction; on Goals it adds a goal.' },
   { target: '[data-tour="nav-transactions"]', title: 'Bring in a bank statement', body: 'Import a CSV or Excel file from your bank. MyMoney works out the columns itself, and you can remove a file again with one tap.' },
   { target: '[data-tour="nav-goals"]', title: 'Plan a car, house or bike', body: 'See the price on the day, the EMI, and whether what you have left over each month can carry it.' },
+  { target: '[data-tour="nav-notes"]', title: 'Notes and lists', body: 'Keep lists of things to buy or sell with text, tables and checkbox to-dos. They save as you type.' },
   { target: '[data-tour="bell"]', title: 'Alerts', body: 'Overspending, goals that do not fit yet and backup reminders appear here. Turn on browser alerts in Settings to get them outside the page too.' },
   { target: '[data-tour="theme"]', title: 'Light or dark', body: 'Match your device, or pick one. MyMoney remembers it.' },
   { target: '[data-tour="nav-settings"]', title: 'Your data, your rules', body: 'Download a backup, change the rates the planner uses, or edit your name. You can take this tour again from here.' },

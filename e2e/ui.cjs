@@ -34,7 +34,7 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     await ph.goto(URL);
     await ph.getByRole('button', { name: 'Explore with sample data' }).click();
     await skipTour(ph);
-    const phoneTabs = investing ? ['Home', 'Activity', 'Goals', 'Invest', 'Plan', 'Settings'] : ['Home', 'Activity', 'Goals', 'Settings'];
+    const phoneTabs = investing ? ['Home', 'Activity', 'Goals', 'Invest', 'Plan', 'Notes', 'Settings'] : ['Home', 'Activity', 'Goals', 'Notes', 'Settings'];
     for (const tab of phoneTabs) {
       await ph.getByRole('navigation').getByRole('button', { name: tab, exact: true }).click();
       if (tab === 'Goals') await ph.waitForSelector('.showcase canvas', { timeout: 15000 }).catch(() => {});
@@ -60,7 +60,7 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     await skipTour(p);
     const nav = (n) => p.getByRole('navigation').getByRole('button', { name: n, exact: true }).click();
 
-    const deskTabs = investing ? ['Dashboard', 'Transactions', 'Goals', 'Investments', 'Settings'] : ['Dashboard', 'Transactions', 'Goals', 'Settings'];
+    const deskTabs = investing ? ['Dashboard', 'Transactions', 'Goals', 'Investments', 'Notes', 'Settings'] : ['Dashboard', 'Transactions', 'Goals', 'Notes', 'Settings'];
     for (const tab of deskTabs) {
       await nav(tab);
       await p.waitForTimeout(300);

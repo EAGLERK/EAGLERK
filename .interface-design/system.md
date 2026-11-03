@@ -56,6 +56,11 @@ No header band, hairline row separators, muted 14px heads. On phones `.table.car
 ### Chart
 Recharts, styled like shadcn charts: horizontal grid only, no axis lines or ticks, 12px muted tick labels, a bordered tooltip with 10px colour chips, and a plain muted legend. Data colours are the five `--s*` tokens.
 
+### Notes
+A Notes tab (between Goals and Settings) for lists the person keeps for themselves, such as things to buy or sell. A note is a title plus a stack of blocks: **text** (a box that grows as you type), **to-do list** (checkboxes; done items are struck through; Enter adds an item below, Backspace on an empty item removes it, "Clear completed" with Undo) and **table** (editable headers and cells, add or remove rows and columns, and a total under any column that is mostly numbers, read in Indian formats). Blocks can be named, moved up or down, and removed with Undo. New note offers three starting points: Things to buy (a to-do list), Things to sell (a table of item, asking price, status) and a blank note. The list shows each note as a card with a one-line summary ("1 of 4 done · 1 table · 12 words"). The sample-data account comes with two example notes.
+
+Notes **save by themselves** about 0.4 seconds after the last keystroke, when leaving the editor, and when the tab goes to the background, with a Saved / Saving indicator; they are not drafts and never trigger the leave popup. They are part of the account data, so they sync and are included in backups. Deleting a note offers Undo. Model: `Note` and `NoteBlock` in `src/engine/types.ts`, helpers and tests in `src/engine/notes.ts` and `tests/notes.test.ts`.
+
 ### Editing transactions, drafts and the Save bar
 Every cell of a transaction row is editable in place: date (a date box that opens the browser's calendar when clicked), description, category, amount, and a round +/- button that switches money out and money in. Cells look like plain text until hovered or focused on mouse devices, and always show a border on touch screens.
 
@@ -73,7 +78,7 @@ A blocky "M" (two pillars under a stepped bar, a block hanging between them), in
 After sign-up (or on the first visit without an account) a modal popup opens over the Dashboard, built like the sign-in card: logo, title ("Let's set up your profile"), one line of purpose, a "What should we call you?" field, a primary "Start with my own data" and a full-width secondary "Explore with sample data". It cannot be dismissed (Escape and the backdrop do nothing); Start stays disabled with a visible reason until a name is entered, and sample data keeps the typed name. Google accounts offer their name as a suggestion. The Dashboard header's left side then reads "Hi, <name>" over "Overview of your money for <month>", filled or empty. Erasing or replacing data keeps the name.
 
 ### First-time tour
-Six tooltips with a highlight ring and an arrow, shown once right after setup and replayable from Settings or from the welcome alert: the green button, Transactions (import), Goals, the bell, the theme switch, Settings. They point at real controls (sidebar on desktop, tab bar on phones, first visible match) and stay on screen. Next, Back, Skip tour, Escape. Done or skipped is saved in the account data (`tourDone`), so it does not repeat on another device. Tips that do not exist on a screen are left out.
+Seven tooltips with a highlight ring and an arrow, shown once right after setup and replayable from Settings or from the welcome alert: the green button, Transactions (import), Goals, Notes, the bell, the theme switch, Settings. They point at real controls (sidebar on desktop, tab bar on phones, first visible match) and stay on screen. Next, Back, Skip tour, Escape. Done or skipped is saved in the account data (`tourDone`), so it does not repeat on another device. Tips that do not exist on a screen are left out.
 
 ### Notifications
 A bell in the header, beside the theme switch, with an unread count. The panel lists alerts newest-priority first (important, heads up, info), each with a reason and an action; "Mark all as read"; read state is saved (`alertsRead`). Alerts are worked out from the data in `src/engine/alerts.ts`, never invented: overspending in the last complete month, categories well above the person's own average, EMIs over 40% of income, goals needing more than the surplus, many "Other" rows, no new transactions for 35 days, a backup older than 30 days (local-only users with 20+ transactions), account saving problems, a welcome note, and "add your first transactions". Sample data does not trigger import or backup reminders. Browser alerts (Settings): system notifications for important alerts that appear while the tab is in the background; they work only while MyMoney is open in a tab, because there is no push service.
@@ -105,6 +110,7 @@ All motion is GSAP (3.15, core only), written in `src/motion/index.ts`. Do not a
 | Decision | Rationale | Date |
 |----------|-----------|------|
 | Logo is a blocky M in mint on a dark tile, replacing the line-chart icon | Owner supplied a mint M reference in the brand colour; drawn as an original vector, not traced | 2026-11-02 |
+| A Notes tab with text, tables and to-do lists that autosave | Owner asked | 2026-11-03 |
 | Transactions are editable in place; imports, typed-in rows and edits are drafts until Save changes, and leaving the screen asks | Owner asked | 2026-11-02 |
 | Welcome is a modal popup over the Dashboard, a six-tip tour follows, and a notification bell with data-driven alerts and optional browser alerts was added | Owner asked | 2026-11-02 |
 | The first screen asks for a name; the Dashboard greets "Hi, <name>" at the left of its header | Owner asked | 2026-11-02 |
