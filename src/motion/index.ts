@@ -125,4 +125,12 @@ export function pulse(el: HTMLElement): () => void {
   return () => { tween.kill(); gsap.set(el, { clearProps: '--pulse' }); };
 }
 
+/** Voice bars that rise and fall while listening. Returns a function that stops them. Reduced motion gets still bars. */
+export function wave(bars: ArrayLike<Element>): () => void {
+  const list = Array.from(bars);
+  if (reducedMotion()) { gsap.set(list, { scaleY: (i: number) => [0.4, 0.7, 1, 0.7, 0.4][i % 5] }); return () => { gsap.set(list, { clearProps: 'transform' }); }; }
+  const tweens = list.map((el, i) => gsap.fromTo(el, { scaleY: 0.25 }, { scaleY: 1, duration: 0.45 + (i % 3) * 0.12, delay: i * 0.07, repeat: -1, yoyo: true, ease: 'sine.inOut' }));
+  return () => { tweens.forEach((t) => t.kill()); gsap.set(list, { clearProps: 'transform' }); };
+}
+
 export { gsap };

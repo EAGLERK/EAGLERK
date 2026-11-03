@@ -785,25 +785,42 @@ ul.notes-list { display: grid; gap: 12px; grid-template-columns: repeat(auto-fil
   .block-title { min-width: 0; }
 }
 
-/* ===== Voice assistant ===== */
-.voice-btn, .voice-mic { --pulse: 0; }
-.voice-btn.live, .voice-mic.live { color: var(--accent-text); border-color: var(--accent); box-shadow: 0 0 0 calc(var(--pulse) * 5px) var(--ring-soft); }
-.voice-panel { display: flex; flex-direction: column; gap: 12px; width: min(400px, calc(100vw - 32px)); }
-.voice-panel .notif-head { padding-bottom: 0; }
-.voice-log { display: flex; flex-direction: column; gap: 8px; min-height: 48px; max-height: 220px; overflow-y: auto; }
-.voice-line { margin: 0; padding: 8px 12px; border-radius: var(--r-lg); max-width: 92%; font-size: 14px; line-height: 1.45; white-space: pre-line; overflow-wrap: anywhere; }
-.voice-line.me { align-self: flex-end; background: var(--info-bg); color: var(--text); }
-.voice-line.bot { align-self: flex-start; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
-.voice-line.live { border: 1px dashed var(--accent); color: var(--text-muted); }
-.voice-mic { align-self: stretch; justify-content: center; min-height: 52px; font-size: 16px; }
+/* ===== Mitra, the voice assistant ===== */
+.voice-btn { --pulse: 0; gap: 8px; padding: 0 14px; font-weight: 500; }
+.voice-btn.live { color: var(--accent-text); border-color: var(--accent); box-shadow: 0 0 0 calc(var(--pulse) * 5px) var(--ring-soft); }
+.voice-panel { display: flex; flex-direction: column; gap: 14px; width: min(380px, calc(100vw - 32px)); padding: 16px; border-radius: var(--r-xl); }
+.voice-head { display: flex; align-items: center; gap: 12px; }
+.voice-avatar { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); }
+.voice-who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
+.voice-who h2 { font-size: 16px; line-height: 1.3; }
+.voice-who .sub { font-size: 13px; }
+.voice-log { display: flex; flex-direction: column; gap: 8px; min-height: 64px; max-height: 220px; overflow-y: auto; }
+.voice-hello { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; }
+.voice-title { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.voice-hello .sub { margin: 0; }
+.voice-line { margin: 0; padding: 10px 14px; border-radius: 18px; max-width: 90%; font-size: 15px; line-height: 1.45; white-space: pre-line; overflow-wrap: anywhere; }
+.voice-line.me { align-self: flex-end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 6px; }
+.voice-line.bot { align-self: flex-start; background: var(--surface-2); color: var(--text); border-bottom-left-radius: 6px; }
+.voice-line.live { background: var(--info-bg); color: var(--text-muted); border: 1px dashed var(--accent); }
+.voice-confirm { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .voice-undo { align-self: flex-start; }
-.voice-confirm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.voice-confirm { justify-content: flex-end; }
+.voice-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.voice-chip { min-height: 36px; padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); font-size: 14px; cursor: pointer; }
+@media (hover: hover) { .voice-chip:hover { background: var(--surface-2); } }
+.voice-chip:focus-visible, .voice-orb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.voice-orb-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.voice-orb { --pulse: 0; width: 72px; height: 72px; border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); cursor: pointer; box-shadow: 0 6px 16px -4px rgb(0 0 0 / 0.3), 0 0 0 calc(var(--pulse) * 12px) var(--ring-soft); }
+.voice-orb:disabled { opacity: 0.5; cursor: default; }
+.voice-bars { display: flex; align-items: center; justify-content: center; gap: 4px; height: 32px; }
+.voice-bars i { display: block; width: 4px; height: 32px; border-radius: 2px; background: currentColor; transform-origin: center; }
+.voice-status { font-size: 14px; color: var(--text-muted); min-height: 20px; }
 .voice-form { display: flex; gap: 8px; }
-.voice-form input { flex: 1; min-width: 0; min-height: var(--control); padding: 8px 10px; background: var(--surface); border: 1px solid var(--axis); border-radius: 8px; color: var(--text); }
-.voice-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.voice-foot { margin-top: 0; }
+.voice-form input { flex: 1; min-width: 0; min-height: var(--control); padding: 8px 16px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; color: var(--text); }
+.voice-form .btn.icon { border-radius: 50%; }
+.voice-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; border-top: 1px solid var(--border); padding-top: 12px; }
 @media (max-width: 599px) {
+  .voice-btn { width: var(--control); min-width: var(--control); padding: 0; }
+  .voice-btn-text { display: none; }
   .voice-panel { width: auto; }
   .voice-wrap .notif-panel { position: fixed; left: 12px; right: 12px; top: 60px; }
 }

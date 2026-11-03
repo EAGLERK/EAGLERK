@@ -42,23 +42,37 @@ Click **Explore with sample data** on first launch to see every screen populated
 
 The Notes tab keeps lists for yourself, such as things to buy or sell. A note is a title and any mix of **text**, **tables** (add rows and columns; numeric columns get a total) and **to-do lists** with checkboxes. Start from Things to buy, Things to sell or a blank note. Notes save as you type, sync with your account and are part of your backup. Tests: `npm run e2e:notes`.
 
-## Voice assistant
+## Mitra, the voice assistant
 
-The microphone button in the header opens a voice assistant. It is a feature switch, on by default: build or run with `VITE_FEATURE_VOICE=0` to remove the button and its tour tip (`src/features.ts`). The first-time tour points at it. Tap **Speak** and say what you want, or type the same sentence in the box below (it also works in browsers that cannot listen).
+Mitra lives behind the **Ask Mitra** button in the header. Tap the big button and say what you want, or type it. It is a feature switch, on by default: build or run with `VITE_FEATURE_VOICE=0` to remove it and its tour tip (`src/features.ts`). The first-time tour introduces it.
 
-- **Add transactions:** "Spent 450 on lunch yesterday", "Got salary 1.25 lakh", "Add an expense for coffee" (it asks how much). They are drafts until you say or press **save**, like every other new transaction.
-- **Notes:** "Add milk, bread and eggs to my shopping list", "Note down call the bank", "Remind me to renew insurance", "Tick off milk", "Remove eggs from my shopping list", "Open my shopping list", "Create a note called trip plan".
-- **Navigate:** "Open goals", "Show my notes", "Dark mode", "Match my device theme".
-- **Change things:** "Change the amount of Swiggy to 500", "Set the category of Uber to Travel", "Set my age to 32", "Change my monthly income to 1.2 lakh", "Add a car goal", "Set house price to 80 lakh", "Set inflation to 6 percent".
-- **Ask:** "How much did I spend this month?", "How much did I save last month?"
-- **Undo:** "Undo" takes back the last change (up to 20 steps). Deleting and changing settings always asks first, and reads the old and new value back.
+- **Add transactions:** "Spent 450 on lunch yesterday", "Got salary 1.25 lakh", "Add an expense for coffee" (Mitra asks how much). They are drafts until you say or press **save**, like every other new transaction.
+- **Notes:** "Add milk, bread and eggs to my shopping list", "Note down call the bank", "Remind me to renew insurance", "Tick off milk", "Remove eggs from my shopping list", "Open my shopping list".
+- **Navigate:** "Open goals", "Show my notes", "Dark mode".
+- **Change things:** "Change the amount of Swiggy to 500", "Set the category of Uber to Travel", "Set my age to 32", "Add a car goal", "Set house price to 80 lakh", "Set inflation to 6 percent".
+- **Ask:** "How much did I spend this month?"
+- **Undo:** "Undo" takes back the last change (up to 20 steps). Deleting and changing settings always asks first and reads the old and new value back.
 
-How it works, and its limits:
+### Two layers
 
-- It is a fixed set of phrases read by rules on this device. There is no AI model and no API key. "Change anything" means the things listed above; anything else gets "I did not understand", never a guess. Say "help" for the list.
-- Speech to text is done by the browser. **Chrome and Edge send the audio to the browser vendor's servers** to do it; Safari varies; Firefox has no speech recognition (typing still works). MyMoney itself never records or stores audio. Spoken replies use the browser's own voice and can be turned off.
-- Speech recognition gets numbers wrong sometimes (14 and 40 sound alike), which is why anything that changes a setting is read back and confirmed.
-- Tests: `npm run e2e:voice` (speech is stubbed, since headless browsers cannot listen) and `tests/voice*.test.ts`. Not yet tested: real microphones and real recognition accuracy with Indian accents.
+1. **Rules, on this device (always on).** A fixed set of phrases is read by code in `src/voice/`. Instant, free, no data leaves your browser except what the browser's own speech recognition does.
+2. **AI, optional.** If Mitra's rules do not recognise a sentence, and the AI is switched on, the sentence goes to an AI model that turns it into one of the same commands, so "dinner with Rahul cost me eight hundred last night" works. The model **cannot do anything the rules cannot**: its answer is checked field by field (`validateCmd` in `src/voice/ai.ts`) and then goes through the same planner, so deletes and setting changes still ask first. It cannot read your data. What is sent: the sentence, today's date, your note titles and the planner's setting names. Never transactions, amounts from your data or your profile.
+
+To turn the AI layer on (about 10 minutes, needs a Supabase account and an Anthropic API key):
+
+```bash
+supabase functions deploy assistant
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Then build with `VITE_VOICE_AI=1`. The function (`supabase/functions/assistant/index.ts`) answers only signed-in users and calls Claude Haiku from the server, so the key is never in the page. Without `VITE_VOICE_AI=1`, or when signed out, Mitra is rules-only and the panel does not mention AI. **It costs money per sentence the rules miss** (a few hundred tokens each; set a spend limit on the key) and the function has no per-user rate limit yet. Add one before opening sign-ups to the public.
+
+### Limits
+
+- Speech to text is done by the browser. **Chrome and Edge send the audio to the browser vendor** to do it; Safari varies; Firefox has none (typing still works). MyMoney never records or stores audio. Spoken replies use the browser's voice and can be turned off.
+- Speech recognition mishears numbers (14 and 40), which is why anything that changes a setting is read back first.
+- Mitra can do what is listed above. Anything else gets an honest "I did not understand", never a guess. Say "help" for the list.
+- Tests: `npm run e2e:voice` (speech stubbed, since headless browsers cannot listen), `npm run e2e:voice-ai` (a stand-in Supabase and a scripted `assistant` function) and `tests/voice*.test.ts`. **Not tested:** a real microphone, real recognition accuracy with Indian accents, and the deployed Edge Function against the real Anthropic API. The function's request shape follows Anthropic's Messages API but has not been run end to end.
 
 ## Editing and saving transactions
 

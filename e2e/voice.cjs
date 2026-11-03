@@ -53,7 +53,7 @@ async function off() {
   await p.getByRole('button', { name: 'Start with my own data' }).click();
   check(await shown(p.getByRole('dialog', { name: /Quick tour/ })), 'the tour starts');
   check((await p.getByRole('button', { name: 'Voice assistant' }).count()) === 0, 'VITE_FEATURE_VOICE=0 removes the microphone button');
-  check(!(await p.getByText('Just say it').count()), 'and its tour tip');
+  check(!(await p.getByText('Meet Mitra').count()), 'and its tour tip');
   await browser.close();
   console.log(failed ? `\n${failed} failed` : '\nall passed');
   process.exit(failed ? 1 : 0);
@@ -77,10 +77,10 @@ async function off() {
       const tip = q.getByRole('dialog', { name: /Quick tour/ });
       let found = false;
       for (let i = 0; i < 9 && !found; i++) {
-        found = await tip.getByText('Just say it', { exact: true }).isVisible();
+        found = await tip.getByText('Meet Mitra', { exact: true }).isVisible();
         if (!found) await tip.getByRole('button', { name: 'Next', exact: true }).click({ timeout: 2000 }).catch(() => {});
       }
-      check(found, 'the first-time tour has a "Just say it" tip');
+      check(found, 'the first-time tour has a "Meet Mitra" tip');
       if (found) {
         await q.waitForTimeout(700); // the ring glides to its target
         const ring = await q.evaluate(() => { const r = document.querySelector('.tour-ring').getBoundingClientRect(); const b = document.querySelector('[data-tour="voice"]').getBoundingClientRect(); return Math.abs(r.left - (b.left - 6)) < 4 && Math.abs(r.top - (b.top - 6)) < 4; });

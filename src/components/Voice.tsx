@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { uid } from '../lib/format';
-import { pulse, popIn } from '../motion';
+import { pulse, popIn, wave } from '../motion';
 import { useStore } from '../store';
+import { askAI, aiAvailable } from '../voice/ai';
+import { ASSISTANT } from '../voice/brand';
 import { requestOpenNote } from '../voice/bus';
 import { parseAmountPhrase } from '../voice/numbers';
 import { parseAnswer, parseCommand, type Tab } from '../voice/parse';
@@ -15,6 +17,7 @@ type Theme = 'auto' | 'light' | 'dark';
 interface Line { id: number; who: 'me' | 'bot'; text: string }
 
 const HELP = [
+  `I'm ${ASSISTANT}. Here is what I can do:`,
   'Add: "Spent 450 on lunch yesterday", "Got salary 85000"',
   'Notes: "Add milk and eggs to my shopping list", "Note down call the bank", "Tick off milk"',
   'Go: "Open goals", "Show my notes"',
@@ -27,10 +30,10 @@ const EXAMPLES = ['Spent 450 on lunch', 'Add milk to my shopping list', 'Open go
 
 const ERRORS: Record<ListenError, string> = {
   denied: 'The microphone is blocked. Allow it in your browser’s site settings, or type instead.',
-  'no-speech': 'I did not hear anything. Tap the microphone and try again.',
+  'no-speech': 'I did not hear anything. Tap the button and try again.',
   network: 'Speech recognition needs an internet connection in this browser. You can type instead.',
   unsupported: 'This browser cannot listen. You can type instead.',
-  other: 'Listening stopped. Tap the microphone to try again.',
+  other: 'Listening stopped. Tap the button to try again.',
 };
 
 const prefGet = (k: string, d: string) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
@@ -47,6 +50,9 @@ export function Voice({ go, theme, setTheme, tabs }: { go: (tab: string) => void
   const [pending, setPending] = useState<Plan['ask'] | null>(null);
   const [speakOn, setSpeakOn] = useState(() => prefGet('mymoney:voice-speak', '1') === '1');
   const [canUndo, setCanUndo] = useState(false);
+  const [thinking, setThinking] = useState(false);
+  const aiReady = useMemo(() => aiAvailable(), []);
+  const [aiOn, setAiOn] = useState(() => prefGet('mymoney:voice-ai', '1') === '1');
   const supported = useMemo(() => listeningSupported(), []);
   const btn = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
@@ -58,8 +64,8 @@ export function Voice({ go, theme, setTheme, tabs }: { go: (tab: string) => void
   const viaMic = useRef(false);
 
   // Everything the handlers read lives in one ref, so a command always sees the latest data without re-creating the listener.
-  const live = useRef({ state, d, drafts, theme, tabs, go, setTheme, speakOn, pending, open });
-  live.current = { state, d, drafts, theme, tabs, go, setTheme, speakOn, pending, open };
+  const live = useRef({ state, d, drafts, theme, tabs, go, setTheme, speakOn, pending, open, aiOn });
+  live.current = { state, d, drafts, theme, tabs, go, setTheme, speakOn, pending, open, aiOn };
 
   const say = useCallback((who: Line['who'], text: string) => setLines((l) => [...l.slice(-7), { id: nextLine.current++, who, text }]), []);
 
@@ -147,7 +153,7 @@ export function Voice({ go, theme, setTheme, tabs }: { go: (tab: string) => void
     if (aloud) speak(text, next); else next();
   };
 
-  const handle = (text: string, mic: boolean) => {
+  const handle = async (text: string, mic: boolean) => {
     const said = text.trim();
     if (!said) return;
     viaMic.current = mic;
@@ -167,7 +173,18 @@ export function Voice({ go, theme, setTheme, tabs }: { go: (tab: string) => void
       }
       setPending(null); // They said something else: treat it as a new command.
     }
-    finish(makePlan(parseCommand(said, ctx.today), ctx));
+    const cmd = parseCommand(said, ctx.today);
+    // Mitra's own rules come first. Only a sentence they do not know goes to the AI, and only if it is switched on.
+    if (cmd.t === 'unknown' && aiReady && L.aiOn) {
+      setThinking(true);
+      const r = await askAI(said, { today: ctx.today, notes: (L.state.notes ?? []).map((n) => n.title).filter(Boolean), assumptions: L.d.assumptions.map((a) => a.label) });
+      setThinking(false);
+      if ('cmd' in r) finish(makePlan(r.cmd, context()));
+      else if ('reply' in r) reply(r.reply);
+      else reply(r.error === 'signin' ? 'Sign in to use the AI. I can still do everything on the list in "What can I say?".' : r.error === 'offline' ? 'I could not reach the AI just now. Try again, or say it another way.' : `Sorry, I could not work out what you meant by "${said}". Say help to see what I can do.`);
+      return;
+    }
+    finish(makePlan(cmd, ctx));
   };
   const handleRef = useRef(handle);
   handleRef.current = handle;
@@ -194,9 +211,11 @@ export function Voice({ go, theme, setTheme, tabs }: { go: (tab: string) => void
   };
 
   const mic = useRef<HTMLButtonElement>(null);
+  const bars = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (!listening) return;
     const stops = [btn.current, mic.current].filter((el): el is HTMLButtonElement => !!el).map((el) => pulse(el));
+    if (bars.current) stops.push(wave(bars.current.children));
     return () => stops.forEach((s) => s());
   }, [listening, open]);
 
@@ -240,60 +259,74 @@ export function Voice({ go, theme, setTheme, tabs }: { go: (tab: string) => void
 
   const lastMe = [...lines].reverse().find((l) => l.who === 'me');
   const lastBot = [...lines].reverse().find((l) => l.who === 'bot');
-  const noteText = 'Your browser turns speech into text. In Chrome the audio goes to Google to do that. MyMoney keeps no recordings.';
+  const first = (state.profile.name || '').trim().split(/\s+/)[0];
+  const status = thinking ? '' : listening ? 'Tap to stop' : 'Tap to talk';
+  const fresh = !lastMe && !lastBot && !listening && !thinking;
 
   return (
     <div className="bell-wrap voice-wrap">
-      <button ref={btn} className={`btn icon ghost voice-btn${listening ? ' live' : ''}`} data-tour="voice" aria-label="Voice assistant" aria-haspopup="dialog" aria-expanded={open} title="Voice assistant" onClick={opener}>
-        <Icon name="mic" size={18} />
+      <button ref={btn} className={`btn ghost voice-btn${listening ? ' live' : ''}`} data-tour="voice" aria-label={`Ask ${ASSISTANT}, your voice assistant`} aria-haspopup="dialog" aria-expanded={open} title={`Ask ${ASSISTANT}`} onClick={opener}>
+        <Icon name="mic" size={18} /><span className="voice-btn-text">Ask {ASSISTANT}</span>
       </button>
       {open && (
-        <div ref={panel} className="notif-panel voice-panel" role="dialog" aria-label="Voice assistant">
-          <div className="notif-head">
-            <h2>Voice assistant</h2>
-            <button className="btn small ghost" onClick={() => close()}>Close</button>
+        <div ref={panel} className="notif-panel voice-panel" role="dialog" aria-label={`${ASSISTANT}, your voice assistant`}>
+          <div className="voice-head">
+            <span className="voice-avatar" aria-hidden><Icon name="mic" size={16} /></span>
+            <div className="voice-who">
+              <h2>{ASSISTANT}</h2>
+              <span className="sub">Your money assistant{aiReady && aiOn ? ' · AI on' : ''}</span>
+            </div>
+            <button className="btn icon small ghost" aria-label="Close" onClick={() => close()}><Icon name="close" size={18} /></button>
           </div>
 
-          {supported && (
-            <button ref={mic} className={`btn voice-mic${listening ? ' live' : ''}`} aria-pressed={listening} onClick={toggleMic}>
-              <Icon name="mic" size={20} />{listening ? 'Stop' : 'Speak'}
-            </button>
-          )}
-
           <div ref={logBox} className="voice-log" role="log" aria-live="polite" aria-label="Conversation">
+            {fresh && (
+              <div className="voice-hello">
+                <p className="voice-title">{first ? `Hi ${first}, I'm ${ASSISTANT}.` : `Hi, I'm ${ASSISTANT}.`}</p>
+                <p className="sub">{supported ? 'Tap the button and tell me what to do.' : 'This browser cannot listen, but you can type what you want below.'}</p>
+              </div>
+            )}
             {listening && <p className="voice-line me live" role="status">{heard || 'Listening...'}</p>}
             {!listening && lastMe && <p className="voice-line me"><span className="sr-only">You said: </span>{lastMe.text}</p>}
-            {lastBot && <p className="voice-line bot"><span className="sr-only">Assistant: </span>{lastBot.text}</p>}
-            {!lastMe && !lastBot && !listening && <p className="sub">{supported ? 'Say what you want to do, or type it below.' : 'This browser cannot listen, but you can type the same commands below.'}</p>}
+            {lastBot && !thinking && <p className="voice-line bot"><span className="sr-only">{ASSISTANT}: </span>{lastBot.text}</p>}
+            {thinking && <p className="voice-line bot" role="status">Thinking...</p>}
           </div>
 
           {pending?.kind === 'confirm' && (
             <div className="voice-confirm">
-              <button className="btn small" onClick={() => handle('no', false)}>No</button>
-              <button className="btn small primary" onClick={() => handle('yes', false)}>Yes</button>
+              <button className="btn small" onClick={() => void handle('no', false)}>No</button>
+              <button className="btn small primary" onClick={() => void handle('yes', false)}>Yes</button>
             </div>
           )}
-          {canUndo && !pending && lastBot && <button className="linkbtn voice-undo" onClick={() => handle('undo', false)}>Undo that</button>}
+          {canUndo && !pending && lastBot && !thinking && <button className="linkbtn voice-undo" onClick={() => void handle('undo', false)}>Undo that</button>}
+
+          {fresh && (
+            <div className="voice-chips" aria-label="Examples">
+              {EXAMPLES.map((x) => <button key={x} className="voice-chip" onClick={() => { setTyped(x); field.current?.focus(); }}>{x}</button>)}
+            </div>
+          )}
+
+          {supported && (
+            <div className="voice-orb-wrap">
+              <button ref={mic} className={`voice-orb${listening ? ' live' : ''}`} aria-label={listening ? 'Stop' : 'Speak'} aria-pressed={listening} disabled={thinking} onClick={toggleMic}>
+                {listening ? <span ref={bars} className="voice-bars" aria-hidden><i /><i /><i /><i /><i /></span> : <Icon name="mic" size={28} />}
+              </button>
+              <span className="voice-status" aria-hidden>{status}</span>
+            </div>
+          )}
 
           <form className="voice-form" onSubmit={submit}>
             <label className="sr-only" htmlFor="voice-text">Type a command</label>
-            <input id="voice-text" ref={field} value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Or type: spent 450 on lunch" autoComplete="off" />
-            <button className="btn icon" type="submit" aria-label="Send" disabled={!typed.trim()}><Icon name="send" size={18} /></button>
+            <input id="voice-text" ref={field} value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Or type here" autoComplete="off" />
+            <button className="btn icon" type="submit" aria-label="Send" disabled={!typed.trim() || thinking}><Icon name="send" size={18} /></button>
           </form>
 
-          {!lastMe && !lastBot && (
-            <div className="voice-chips" aria-label="Examples">
-              {EXAMPLES.map((x) => <button key={x} className="btn small" onClick={() => { setTyped(x); field.current?.focus(); }}>{x}</button>)}
-            </div>
-          )}
-
-          <div className="notif-foot voice-foot">
-            {speakingSupported() ? (
-              <label className="check"><input type="checkbox" checked={speakOn} onChange={(e) => { setSpeakOn(e.target.checked); prefSet('mymoney:voice-speak', e.target.checked ? '1' : '0'); if (!e.target.checked) stopSpeaking(); }} />Speak replies</label>
-            ) : <span />}
-            <button className="linkbtn" onClick={() => handle('help', false)}>What can I say?</button>
+          <div className="voice-foot">
+            {speakingSupported() && <label className="check"><input type="checkbox" checked={speakOn} onChange={(e) => { setSpeakOn(e.target.checked); prefSet('mymoney:voice-speak', e.target.checked ? '1' : '0'); if (!e.target.checked) stopSpeaking(); }} />Speak replies</label>}
+            {aiReady && <label className="check"><input type="checkbox" checked={aiOn} onChange={(e) => { setAiOn(e.target.checked); prefSet('mymoney:voice-ai', e.target.checked ? '1' : '0'); }} />Use AI for new phrases</label>}
+            <button className="linkbtn" onClick={() => void handle('help', false)}>What can I say?</button>
           </div>
-          <p className="field-note">{noteText}</p>
+          <p className="field-note">Your browser turns speech into text; in Chrome the audio goes to Google. {aiReady && aiOn ? 'A sentence I do not recognise is sent to an AI service to be understood: just the sentence, the date and your note titles, never your transactions. ' : ''}{ASSISTANT} keeps no recordings.</p>
         </div>
       )}
     </div>

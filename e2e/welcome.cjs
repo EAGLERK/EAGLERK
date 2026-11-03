@@ -63,7 +63,7 @@ async function importCsv(page, name, text) {
     check(!(await dlg.isVisible()), 'starting closes the popup');
 
     // ---------- the tour ----------
-    const titles = ['Your main action', 'Bring in a bank statement', 'Plan a car, house or bike', 'Notes and lists', 'Just say it', 'Alerts', 'Light or dark', 'Your data, your rules'];
+    const titles = ['Your main action', 'Bring in a bank statement', 'Plan a car, house or bike', 'Notes and lists', 'Meet Mitra', 'Alerts', 'Light or dark', 'Your data, your rules'];
     const tip = p.getByRole('dialog', { name: /Quick tour/ });
     check(await shown(tip.getByText(titles[0])), 'the tour starts by itself the first time');
     let okSteps = true;
