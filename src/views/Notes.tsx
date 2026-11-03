@@ -6,6 +6,7 @@ import { Card } from '../components/ui';
 import { useToast } from '../components/feedback';
 import { inr } from '../lib/format';
 import { useStore } from '../store';
+import { onOpenNote, takePendingNote } from '../voice/bus';
 
 const when = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 
@@ -17,10 +18,12 @@ const STARTS: Array<{ kind: NoteKind; icon: IconName; title: string; hint: strin
 
 export function Notes() {
   const { state, dispatch } = useStore();
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(() => takePendingNote());
   const [choosing, setChoosing] = useState(false);
   const notes = useMemo(() => [...(state.notes ?? [])].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)), [state.notes]);
   const open = openId ? notes.find((n) => n.id === openId) : undefined;
+  // The voice assistant can ask for a note to be opened while this screen is already showing.
+  useEffect(() => onOpenNote((id) => { takePendingNote(); setOpenId(id); }), []);
 
   const start = (kind: NoteKind) => {
     const note = createNote(kind, new Date().toISOString());
@@ -93,6 +96,13 @@ function NoteEditor({ note: initial, onBack }: { note: Note; onBack: () => void 
   const latest = useRef(note);
   latest.current = note;
   const committed = useRef(initial);
+  // Something else changed this note (the voice assistant, for example). Take its version, unless there are keystrokes still waiting to save.
+  useEffect(() => {
+    if (initial === committed.current || latest.current !== committed.current) return;
+    committed.current = initial;
+    latest.current = initial;
+    setNote(initial);
+  }, [initial]);
   const timer = useRef(0);
   const gone = useRef(false);
   const [focusBlock, setFocusBlock] = useState<string | null>(null);

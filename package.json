@@ -15,6 +15,7 @@
     "e2e:welcome": "node e2e/welcome.cjs",
     "e2e:edit": "node e2e/edit.cjs",
     "e2e:notes": "node e2e/notes.cjs",
+    "e2e:voice": "node e2e/voice.cjs",
     "dev:auth-demo": "node scripts/dev-auth-demo.cjs",
     "check:supabase": "node scripts/check-supabase.cjs",
     "e2e:ui": "node e2e/ui.cjs"

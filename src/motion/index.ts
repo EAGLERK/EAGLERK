@@ -118,4 +118,11 @@ export function moveRing(el: HTMLElement, rect: { left: number; top: number; wid
   else gsap.to(el, { ...rect, duration: 0.3, overwrite: 'auto' });
 }
 
+/** A soft ring that breathes around a control while it is listening. Returns a function that stops it. Reduced motion gets a still ring. */
+export function pulse(el: HTMLElement): () => void {
+  if (reducedMotion()) { gsap.set(el, { '--pulse': 0.7 }); return () => { gsap.set(el, { clearProps: '--pulse' }); }; }
+  const tween = gsap.fromTo(el, { '--pulse': 0.15 }, { '--pulse': 1, duration: 0.8, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  return () => { tween.kill(); gsap.set(el, { clearProps: '--pulse' }); };
+}
+
 export { gsap };

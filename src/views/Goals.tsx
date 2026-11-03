@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { addMonths } from '../engine/cashflow';
-import { earliestMonths, GOAL_DEFAULTS, planGoal, type PlanContext } from '../engine/goals';
+import { earliestMonths, GOAL_DEFAULTS, newGoal, planGoal, type PlanContext } from '../engine/goals';
 import type { Goal, GoalKind } from '../engine/types';
 import { Icon, type IconName } from '../components/icons';
 import { useToast } from '../components/feedback';
@@ -11,8 +11,6 @@ import { useStore } from '../store';
 import { LoansCard } from './Loans';
 
 const Showcase3D = lazy(() => import('../three/Showcase3D'));
-
-const DEFAULT_PRICE: Record<GoalKind, number> = { car: 1_000_000, house: 6_000_000, bike: 150_000, other: 500_000 };
 
 const CHOICES: Array<{ kind: GoalKind; icon: IconName; title: string; hint: string }> = [
   { kind: 'car', icon: 'car', title: 'Car', hint: 'Down payment, loan and running costs' },
@@ -43,10 +41,7 @@ export function Goals() {
 
   const add = (kind: GoalKind) => {
     const g = GOAL_DEFAULTS[kind];
-    dispatch({
-      type: 'upsertGoal',
-      goal: { id: uid(), kind, name: g.name, price: DEFAULT_PRICE[kind], targetMonth: addMonths(d.today.slice(0, 7), kind === 'house' ? 84 : 24), downPaymentPct: g.downPaymentPct, loanRate: d.rates[g.rateKey] ?? 9, loanYears: g.loanYears, extraCostPct: g.extraCostPct, saved: 0 },
-    });
+    dispatch({ type: 'upsertGoal', goal: newGoal(kind, uid(), d.today, d.rates) });
     setChoosing(false);
     toast(`${g.name} goal added. Edit its price and date below.`);
   };

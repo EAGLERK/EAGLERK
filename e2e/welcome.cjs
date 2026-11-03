@@ -63,7 +63,7 @@ async function importCsv(page, name, text) {
     check(!(await dlg.isVisible()), 'starting closes the popup');
 
     // ---------- the tour ----------
-    const titles = ['Your main action', 'Bring in a bank statement', 'Plan a car, house or bike', 'Notes and lists', 'Alerts', 'Light or dark', 'Your data, your rules'];
+    const titles = ['Your main action', 'Bring in a bank statement', 'Plan a car, house or bike', 'Notes and lists', 'Just say it', 'Alerts', 'Light or dark', 'Your data, your rules'];
     const tip = p.getByRole('dialog', { name: /Quick tour/ });
     check(await shown(tip.getByText(titles[0])), 'the tour starts by itself the first time');
     let okSteps = true;
@@ -74,9 +74,9 @@ async function importCsv(page, name, text) {
       if (!(here && counter && geo.ringOk && geo.popIn)) { okSteps = false; console.log('  step', i + 1, { here, counter, geo }); }
       if (i < titles.length - 1) await tip.getByRole('button', { name: 'Next', exact: true }).click();
     }
-    check(okSteps, 'all seven tips show in order, each on screen with a highlight ring and a counter');
+    check(okSteps, 'all eight tips show in order, each on screen with a highlight ring and a counter');
     await tip.getByRole('button', { name: 'Back' }).click();
-    check(await shown(tip.getByText(titles[5], { exact: true }), 2000), 'Back goes to the previous tip');
+    check(await shown(tip.getByText(titles[titles.length - 2], { exact: true }), 2000), 'Back goes to the previous tip');
     await tip.getByRole('button', { name: 'Next', exact: true }).click();
     await tip.getByRole('button', { name: 'Done' }).click();
     check(!(await tip.isVisible()), 'Done closes the tour');
@@ -168,10 +168,10 @@ async function importCsv(page, name, text) {
     const mtip = m.getByRole('dialog', { name: /Quick tour/ });
     check(await shown(mtip), 'phone: the tour starts');
     let phoneOk = true;
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 8; i++) {
       const g = await m.evaluate(() => { const t = document.querySelector('.tour-pop').getBoundingClientRect(); const r = document.querySelector('.tour-ring').getBoundingClientRect(); return t.left >= 0 && t.right <= innerWidth && t.top >= 0 && t.bottom <= innerHeight && r.width > 20; });
       if (!g) { phoneOk = false; console.log('  phone step', i + 1, 'off screen'); }
-      if (i < 6) await mtip.getByRole('button', { name: 'Next', exact: true }).click(); else await mtip.getByRole('button', { name: 'Done' }).click();
+      if (i < 7) await mtip.getByRole('button', { name: 'Next', exact: true }).click(); else await mtip.getByRole('button', { name: 'Done' }).click();
     }
     check(phoneOk, 'phone: every tip stays inside the screen (the tab bar tips point up, the header tips point down)');
     const mb = m.getByRole('button', { name: /^Notifications/ });

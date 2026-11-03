@@ -784,3 +784,30 @@ ul.notes-list { display: grid; gap: 12px; grid-template-columns: repeat(auto-fil
   .note-top .btn { flex: none; }
   .block-title { min-width: 0; }
 }
+
+/* ===== Voice assistant ===== */
+.voice-btn, .voice-mic { --pulse: 0; }
+.voice-btn.live, .voice-mic.live { color: var(--accent-text); border-color: var(--accent); box-shadow: 0 0 0 calc(var(--pulse) * 5px) var(--ring-soft); }
+.voice-panel { display: flex; flex-direction: column; gap: 12px; width: min(400px, calc(100vw - 32px)); }
+.voice-panel .notif-head { padding-bottom: 0; }
+.voice-log { display: flex; flex-direction: column; gap: 8px; min-height: 48px; max-height: 220px; overflow-y: auto; }
+.voice-line { margin: 0; padding: 8px 12px; border-radius: var(--r-lg); max-width: 92%; font-size: 14px; line-height: 1.45; white-space: pre-line; overflow-wrap: anywhere; }
+.voice-line.me { align-self: flex-end; background: var(--info-bg); color: var(--text); }
+.voice-line.bot { align-self: flex-start; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.voice-line.live { border: 1px dashed var(--accent); color: var(--text-muted); }
+.voice-mic { align-self: stretch; justify-content: center; min-height: 52px; font-size: 16px; }
+.voice-undo { align-self: flex-start; }
+.voice-confirm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.voice-confirm { justify-content: flex-end; }
+.voice-form { display: flex; gap: 8px; }
+.voice-form input { flex: 1; min-width: 0; min-height: var(--control); padding: 8px 10px; background: var(--surface); border: 1px solid var(--axis); border-radius: 8px; color: var(--text); }
+.voice-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.voice-foot { margin-top: 0; }
+@media (max-width: 599px) {
+  .voice-panel { width: auto; }
+  .voice-wrap .notif-panel { position: fixed; left: 12px; right: 12px; top: 60px; }
+}
+@media (max-width: 430px) {
+  /* Room for bell, microphone and the three theme buttons next to the "Sample" badge. */
+  .crumbs { gap: 4px; }
+}

@@ -33,7 +33,7 @@ Click **Explore with sample data** on first launch to see every screen populated
 ## First run, tour and alerts
 
 - **Welcome popup:** the first time, a popup over the Dashboard asks what to call you, then starts empty or with sample data.
-- **Tour:** seven tooltips point at the main controls once. Replay them from Settings, Quick tour.
+- **Tour:** eight tooltips point at the main controls once, including the microphone. Replay them from Settings, Quick tour.
 - **Bell:** alerts worked out from your own data (overspending, goals that do not fit, heavy EMIs, uncategorised rows, stale data, backup and sync problems), each with a reason and a button. The rules are in `src/engine/alerts.ts` with tests in `tests/alerts.test.ts`.
 - **Browser alerts:** Settings, Notifications. Important alerts that appear while MyMoney is open in a background tab also show as system notifications. There is no push service, so nothing arrives when the app is closed; adding that would need a small server, a service worker and a push key.
 - Tests: `npm run e2e:welcome`.
@@ -41,6 +41,24 @@ Click **Explore with sample data** on first launch to see every screen populated
 ## Notes
 
 The Notes tab keeps lists for yourself, such as things to buy or sell. A note is a title and any mix of **text**, **tables** (add rows and columns; numeric columns get a total) and **to-do lists** with checkboxes. Start from Things to buy, Things to sell or a blank note. Notes save as you type, sync with your account and are part of your backup. Tests: `npm run e2e:notes`.
+
+## Voice assistant
+
+The microphone button in the header opens a voice assistant. It is a feature switch, on by default: build or run with `VITE_FEATURE_VOICE=0` to remove the button and its tour tip (`src/features.ts`). The first-time tour points at it. Tap **Speak** and say what you want, or type the same sentence in the box below (it also works in browsers that cannot listen).
+
+- **Add transactions:** "Spent 450 on lunch yesterday", "Got salary 1.25 lakh", "Add an expense for coffee" (it asks how much). They are drafts until you say or press **save**, like every other new transaction.
+- **Notes:** "Add milk, bread and eggs to my shopping list", "Note down call the bank", "Remind me to renew insurance", "Tick off milk", "Remove eggs from my shopping list", "Open my shopping list", "Create a note called trip plan".
+- **Navigate:** "Open goals", "Show my notes", "Dark mode", "Match my device theme".
+- **Change things:** "Change the amount of Swiggy to 500", "Set the category of Uber to Travel", "Set my age to 32", "Change my monthly income to 1.2 lakh", "Add a car goal", "Set house price to 80 lakh", "Set inflation to 6 percent".
+- **Ask:** "How much did I spend this month?", "How much did I save last month?"
+- **Undo:** "Undo" takes back the last change (up to 20 steps). Deleting and changing settings always asks first, and reads the old and new value back.
+
+How it works, and its limits:
+
+- It is a fixed set of phrases read by rules on this device. There is no AI model and no API key. "Change anything" means the things listed above; anything else gets "I did not understand", never a guess. Say "help" for the list.
+- Speech to text is done by the browser. **Chrome and Edge send the audio to the browser vendor's servers** to do it; Safari varies; Firefox has no speech recognition (typing still works). MyMoney itself never records or stores audio. Spoken replies use the browser's own voice and can be turned off.
+- Speech recognition gets numbers wrong sometimes (14 and 40 sound alike), which is why anything that changes a setting is read back and confirmed.
+- Tests: `npm run e2e:voice` (speech is stubbed, since headless browsers cannot listen) and `tests/voice*.test.ts`. Not yet tested: real microphones and real recognition accuracy with Indian accents.
 
 ## Editing and saving transactions
 

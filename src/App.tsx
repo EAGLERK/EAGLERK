@@ -5,6 +5,8 @@ import { DraftsProvider, useDrafts } from './components/Drafts';
 import { Logo } from './components/Logo';
 import { Notifications } from './components/Notifications';
 import { Tour } from './components/Tour';
+import { Voice } from './components/Voice';
+import type { Tab as VoiceTab } from './voice/parse';
 import { WelcomeDialog } from './components/WelcomeDialog';
 import { features } from './features';
 import { Dashboard } from './views/Dashboard';
@@ -158,7 +160,8 @@ function ShellInner() {
         <div className="panel">
           <div className="crumbs">
             <div className="path">MyMoney<span className="crumb-rest"> &rsaquo; <b>{current.label}</b></span></div>
-            {state.txns.some((t) => t.source === 'demo') && <span className="badge watch">Sample data</span>}
+            {state.txns.some((t) => t.source === 'demo') && <span className="badge watch">Sample<span className="crumb-rest"> data</span></span>}
+            {state.onboarded && features.voice && <Voice go={go} theme={theme} setTheme={setTheme} tabs={ALL.map((t) => t.id as VoiceTab)} />}
             {state.onboarded && <Notifications go={go} onTour={startTour} />}
             <div className="pill-toggle theme-switch" data-tour="theme" role="group" aria-label="Colour theme">
               {THEMES.map(({ id, label, icon }) => <button key={id} aria-pressed={theme === id} aria-label={label} title={label} onClick={() => setTheme(id)}><Icon name={icon} size={18} /></button>)}

@@ -2,6 +2,7 @@ import { affordability, emi, totalInterest, type Affordability } from './loan';
 import { equityPostTax, postTaxReturn, INSTRUMENTS } from './instruments';
 import { afterTaxRate, effectiveYield } from './deposits';
 import { inflate, monthsToReach, requiredMonthly } from './projection';
+import { addMonths } from './cashflow';
 import type { Goal, GoalKind, Rates } from './types';
 
 export const GOAL_DEFAULTS: Record<GoalKind, Pick<Goal, 'downPaymentPct' | 'loanYears' | 'extraCostPct' | 'name'> & { rateKey: string; growthKey: string }> = {
@@ -10,6 +11,14 @@ export const GOAL_DEFAULTS: Record<GoalKind, Pick<Goal, 'downPaymentPct' | 'loan
   bike: { name: 'Bike', downPaymentPct: 20, loanYears: 2, extraCostPct: 10, rateKey: 'bikeLoan', growthKey: 'bikeGrowth' },
   other: { name: 'Goal', downPaymentPct: 100, loanYears: 0, extraCostPct: 0, rateKey: 'fd', growthKey: 'inflation' },
 };
+
+export const DEFAULT_PRICE: Record<GoalKind, number> = { car: 1_000_000, house: 6_000_000, bike: 150_000, other: 500_000 };
+
+/** A new goal with the usual starting values for its kind. */
+export function newGoal(kind: GoalKind, id: string, today: string, rates: Rates): Goal {
+  const g = GOAL_DEFAULTS[kind];
+  return { id, kind, name: g.name, price: DEFAULT_PRICE[kind], targetMonth: addMonths(today.slice(0, 7), kind === 'house' ? 84 : 24), downPaymentPct: g.downPaymentPct, loanRate: rates[g.rateKey] ?? 9, loanYears: g.loanYears, extraCostPct: g.extraCostPct, saved: 0 };
+}
 
 export interface RuleCheck {
   ok: boolean;

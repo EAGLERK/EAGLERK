@@ -7,4 +7,6 @@
  */
 export const features = {
   investing: import.meta.env.VITE_FEATURE_INVESTING === '1',
+  /** The voice assistant is on. Build or run with VITE_FEATURE_VOICE=0 to take the microphone out of the header and the tour. */
+  voice: import.meta.env.VITE_FEATURE_VOICE !== '0',
 } as const;
