@@ -828,3 +828,15 @@ ul.notes-list { display: grid; gap: 12px; grid-template-columns: repeat(auto-fil
   /* Room for bell, microphone and the three theme buttons next to the "Sample" badge. */
   .crumbs { gap: 4px; }
 }
+
+/* ===== Phone, installed app and native shell ===== */
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+button, a, select, summary, label, input[type='checkbox'] { touch-action: manipulation; }
+/* iPhones zoom the page when a field smaller than 16px gets focus. Fields on touch screens are 16px. */
+@media (pointer: coarse) { input:not([type='checkbox']):not([type='radio']), select, textarea { font-size: 16px !important; } }
+/* Room for the notch, the status bar and the rounded corners when the page fills the screen (installed app, native app). */
+@media (max-width: 899px) {
+  .frame { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+  .panel { padding-top: calc(12px + env(safe-area-inset-top, 0px)); }
+  .notif-panel, .voice-wrap .notif-panel { top: calc(60px + env(safe-area-inset-top, 0px)); }
+}

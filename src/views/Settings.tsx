@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { Assumption } from '../engine/assumptions';
 import { Badge, Callout, Card, Field, Num, NumInput, PasswordInput, Toggle } from '../components/ui';
+import { InstallCard } from '../components/Install';
 import { NotificationSettings } from '../components/Notifications';
 import { pct } from '../lib/format';
 import { Icon } from '../components/icons';
@@ -134,7 +135,9 @@ export function Settings() {
 
       <NotificationSettings />
 
-      <Card title="Quick tour" sub="Seven short tips that point at the main controls. They appear once; you can replay them here.">
+      <InstallCard />
+
+      <Card title="Quick tour" sub="A few short tips that point at the main controls. They appear once; you can replay them here.">
         <button className="btn" onClick={() => { location.hash = 'dashboard'; dispatch({ type: 'tour', done: false }); }}>Take the tour again</button>
       </Card>
 

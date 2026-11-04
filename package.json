@@ -17,11 +17,21 @@
     "e2e:notes": "node e2e/notes.cjs",
     "e2e:voice": "node e2e/voice.cjs",
     "e2e:voice-ai": "node e2e/voice-ai.cjs",
+    "e2e:pwa": "node e2e/pwa.cjs",
     "dev:auth-demo": "node scripts/dev-auth-demo.cjs",
     "check:supabase": "node scripts/check-supabase.cjs",
-    "e2e:ui": "node e2e/ui.cjs"
+    "e2e:ui": "node e2e/ui.cjs",
+    "build:mobile": "vite build --base ./ && cap sync",
+    "mobile:android": "npm run build:mobile && cap open android",
+    "mobile:ios": "npm run build:mobile && cap open ios",
+    "mobile:apk": "npm run build:mobile && cd android && ./gradlew assembleDebug",
+    "mobile:icons": "capacitor-assets generate --assetPath assets --android --ios"
   },
   "dependencies": {
+    "@capacitor-community/speech-recognition": "^7.0.1",
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0",
     "@supabase/supabase-js": "^2.118.0",
     "gsap": "3.15.0",
     "react": "^19.3.1",
@@ -30,6 +40,8 @@
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.0",
     "@electric-sql/pglite": "^0.5.13",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",

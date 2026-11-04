@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { isNative } from '../platform';
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -24,7 +25,8 @@ export const supabase: SupabaseClient | null =
 
 export const authFeatures = {
   enabled: supabase !== null,
-  google: import.meta.env.VITE_AUTH_GOOGLE !== '0',
+  /** Google refuses sign-in from inside an app's web view, so the apps use email and password only. */
+  google: import.meta.env.VITE_AUTH_GOOGLE !== '0' && !isNative(),
   /** Phone sign-in needs an SMS provider configured in Supabase. Off until VITE_AUTH_PHONE=1. */
   phone: import.meta.env.VITE_AUTH_PHONE === '1',
 };

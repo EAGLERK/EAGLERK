@@ -1,3 +1,6 @@
+import { isNative } from '../platform';
+import { createNativeListener } from './native-speech';
+
 /**
  * Thin wrapper over the browser's speech recognition and speech synthesis.
  * Recognition is Chrome, Edge and Safari only (Firefox has none). In Chrome the audio is sent to Google to be turned into text;
@@ -18,7 +21,8 @@ const ctor = (): RecCtor | null => {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 };
 
-export const listeningSupported = (): boolean => !!ctor();
+/** Inside the phone apps the phone's own recogniser is used, so listening is assumed; a missing one is reported when it starts. */
+export const listeningSupported = (): boolean => isNative() || !!ctor();
 export const speakingSupported = (): boolean => typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
 
 export type ListenError = 'denied' | 'no-speech' | 'network' | 'unsupported' | 'other';
@@ -36,7 +40,18 @@ export interface ListenHandlers {
   onError(e: ListenError): void;
 }
 
+/** The phone plugin is loaded the first time it is needed, so the web build never pays for it. */
+function nativeListener(h: ListenHandlers, lang: string): Listener {
+  let inner: Listener | null = null;
+  const load = import('@capacitor-community/speech-recognition').then(({ SpeechRecognition }) => { inner = createNativeListener(SpeechRecognition, h, lang); return inner; });
+  return {
+    start() { void load.then((l) => l.start()).catch(() => { h.onError('unsupported'); h.onEnd(); }); },
+    stop() { inner?.stop(); },
+  };
+}
+
 export function createListener(h: ListenHandlers, lang = 'en-IN'): Listener | null {
+  if (isNative()) return nativeListener(h, lang);
   const C = ctor();
   if (!C) return null;
   let rec: Rec | null = null;

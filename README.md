@@ -74,6 +74,48 @@ Then build with `VITE_VOICE_AI=1`. The function (`supabase/functions/assistant/i
 - Mitra can do what is listed above. Anything else gets an honest "I did not understand", never a guess. Say "help" for the list.
 - Tests: `npm run e2e:voice` (speech stubbed, since headless browsers cannot listen), `npm run e2e:voice-ai` (a stand-in Supabase and a scripted `assistant` function) and `tests/voice*.test.ts`. **Not tested:** a real microphone, real recognition accuracy with Indian accents, and the deployed Edge Function against the real Anthropic API. The function's request shape follows Anthropic's Messages API but has not been run end to end.
 
+## Mobile app
+
+The phone apps are this same web app, not a rewrite, so every screen, Mitra and your data work the same everywhere. There are three ways to get it on a phone.
+
+**1. Install from the browser (works as soon as the site is deployed over HTTPS).** On Android (Chrome, Edge) open the site, then Settings, Use MyMoney as an app, Install the app. On iPhone and iPad open it in Safari, tap Share, then Add to Home Screen. It opens full screen with its own icon, keeps working with no connection, and long-pressing the icon on Android offers Add transaction and Notes. The service worker (`pwa/sw.js`) only saves this site's own files; it never stores your data and never touches sign-in, sync or AI calls. **On iPhone the home-screen app has storage separate from Safari**, so your data will look missing: download a backup in Safari first and restore it inside the app (Settings says this).
+
+**2. Android app (Capacitor).** You need [Android Studio](https://developer.android.com/studio) and a phone or emulator.
+
+```bash
+npm run mobile:android   # builds the web app, copies it into android/, opens Android Studio; press Run
+npm run mobile:apk       # or build a debug APK: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+**3. iPhone app (Capacitor).** You need a Mac with Xcode and [CocoaPods](https://cocoapods.org), and, to put it on anyone else's phone, the Apple Developer Program ($99 a year).
+
+```bash
+cd ios/App && pod install && cd ../..
+npm run mobile:ios       # builds the web app, copies it into ios/, opens Xcode; press Run
+```
+
+Before you publish either app:
+
+- **Change `appId` in `capacitor.config.ts`** (it is `app.mymoney`, a placeholder). It is the app's permanent identity in Google Play and the App Store and cannot be changed later. Use a reverse domain you own.
+- The native build reads `.env.local` like any build, so sign-in is on. **Set `VITE_WEB_URL` to your deployed site** (for example `https://mymoney.example`). Inside the apps the page's own address is `https://localhost`, which means nothing to a phone, so confirmation and password-reset emails link to that website instead: the person confirms there, then signs in in the app. Add the same URL to Supabase's redirect list.
+- Icons and splash screens come from `assets/` (made by `node scripts/make-icons.cjs`, applied by `npm run mobile:icons`). Replace the files in `assets/` to rebrand.
+- A release build needs a signing key (Android) or a signing team (iOS). Google Play has a one-time $25 fee. Both stores also want a privacy policy; the privacy notes below are a starting point.
+
+What is different inside the apps:
+
+- **Google sign-in is off.** Google refuses sign-in from an app's web view. Email and password works.
+- **Mitra listens through the phone's own recogniser** (a Capacitor plugin), because the web view has no speech recognition. The first tap asks for the microphone. Typing works regardless.
+- **Browser alerts are not available** (web views have no Notification API); the bell inside the app still works. Real phone notifications would need a native notifications plugin, which is not wired.
+- **Downloading a backup may not work** in a web view; use Copy backup in Settings.
+- Android's cloud backup of app data is switched off (`allowBackup="false"`), so your money data is not copied to a Google account behind your back. The cost: it is not restored on a new phone. Use your MyMoney account or a backup file for that.
+
+What has and has not been checked:
+
+- **Checked in a real browser:** the manifest, icons, service worker and **offline opening with your data** (`npm run e2e:pwa`), 16px fields so iPhones do not zoom, safe-area padding, no sideways scroll.
+- **Run through Capacitor's real web code with a stand-in for the phone side:** the app pretends to be the Android shell, Mitra picks the phone recogniser, asks for the permission, starts it, "hears" a sentence and acts on it (`npm run e2e:pwa`). Plus unit tests for the listening logic (one tap = one recogniser, refusals, failures) and for where email links lead (`tests/mobile.test.ts`). The stand-in is my reading of how the plugin behaves, not the real plugin on a real phone.
+- **Not built or run:** the Android project could not be built in the environment I worked in (its network blocks Google's Maven server, so Gradle cannot download the Android toolchain), the iPhone project needs a Mac, and **nothing has run on a real phone**. Expect to fix small things on the first build. Unknown until you try: how the 3D goal pictures perform on low-end Android phones, how the plugin behaves on iOS (it predates Swift Package Manager, so the iPhone project uses CocoaPods), and whether the status bar and notch padding look right on every device.
+- **Why not React Native:** it would be a second app to write and keep in step, with the engine, notes, drafts, Mitra and every screen rebuilt. A web view feels less native (scrolling and transitions are the browser's), which is the price of one codebase. Say so if you want the rewrite; it is months, not days.
+
 ## Editing and saving transactions
 
 Every transaction can be edited in the list: date (click it for a calendar), description, category, amount, and money in or out. Anything imported, typed in or changed is a **draft** until you press **Save changes**: it is highlighted, it does not count on the Dashboard, and leaving the screen asks whether to save, leave without saving, or keep editing. Closing or reloading the tab shows the browser's own warning. Tests: `npm run e2e:edit`.

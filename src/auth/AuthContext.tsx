@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { Session, User } from '@supabase/supabase-js';
 import { authFeatures, supabase } from './supabase';
 import { friendlyAuthError, normalizePhone, validateEmail, validatePassword } from './validate';
+import { isNative } from '../platform';
+import { redirectFor } from './redirect';
 
 export type Result = { ok: true } | { ok: false; error: string };
 export type SignUpResult = Result | { ok: true; needsConfirm: true };
@@ -33,7 +35,7 @@ export const useAuth = (): AuthApi | null => useContext(Ctx);
 
 const ok: Result = { ok: true };
 const fail = (e: unknown): Result => ({ ok: false, error: friendlyAuthError(e) });
-const redirectUrl = () => window.location.origin + window.location.pathname;
+const redirectUrl = () => redirectFor(isNative(), import.meta.env.VITE_WEB_URL as string | undefined, window.location.origin, window.location.pathname);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
