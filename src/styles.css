@@ -840,3 +840,25 @@ button, a, select, summary, label, input[type='checkbox'] { touch-action: manipu
   .panel { padding-top: calc(12px + env(safe-area-inset-top, 0px)); }
   .notif-panel, .voice-wrap .notif-panel { top: calc(60px + env(safe-area-inset-top, 0px)); }
 }
+
+/* ===== Refinement pass (design review) ===== */
+/* The header's controls: Mitra is a real button, the theme is one button on a phone. */
+.theme-cycle { display: none; }
+@media (max-width: 599px) {
+  .theme-switch { display: none; }
+  .theme-cycle { display: inline-flex; }
+  /* Icon-only controls in the header match: no box around the microphone on a phone. */
+  .voice-btn { border-color: transparent; box-shadow: none; }
+  .voice-btn.live { border-color: var(--accent); }
+}
+/* One summary leads. With exactly three cards, "Left over" is the wider one and its figure is the largest on the page. */
+@media (min-width: 900px) {
+  .sumgrid:has(> :nth-child(3):last-child) { grid-template-columns: 1.5fr 1fr 1fr; }
+  .sumgrid > .sumcard.feature .big { font-size: 36px; }
+}
+.sumcard .head { min-height: 60px; }
+/* The goals page is about goals: the 3D picture is a header, not the main event. */
+.showcase { height: 240px; }
+@media (max-width: 899px) { .showcase { height: 200px; } }
+/* Figures of different sizes still start on one line across the row. */
+@media (min-width: 900px) { .sumcard .big { min-height: 48px; } }

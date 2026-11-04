@@ -155,10 +155,11 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
       <div className="grid g2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))' }}>
         <Card
           title="Cash flow"
-          sub={<span>Left over, last {range} months <span style={{ marginLeft: 8 }}>Spend <Delta now={cur.spend} before={prev.spend} upIsGood={false} fmt={inrCompact} /></span></span>}
+          sub={`Left over, last ${range} months`}
           right={<Toggle label="Range" value={range} onChange={setRange} options={[['6', '6 months'], ['12', '12 months']]} />}
         >
-          <div className={`bigfig num ${rangeSaved < 0 ? 'bad' : ''}`} style={{ marginBottom: 8 }}>{inr(rangeSaved)}</div>
+          <div className={`bigfig num ${rangeSaved < 0 ? 'bad' : ''}`}>{inr(rangeSaved)}</div>
+          <div className="sub" style={{ marginBottom: 8 }}>Spending in {monthLabel(month)}: <Delta now={cur.spend} before={prev.spend} upIsGood={false} fmt={inrCompact} /></div>
           <IncomeSpendChart data={trend.map((t) => ({ label: monthLabel(t.month, false), income: t.income, spend: t.spend, invested: t.invested }))} />
         </Card>
 

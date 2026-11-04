@@ -44,8 +44,12 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
       check((await primaries(ph)).length <= 1, `phone / ${tab}: at most one primary button (${JSON.stringify(await primaries(ph))})`);
       check((await clipped(ph)).length === 0, `phone / ${tab}: no clipped toggles`);
     }
-    const sw = await ph.locator('.theme-switch button').evaluateAll((b) => b.map((e) => Math.round(e.getBoundingClientRect().height)));
-    check(sw.length === 3 && sw.every((h) => h >= 44), `phone: theme buttons are at least 44px tall ${JSON.stringify(sw)}`);
+    const cyc = await ph.locator('.theme-cycle').boundingBox();
+    check(cyc && cyc.width >= 44 && cyc.height >= 44 && (await ph.locator('.theme-switch').isHidden()), `phone: one theme button, at least 44px, replaces the three-button switch (${JSON.stringify(cyc && [Math.round(cyc.width), Math.round(cyc.height)])})`);
+    const themeBefore = await ph.evaluate(() => document.documentElement.dataset.theme || 'auto');
+    await ph.locator('.theme-cycle').click();
+    await ph.waitForTimeout(150);
+    check((await ph.evaluate(() => document.documentElement.dataset.theme || 'auto')) !== themeBefore && /Colour theme: /.test(await ph.locator('.theme-cycle').getAttribute('aria-label')), 'phone: tapping it steps to the next theme and its spoken name says which one is on');
     check(await ph.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'phone: the header with the theme switcher does not overflow sideways');
     await phoneCtx.close();
 

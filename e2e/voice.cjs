@@ -247,8 +247,8 @@ async function off() {
     check(box.x >= 0 && box.x + box.width <= 390 && box.y + box.height <= 780, 'the panel fits inside the phone screen');
     await ctx.close();
     ({ ctx, p } = await start(browser, { demo: true, viewport: { width: 390, height: 780 } }));
-    const dark = await p.getByRole('button', { name: 'Dark', exact: true }).boundingBox();
-    check(dark && dark.x + dark.width <= 390, 'with sample data on a phone, all three theme buttons are still on screen');
+    const cyc = await p.locator('.theme-cycle').boundingBox();
+    check(cyc && cyc.x + cyc.width <= 390 && cyc.x >= 0, 'with sample data on a phone, the theme button is still on screen');
     await ctx.close();
   } catch (e) {
     console.log('FAIL crashed: ' + (e && e.message));

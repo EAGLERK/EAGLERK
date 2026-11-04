@@ -265,7 +265,7 @@ export function Voice({ go, theme, setTheme, tabs }: { go: (tab: string) => void
 
   return (
     <div className="bell-wrap voice-wrap">
-      <button ref={btn} className={`btn ghost voice-btn${listening ? ' live' : ''}`} data-tour="voice" aria-label={`Ask ${ASSISTANT}, your voice assistant`} aria-haspopup="dialog" aria-expanded={open} title={`Ask ${ASSISTANT}`} onClick={opener}>
+      <button ref={btn} className={`btn voice-btn${listening ? ' live' : ''}`} data-tour="voice" aria-label={`Ask ${ASSISTANT}, your voice assistant`} aria-haspopup="dialog" aria-expanded={open} title={`Ask ${ASSISTANT}`} onClick={opener}>
         <Icon name="mic" size={18} /><span className="voice-btn-text">Ask {ASSISTANT}</span>
       </button>
       {open && (

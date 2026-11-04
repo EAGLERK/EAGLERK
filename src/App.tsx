@@ -120,6 +120,7 @@ function ShellInner() {
     routeIn(mainRef.current);
   }, [tab]);
   const current = ALL.find((t) => t.id === tab) ?? ALL[0];
+  const currentTheme = THEMES.find((t) => t.id === theme) ?? THEMES[0];
 
   const startTour = () => { go('dashboard'); dispatch({ type: 'tour', done: false }); };
 
@@ -166,6 +167,10 @@ function ShellInner() {
             <div className="pill-toggle theme-switch" data-tour="theme" role="group" aria-label="Colour theme">
               {THEMES.map(({ id, label, icon }) => <button key={id} aria-pressed={theme === id} aria-label={label} title={label} onClick={() => setTheme(id)}><Icon name={icon} size={18} /></button>)}
             </div>
+            {/* On a phone the three buttons would take a third of the header, so one button steps through the same three choices. */}
+            <button className="btn icon ghost theme-cycle" data-tour="theme" aria-label={`Colour theme: ${currentTheme.label}. Tap to change.`} title={currentTheme.label} onClick={() => setTheme(THEMES[(THEMES.findIndex((t) => t.id === theme) + 1) % THEMES.length].id)}>
+              <Icon name={currentTheme.icon} size={20} />
+            </button>
           </div>
           <main ref={mainRef} tabIndex={-1} id="main">
             {tab === 'transactions' ? <Transactions openAdd={route === 'add-transaction'} onCloseAdd={() => { location.hash = 'transactions'; setRoute('transactions'); }} />

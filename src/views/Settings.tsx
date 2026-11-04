@@ -85,7 +85,12 @@ export function Settings() {
 
   return (
     <div className="page">
-      <h1>Settings</h1>
+      <div className="page-head">
+        <div>
+          <h1>Settings</h1>
+          <div className="sub">Your profile, the numbers behind your plans, alerts and your data</div>
+        </div>
+      </div>
 
       {auth?.user && <AccountCard />}
 
