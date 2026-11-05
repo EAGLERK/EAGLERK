@@ -1,6 +1,7 @@
 // The Notes tab: text, tables and to-do lists, saved as you type. Checked in a real browser.
 // Usage: APP_URL=http://localhost:5173/ npm run e2e:notes   (server started with the Supabase values blanked)
 const { chromium } = require('playwright');
+const { seed } = require('./fixtures/demo.cjs');
 const URL = process.env.APP_URL || 'http://localhost:5173/';
 // The Investments and Plan tabs exist only in a build with investing switched on (INVESTING=1).
 const TABS = process.env.INVESTING === '1' ? 7 : 5;
@@ -13,8 +14,11 @@ async function start(browser, opts = {}, demo = false) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 }, ...opts });
   const p = await ctx.newPage();
   await p.goto(URL);
-  await p.getByLabel('What should we call you?').fill('Asha');
-  await p.getByRole('button', { name: demo ? 'Explore with sample data' : 'Start with my own data' }).click();
+  if (demo) await seed(p);
+  else {
+    await p.getByLabel('What should we call you?').fill('Asha');
+    await p.getByRole('button', { name: 'Get started' }).click();
+  }
   await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
   return { ctx, p };
 }

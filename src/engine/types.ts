@@ -15,6 +15,7 @@ export interface Txn {
   amount: number;
   type: 'income' | 'expense';
   category: string;
+  /** 'demo' only exists in data saved by an earlier version that had sample data. */
   source: 'manual' | 'csv' | 'demo';
   /** Name of the statement file this row was imported from, so the whole import can be removed in one step. */
   file?: string;

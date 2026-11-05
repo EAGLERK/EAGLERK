@@ -48,7 +48,7 @@ function SummaryCard(props: {
 }
 
 export function Dashboard({ go }: { go: (tab: string) => void }) {
-  const { state, dispatch, d } = useStore();
+  const { state, d } = useStore();
   const [month, setMonth] = useState(d.latestMonth);
   const [range, setRange] = useState<'6' | '12'>('6');
   const cur = useMemo(() => summarize(state.txns, month), [state.txns, month]);
@@ -71,10 +71,10 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
           </div>
         </div>
         <Empty title="Nothing here yet">
-          <p style={{ marginBottom: 14 }}>Add your transactions, investments and goals, or load sample data to see how the numbers look.</p>
+          <p style={{ marginBottom: 14 }}>Add a transaction, import a bank statement, or connect a Google Sheet, and this page fills in with your own numbers.</p>
           <div className="row" style={{ justifyContent: 'center' }}>
-            <button className="btn primary" onClick={() => dispatch({ type: 'loadDemo', name: state.profile.name })}>Load sample data</button>
-            <button className="btn" onClick={() => go('transactions')}>Import a bank statement</button>
+            <button className="btn primary" onClick={() => go('add-transaction')}>Add a transaction</button>
+            <button className="btn" onClick={() => go('transactions')}>Import or connect a sheet</button>
           </div>
         </Empty>
       </div>

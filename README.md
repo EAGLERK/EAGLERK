@@ -28,11 +28,11 @@ npm run e2e:auth   # sign-in, Google, sync and conflict tests against a mock Sup
 npm run dev:auth-demo   # try the sign-in screens at http://localhost:5177 with no Supabase project (in-memory mock)
 ```
 
-Click **Explore with sample data** on first launch to see every screen populated.
+The app starts empty and has no sample data: add a transaction, import a statement or connect a Google Sheet to see the screens fill in. (Earlier versions could load made-up sample data; if you still have some, a **Sample data** flag in the header opens Settings, where **Remove sample data** takes it out and keeps anything you added yourself.) Browser tests that need a filled-in account use made-up data from `e2e/fixtures/demo.cjs`.
 
 ## First run, tour and alerts
 
-- **Welcome popup:** the first time, a popup over the Dashboard asks what to call you, then starts empty or with sample data.
+- **Welcome popup:** the first time, a popup over the Dashboard asks what to call you, then starts with an empty account.
 - **Tour:** eight tooltips point at the main controls once, including the microphone. Replay them from Settings, Quick tour.
 - **Bell:** alerts worked out from your own data (overspending, goals that do not fit, heavy EMIs, uncategorised rows, stale data, backup and sync problems), each with a reason and a button. The rules are in `src/engine/alerts.ts` with tests in `tests/alerts.test.ts`.
 - **Browser alerts:** Settings, Notifications. Important alerts that appear while MyMoney is open in a background tab also show as system notifications. There is no push service, so nothing arrives when the app is closed; adding that would need a small server, a service worker and a push key.

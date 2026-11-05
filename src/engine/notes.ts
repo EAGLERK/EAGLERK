@@ -20,27 +20,6 @@ export function createNote(kind: NoteKind, now: string, id: Id = rid): Note {
   return { id: id(), title: '', updatedAt: now, blocks: [newText(id)] };
 }
 
-/** A few lines for the sample-data account, so the tab shows what it is for. */
-export function demoNotes(now = new Date().toISOString(), id: Id = rid): Note[] {
-  const buy: Note = {
-    id: id(), title: 'Things to buy', updatedAt: now,
-    blocks: [
-      { id: id(), type: 'todo', title: 'This month', items: [
-        { id: id(), text: 'Laptop bag', done: true }, { id: id(), text: 'Water purifier filter', done: false },
-        { id: id(), text: 'Running shoes', done: false }, { id: id(), text: 'Gift for Mom', done: false },
-      ] },
-      { id: id(), type: 'text', text: 'Wait for the festival sale on bigger items. Check price history first.' },
-    ],
-  };
-  const sell: Note = {
-    id: id(), title: 'Things to sell', updatedAt: new Date(Date.parse(now) - 3600_000).toISOString(),
-    blocks: [{ id: id(), type: 'table', title: '', columns: ['Item', 'Asking price (₹)', 'Status'], rows: [
-      ['Old phone', '8,000', 'Listed'], ['Study table', '3,500', 'Buyer coming Sunday'], ['Bicycle', '6,000', 'Not listed'],
-    ] }],
-  };
-  return [buy, sell];
-}
-
 /** How many to-do items are done, across the whole note. */
 export function todoProgress(note: Pick<Note, 'blocks'>): { done: number; total: number } {
   let done = 0;

@@ -58,7 +58,7 @@ const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers
     await p.getByLabel('Password', { exact: true }).fill(PW);
     await p.getByRole('button', { name: 'Create account', exact: true }).click();
     await p.getByLabel('What should we call you?').fill('Asha');
-    await p.getByRole('button', { name: 'Start with my own data' }).click();
+    await p.getByRole('button', { name: 'Get started' }).click();
     await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
 
     const panel = p.getByRole('dialog', { name: /Mitra/ });

@@ -2,6 +2,7 @@
 // Also pretends to be the Android app (a stand-in for Capacitor's native bridge) to check the app uses the phone's recogniser there.
 // Builds the app with the Supabase values blanked, serves it on port 4176 and tests it. Usage: npm run e2e:pwa
 const { spawn, execSync } = require('node:child_process');
+const { seed } = require('./fixtures/demo.cjs');
 const { chromium } = require('playwright');
 
 const PORT = 4176;
@@ -103,8 +104,7 @@ const NATIVE_SHIM = `
     // ---------- the service worker ----------
     const ready = await p.evaluate(async () => { const r = await navigator.serviceWorker.ready; return !!r.active; }).catch(() => false);
     check(ready, 'the service worker registers and becomes active');
-    await p.getByLabel('What should we call you?').fill('Asha');
-    await p.getByRole('button', { name: 'Explore with sample data' }).click();
+    await seed(p);
     await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
     await p.reload();
     await p.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 8000 }).catch(() => {});
@@ -140,7 +140,7 @@ const NATIVE_SHIM = `
     await n.goto(URL);
     check(!(await n.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)), 'inside the app no service worker is registered');
     await n.getByLabel('What should we call you?').fill('Asha');
-    await n.getByRole('button', { name: 'Start with my own data' }).click();
+    await n.getByRole('button', { name: 'Get started' }).click();
     await n.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
     await n.getByRole('navigation').getByRole('button', { name: 'Settings', exact: true }).click();
     check(await shown(n.getByRole('heading', { name: 'Quick tour' })) && !(await n.getByRole('heading', { name: 'Use MyMoney as an app' }).count()), 'inside the app there is no "install" card');

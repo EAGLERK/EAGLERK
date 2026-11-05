@@ -28,11 +28,13 @@ export function Settings() {
   const p = state.profile;
   const where = auth?.user ? 'your account' : 'this browser';
 
-  const replaceWithSample = async () => {
-    const ok = await confirm({ title: 'Replace your data with sample data?', body: `Everything in ${where} is replaced by made-up example transactions, investments and goals. Download a backup first if you want to keep yours.`, confirmLabel: 'Replace with sample data', danger: true });
+  // Earlier versions could load made-up sample data. Anyone who still has it can take it out; nothing offers to add it any more.
+  const hasSample = state.txns.some((t) => t.source === 'demo');
+  const removeSample = async () => {
+    const ok = await confirm({ title: 'Remove the sample data?', body: 'The made-up transactions, goals, investments and loan from the old sample data are deleted. Anything you added yourself stays. Notes are not touched, so delete any example notes yourself.', confirmLabel: 'Remove sample data', danger: true });
     if (!ok) return;
-    dispatch({ type: 'loadDemo', name: state.profile.name });
-    toast('Sample data loaded');
+    dispatch({ type: 'removeSample' });
+    toast('Sample data removed');
   };
 
   const eraseAll = async () => {
@@ -164,9 +166,9 @@ export function Settings() {
 
         <div className="danger-zone">
           <h3>Danger zone</h3>
-          <p className="sub">These replace or remove your data. You will be asked to confirm.</p>
+          <p className="sub">These remove your data. You will be asked to confirm.</p>
           <div className="row">
-            <button className="btn danger" onClick={replaceWithSample}>Replace with sample data</button>
+            {hasSample && <button className="btn danger" onClick={removeSample}>Remove sample data</button>}
             <button className="btn danger" onClick={eraseAll}><Icon name="trash" size={16} />Erase all data</button>
           </div>
         </div>

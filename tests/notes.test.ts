@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createNote, demoNotes, moveBlock, newTable, noteSummary, tableTotals, todoProgress } from '../src/engine/notes';
+import { createNote, moveBlock, newTable, noteSummary, tableTotals, todoProgress } from '../src/engine/notes';
 import type { Note, NoteBlock } from '../src/engine/types';
 
 let n = 0;
@@ -38,7 +38,7 @@ describe('starting a note', () => {
   });
 
   it('gives every block and item its own id', () => {
-    const note = demoNotes(NOW, id)[0];
+    const note = createNote('buy', NOW, id);
     const ids = [note.id, ...note.blocks.flatMap((b) => [b.id, ...(b.type === 'todo' ? b.items.map((i) => i.id) : [])])];
     expect(new Set(ids).size).toBe(ids.length);
   });

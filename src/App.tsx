@@ -162,7 +162,8 @@ function ShellInner() {
         <div className="panel">
           <div className="crumbs">
             <div className="path">MyMoney<span className="crumb-rest"> &rsaquo; <b>{current.label}</b></span></div>
-            {state.txns.some((t) => t.source === 'demo') && <span className="badge watch">Sample<span className="crumb-rest"> data</span></span>}
+            {/* Only for data loaded by an earlier version that had sample data: a way to see what it is and remove it. */}
+            {state.txns.some((t) => t.source === 'demo') && <button className="badge watch badge-btn" title="This is sample data. Open Settings to remove it." onClick={() => go('settings')}>Sample<span className="crumb-rest"> data</span></button>}
             {state.onboarded && features.voice && <Voice go={go} theme={theme} setTheme={setTheme} tabs={ALL.map((t) => t.id as VoiceTab)} />}
             {state.onboarded && <Notifications go={go} onTour={startTour} />}
             <div className="pill-toggle theme-switch" data-tour="theme" role="group" aria-label="Colour theme">
@@ -193,7 +194,7 @@ function ShellInner() {
         ))}
       </nav>
 
-      {!state.onboarded && <WelcomeDialog suggestedName={suggestedName(auth?.user)} onStart={(name) => dispatch({ type: 'startFresh', name })} onDemo={(name) => dispatch({ type: 'loadDemo', name })} />}
+      {!state.onboarded && <WelcomeDialog suggestedName={suggestedName(auth?.user)} onStart={(name) => dispatch({ type: 'startFresh', name })} />}
       {state.onboarded && !state.tourDone && <Tour onFinish={() => dispatch({ type: 'tour', done: true })} />}
     </div>
   );

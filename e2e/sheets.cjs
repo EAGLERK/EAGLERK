@@ -35,7 +35,7 @@ async function start(browser, opts = {}) {
 
   await p.goto(URL);
   await p.getByLabel('What should we call you?').fill('Asha');
-  await p.getByRole('button', { name: 'Start with my own data' }).click();
+  await p.getByRole('button', { name: 'Get started' }).click();
   await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
   await p.getByRole('navigation').getByRole('button', { name: /^(Transactions|Activity)$/ }).first().click();
   return { ctx, p, fake };

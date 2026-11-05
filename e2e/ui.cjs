@@ -2,6 +2,7 @@
 // no clipped controls, in-page confirmation, Undo, required-field feedback, keyboard and focus.
 // Needs Playwright with Chromium available. Usage: APP_URL=http://localhost:5173/ npm run e2e:ui
 const { chromium } = require('playwright');
+const { seed } = require('./fixtures/demo.cjs');
 const URL = process.env.APP_URL || 'http://localhost:5173/';
 // Investing is hidden unless the app was built with VITE_FEATURE_INVESTING=1; run with INVESTING=1 against such a build.
 const investing = process.env.INVESTING === '1';
@@ -32,7 +33,7 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     const phoneCtx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const ph = await phoneCtx.newPage();
     await ph.goto(URL);
-    await ph.getByRole('button', { name: 'Explore with sample data' }).click();
+    await seed(ph);
     await skipTour(ph);
     const phoneTabs = investing ? ['Home', 'Activity', 'Goals', 'Invest', 'Plan', 'Notes', 'Settings'] : ['Home', 'Activity', 'Goals', 'Notes', 'Settings'];
     for (const tab of phoneTabs) {
@@ -60,7 +61,7 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     p.on('console', (m) => ['error', 'warning'].includes(m.type()) && !/GL Driver|ReadPixels/.test(m.text()) && errors.push(m.text().slice(0, 160)));
     p.on('pageerror', (e) => errors.push(e.message));
     await p.goto(URL);
-    await p.getByRole('button', { name: 'Explore with sample data' }).click();
+    await seed(p);
     await skipTour(p);
     const nav = (n) => p.getByRole('navigation').getByRole('button', { name: n, exact: true }).click();
 
@@ -131,7 +132,7 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     const calm = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
     const cp = await calm.newPage();
     await cp.goto(URL);
-    await cp.getByRole('button', { name: 'Explore with sample data' }).click();
+    await seed(cp);
     await skipTour(cp);
     const cb = cp.getByRole('button', { name: 'Add transaction' });
     const cbox = await cb.boundingBox();

@@ -6,9 +6,9 @@ import { Logo } from './Logo';
 
 /**
  * Shown over the Dashboard the first time someone arrives (right after signing up, or on first visit without an account).
- * It cannot be dismissed: a name is asked for first, and either choice moves on.
+ * It cannot be dismissed: a name is asked for first.
  */
-export function WelcomeDialog({ suggestedName, onStart, onDemo }: { suggestedName: string; onStart: (name: string) => void; onDemo: (name: string) => void }) {
+export function WelcomeDialog({ suggestedName, onStart }: { suggestedName: string; onStart: (name: string) => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [name, setName] = useState(suggestedName);
   const ready = name.trim().length > 0;
@@ -32,9 +32,8 @@ export function WelcomeDialog({ suggestedName, onStart, onDemo }: { suggestedNam
           <label htmlFor="your-name">What should we call you?</label>
           <input id="your-name" autoFocus autoComplete="given-name" placeholder="Your name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
-        {!ready && <p className="why" role="status">Enter your name to start with your own data.</p>}
-        <button className="btn primary" type="submit" disabled={!ready}>Start with my own data</button>
-        <button className="btn block" type="button" onClick={() => onDemo(name)}>Explore with sample data</button>
+        {!ready && <p className="why" role="status">Enter your name to get started.</p>}
+        <button className="btn primary" type="submit" disabled={!ready}>Get started</button>
       </form>
     </dialog>
   );

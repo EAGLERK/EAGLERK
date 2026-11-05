@@ -4,6 +4,7 @@
 const { spawn } = require('node:child_process');
 const { chromium } = require('playwright');
 const mock = require('./mock-supabase.cjs');
+const { demoCsv } = require('./fixtures/demo.cjs');
 
 const MOCK_PORT = 54322; // not 54321, which `npm run dev:auth-demo` uses
 const APP_PORT = 5174;
@@ -67,6 +68,15 @@ async function signIn(page, email, pw = PW) {
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 }
 const savedChip = (page) => page.getByText('All changes saved').first().waitFor({ timeout: 8000 }).then(() => true, () => false);
+/** The app has no sample data any more, so an account gets its transactions the way a person would: by importing a statement and saving. */
+async function addTransactions(page) {
+  await page.getByLabel('What should we call you?').fill('Ann');
+  await page.getByRole('button', { name: 'Get started' }).click();
+  await page.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
+  await page.getByRole('navigation').getByRole('button', { name: 'Transactions', exact: true }).first().click();
+  await page.getByLabel('Choose a statement file', { exact: false }).setInputFiles({ name: 'statement.csv', mimeType: 'text/csv', buffer: Buffer.from(demoCsv()) });
+  await page.getByRole('button', { name: 'Save changes' }).click();
+}
 const nav = (page, name) => page.getByRole('navigation').getByRole('button', { name }).first().click();
 
 (async () => {
@@ -146,11 +156,10 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     await reset();
     p = await newPage(browser);
     await signUp(p, 'ann@test.dev');
-    await p.getByRole('button', { name: 'Explore with sample data' }).click();
-    await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
+    await addTransactions(p);
     check(await savedChip(p), 'after sign-up the app shows "All changes saved"');
     const s1 = await until(async () => { const s = await state(); const r = s.rows[0]; return r && r.data.txns.length > 100 ? s : false; });
-    check(!!s1, 'sample data was saved to the account row on the server');
+    check(!!s1, 'the imported transactions were saved to the account row on the server');
     const annId = s1 && s1.users[0].id;
     check(!!s1 && s1.rows[0].id === annId, 'the row belongs to the signed-in user');
     check(await p.evaluate(() => localStorage.getItem('mymoney:v1') === null && localStorage.getItem('eaglerk:v1') === null), 'no copy of the data is kept in browser storage while signed in');
@@ -159,7 +168,7 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     await p.reload();
     await nav(p, 'Dashboard');
     check(await p.getByText('Overview').first().waitFor({ timeout: 8000 }).then(() => true, () => false), 'reload: still signed in, data loaded from the account');
-    check(!(await text(p)).includes('Explore with sample data'), 'reload: no onboarding screen for an existing account');
+    check(!(await text(p)).includes('What should we call you?'), 'reload: no onboarding screen for an existing account');
 
     // 7. Second device sees the same data
     const pB = await newPage(browser);
@@ -281,7 +290,8 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     await reset();
     p = await newPage(browser);
     await signUp(p, 'dup@test.dev');
-    await p.getByRole('button', { name: 'Explore with sample data' }).click().catch(() => {});
+    await p.getByLabel('What should we call you?').fill('Dup');
+    await p.getByRole('button', { name: 'Get started' }).click();
     await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 4000 }).catch(() => {});
     await savedChip(p);
     await p.getByRole('button', { name: 'Sign out' }).first().click();
@@ -323,10 +333,10 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     await p.waitForURL(/\/auth\/v1\/authorize/, { timeout: 8000 });
     await fetch(`${MOCK}/__pkce?email=gina@test.dev&provider=google`);
     await p.goto(APP + '?code=abc123');
-    check(await p.getByRole('button', { name: 'Start with my own data' }).waitFor({ timeout: 8000 }).then(() => true, () => false), 'returning from Google signs the user in');
+    check(await p.getByRole('button', { name: 'Get started' }).waitFor({ timeout: 8000 }).then(() => true, () => false), 'returning from Google signs the user in');
     check(!p.url().includes('code='), 'the one-time code is removed from the address bar');
     await p.getByLabel('What should we call you?').fill('Asha');
-    await p.getByRole('button', { name: 'Start with my own data' }).click();
+    await p.getByRole('button', { name: 'Get started' }).click();
     await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
     await nav(p, 'Settings');
     check(await shown(p.getByText('Signed in with Google.')), 'Settings says the account uses Google');
@@ -339,7 +349,7 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     p = await newPage(browser);
     await signUp(p, 'rita@test.dev');
     await p.getByLabel('What should we call you?').fill('Asha');
-    await p.getByRole('button', { name: 'Start with my own data' }).click();
+    await p.getByRole('button', { name: 'Get started' }).click();
     await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
     await savedChip(p);
     await p.getByRole('button', { name: 'Sign out' }).first().click();
@@ -382,9 +392,9 @@ const nav = (page, name) => page.getByRole('navigation').getByRole('button', { n
     check(await p.getByRole('alert').getByText(/wrong or has expired/).waitFor({ timeout: 8000 }).then(() => true, () => false), 'a wrong code is refused with a plain message');
     await p.getByLabel('SMS code').fill('123456');
     await p.getByRole('button', { name: 'Verify code' }).click();
-    check(await p.getByRole('button', { name: 'Start with my own data' }).waitFor({ timeout: 8000 }).then(() => true, () => false), 'the right code signs the user in');
+    check(await p.getByRole('button', { name: 'Get started' }).waitFor({ timeout: 8000 }).then(() => true, () => false), 'the right code signs the user in');
     await p.getByLabel('What should we call you?').fill('Asha');
-    await p.getByRole('button', { name: 'Start with my own data' }).click();
+    await p.getByRole('button', { name: 'Get started' }).click();
     await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
     check(await p.getByText('+919876543210').first().waitFor({ timeout: 8000 }).then(() => true, () => false), 'the sidebar shows the phone number, not a blank');
     await savedChip(p);

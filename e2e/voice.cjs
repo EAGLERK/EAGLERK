@@ -2,6 +2,7 @@
 // so this tests everything after the words arrive: the panel, the commands, confirmations, undo and the changes in the app.
 // Usage: APP_URL=http://localhost:5173/ npm run e2e:voice   (server started with the Supabase values blanked)
 const { chromium } = require('playwright');
+const { seed } = require('./fixtures/demo.cjs');
 const URL = process.env.APP_URL || 'http://localhost:5173/';
 
 let failed = 0;
@@ -27,8 +28,11 @@ async function start(browser, { demo = false, stub = true, nospeech = false, vie
   if (stub) await p.addInitScript(STUB);
   if (nospeech) await p.addInitScript(() => { delete window.SpeechRecognition; delete window.webkitSpeechRecognition; });
   await p.goto(URL);
-  await p.getByLabel('What should we call you?').fill('Asha');
-  await p.getByRole('button', { name: demo ? 'Explore with sample data' : 'Start with my own data' }).click();
+  if (demo) await seed(p);
+  else {
+    await p.getByLabel('What should we call you?').fill('Asha');
+    await p.getByRole('button', { name: 'Get started' }).click();
+  }
   await p.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
   return { ctx, p };
 }
@@ -50,7 +54,7 @@ async function off() {
   const p = await ctx.newPage();
   await p.goto(URL);
   await p.getByLabel('What should we call you?').fill('Asha');
-  await p.getByRole('button', { name: 'Start with my own data' }).click();
+  await p.getByRole('button', { name: 'Get started' }).click();
   check(await shown(p.getByRole('dialog', { name: /Quick tour/ })), 'the tour starts');
   check((await p.getByRole('button', { name: 'Voice assistant' }).count()) === 0, 'VITE_FEATURE_VOICE=0 removes the microphone button');
   check(!(await p.getByText('Meet Mitra').count()), 'and its tour tip');
@@ -73,7 +77,7 @@ async function off() {
       const q = await c2.newPage();
       await q.goto(URL);
       await q.getByLabel('What should we call you?').fill('Asha');
-      await q.getByRole('button', { name: 'Start with my own data' }).click();
+      await q.getByRole('button', { name: 'Get started' }).click();
       const tip = q.getByRole('dialog', { name: /Quick tour/ });
       let found = false;
       for (let i = 0; i < 9 && !found; i++) {

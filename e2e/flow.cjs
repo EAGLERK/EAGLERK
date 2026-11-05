@@ -36,8 +36,8 @@ const check = (ok, msg) => {
   const main = () => page.locator('main').innerText();
 
   await page.goto(URL);
-  const startBtn = page.getByRole('button', { name: 'Start with my own data' });
-  check(await startBtn.isDisabled() && await page.getByText('Enter your name to start with your own data.').isVisible(), 'welcome: starting is disabled until a name is entered, and it says why');
+  const startBtn = page.getByRole('button', { name: 'Get started' });
+  check(await startBtn.isDisabled() && await page.getByText('Enter your name to get started.').isVisible(), 'welcome: starting is disabled until a name is entered, and it says why');
   await page.getByLabel('What should we call you?').fill('Asha');
   check(await startBtn.isEnabled(), 'welcome: entering a name enables Start');
   await startBtn.click();

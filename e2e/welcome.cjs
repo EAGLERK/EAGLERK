@@ -1,6 +1,7 @@
 // The welcome popup, the first-time tour, the notification bell and browser alerts, checked in a real browser.
 // Usage: APP_URL=http://localhost:5173/ npm run e2e:welcome   (server started with the Supabase values blanked)
 const { chromium } = require('playwright');
+const { demoState } = require('./fixtures/demo.cjs');
 const URL = process.env.APP_URL || 'http://localhost:5173/';
 
 let failed = 0;
@@ -53,13 +54,13 @@ async function importCsv(page, name, text) {
     check(await shown(dlg), 'first visit: a "Let\'s set up your profile" popup opens');
     check(await p.evaluate(() => !!document.querySelector('dialog.welcome') && document.querySelector('dialog.welcome').matches(':modal')), 'the popup is a real modal dialog over the page');
     check((await p.locator('.sidebar').isVisible()) && /Overview|Hi,/.test(await p.locator('main h1').innerText()), 'the Dashboard is behind it, not replaced by it');
-    check((await p.locator('dialog.welcome .brand-mark').count()) === 1 && (await p.locator('dialog.welcome .btn.primary').count()) === 1 && (await p.locator('dialog.welcome .btn.block').count()) === 1, 'it is laid out like the sign-in card: logo, field, one primary button, a secondary button below');
+    check((await p.locator('dialog.welcome .brand-mark').count()) === 1 && (await p.locator('dialog.welcome .btn.primary').count()) === 1 && (await p.locator('dialog.welcome .btn').count()) === 1 && !(await p.getByText(/sample data/i).count()), 'it is laid out like the sign-in card: logo, field, one primary button, and no sample-data option');
     check((await p.getByRole('button', { name: /^Notifications/ }).count()) === 0, 'no bell or alerts before setup is finished');
     await p.keyboard.press('Escape');
     check(await dlg.isVisible(), 'Escape does not dismiss it');
-    check(await p.getByRole('button', { name: 'Start with my own data' }).isDisabled(), 'Start is disabled until a name is entered');
+    check(await p.getByRole('button', { name: 'Get started' }).isDisabled(), 'Start is disabled until a name is entered');
     await p.getByLabel('What should we call you?').fill('Asha');
-    await p.getByRole('button', { name: 'Start with my own data' }).click();
+    await p.getByRole('button', { name: 'Get started' }).click();
     check(!(await dlg.isVisible()), 'starting closes the popup');
 
     // ---------- the tour ----------
@@ -149,7 +150,7 @@ async function importCsv(page, name, text) {
     const dp = await dctx.newPage();
     await dp.goto(URL);
     await dp.getByLabel('What should we call you?').fill('Ravi');
-    await dp.getByRole('button', { name: 'Start with my own data' }).click();
+    await dp.getByRole('button', { name: 'Get started' }).click();
     await dp.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
     await dp.getByRole('navigation').getByRole('button', { name: 'Settings', exact: true }).click();
     await dp.getByRole('button', { name: 'Turn on browser alerts' }).click();
@@ -164,7 +165,8 @@ async function importCsv(page, name, text) {
     check(await shown(m.getByRole('dialog', { name: /set up your profile/i })), 'phone: the popup opens');
     const fits = await m.evaluate(() => { const r = document.querySelector('dialog.welcome').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight && document.documentElement.scrollWidth <= innerWidth; });
     check(fits, 'phone: the popup fits the screen with no sideways scroll');
-    await m.getByRole('button', { name: 'Explore with sample data' }).click();
+    await m.getByLabel('What should we call you?').fill('Asha');
+    await m.getByRole('button', { name: 'Get started' }).click();
     const mtip = m.getByRole('dialog', { name: /Quick tour/ });
     check(await shown(mtip), 'phone: the tour starts');
     let phoneOk = true;
@@ -182,6 +184,42 @@ async function importCsv(page, name, text) {
     check(mp, 'phone: the notification panel fits the screen');
     check(await m.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'phone: the header with the bell does not overflow');
     await mctx.close();
+
+    // ---------- no sample data ----------
+    {
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+      const q = await ctx.newPage();
+      await q.goto(URL);
+      await q.getByLabel('What should we call you?').fill('Asha');
+      await q.getByRole('button', { name: 'Get started' }).click();
+      await q.getByRole('button', { name: 'Skip tour' }).click({ timeout: 6000 }).catch(() => {});
+      check(await shown(q.getByRole('heading', { name: 'Nothing here yet' })) && await shown(q.getByRole('button', { name: 'Add a transaction', exact: true }).first()), 'a new account\'s Dashboard asks for its own transactions');
+      check(!(await q.getByText(/sample/i).count()), 'and offers no sample data anywhere on it');
+      await q.getByRole('navigation').getByRole('button', { name: 'Settings', exact: true }).click();
+      check(await shown(q.getByRole('heading', { name: 'Danger zone' })) && !(await q.getByRole('button', { name: /sample data/i }).count()), 'Settings has no sample-data button');
+      await ctx.close();
+
+      // Someone who loaded sample data in an earlier version can still see it and take it out, without losing what they added themselves.
+      const old = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+      const o = await old.newPage();
+      await o.goto(URL);
+      const state = demoState('Asha');
+      state.tourDone = true;
+      state.txns.push({ id: 'mine-1', date: new Date().toISOString().slice(0, 10), description: 'My own coffee', amount: 120, type: 'expense', category: 'Food & Dining', source: 'manual' });
+      await o.evaluate((s) => localStorage.setItem('mymoney:v1', s), JSON.stringify(state));
+      await o.reload();
+      check(await shown(o.getByRole('button', { name: /Sample/ })), 'old sample data is flagged in the header');
+      await o.getByRole('button', { name: /Sample/ }).click();
+      check(await shown(o.getByRole('heading', { name: 'Danger zone' })), 'the flag opens Settings');
+      await o.getByRole('button', { name: 'Remove sample data' }).click();
+      check(await shown(o.getByRole('dialog', { name: 'Remove the sample data?' })), 'removing asks first');
+      await o.getByRole('dialog').getByRole('button', { name: 'Remove sample data' }).click();
+      await o.waitForFunction(() => (JSON.parse(localStorage.getItem('mymoney:v1')).txns || []).length === 1);
+      const after = await o.evaluate(() => JSON.parse(localStorage.getItem('mymoney:v1')));
+      check(after.txns[0].id === 'mine-1' && !after.goals.length && !after.investments.length && !after.liabilities.length, 'it removes the sample transactions, goals, investments and loan, and keeps a transaction the person added');
+      check(after.notes.length === 2 && !(await o.getByRole('button', { name: /Sample/ }).count()) && !(await o.getByRole('button', { name: 'Remove sample data' }).count()), 'notes are left alone, and the flag and the button go away');
+      await old.close();
+    }
   } finally {
     await browser.close();
   }

@@ -881,3 +881,6 @@ ul.files .file-info .sheet-error { margin-top: 6px; font-size: 13px; }
   ul.files.sheets li { flex-wrap: wrap; }
   ul.files.sheets .sheet-actions { width: 100%; justify-content: flex-start; }
 }
+
+/* The "Sample data" badge is a button only for data from an earlier version (it opens Settings to remove it). */
+button.badge-btn { border: 0; font: inherit; cursor: pointer; }

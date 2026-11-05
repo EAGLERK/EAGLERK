@@ -4,8 +4,6 @@ import { averages, monthsWithData, addMonths } from './engine/cashflow';
 import { buildPortfolio, type Portfolio } from './engine/portfolio';
 import { marginalRate } from './engine/tax';
 import type { Note, SheetLink, Goal, Investment, Liability, Profile, Rates, Txn } from './engine/types';
-import { demoData } from './demo';
-import { demoNotes } from './engine/notes';
 import { todayISO } from './lib/format';
 
 export interface AppState {
@@ -65,7 +63,8 @@ export type Action =
   | { type: 'upsertLiability'; liability: Liability }
   | { type: 'deleteLiability'; id: string }
   | { type: 'override'; key: string; value: number | null }
-  | { type: 'loadDemo'; name?: string }
+  /** Takes out what the old sample data added (matched by its transaction source and fixed ids). */
+  | { type: 'removeSample' }
   | { type: 'startFresh'; name?: string }
   | { type: 'upsertNote'; note: Note }
   | { type: 'deleteNote'; id: string }
@@ -73,6 +72,9 @@ export type Action =
   | { type: 'readAlerts'; ids: string[] }
   | { type: 'backedUp'; at: string }
   | { type: 'replace'; state: AppState };
+
+/** Ids the old sample data used for the things that carry no `source` marker. */
+const LEGACY_SAMPLE = { goals: ['goal-bike', 'goal-car', 'goal-house'], investments: ['inv-sav', 'inv-fd', 'inv-rd', 'inv-ppf', 'inv-mf', 'inv-gold'], liabilities: ['loan-pl'] };
 
 const upsert = <T extends { id: string }>(list: T[], item: T) => (list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item]);
 
@@ -110,11 +112,13 @@ function reducer(s: AppState, a: Action): AppState {
       else o[a.key] = a.value;
       return { ...s, overrides: o };
     }
-    case 'loadDemo': {
-      const demo = demoData();
-      const name = a.name?.trim();
-      return { ...s, ...demo, notes: s.notes?.length ? s.notes : demoNotes(), profile: name ? { ...demo.profile, name } : demo.profile, onboarded: true, tourDone: s.tourDone, alertsRead: s.alertsRead };
-    }
+    case 'removeSample': return {
+      ...s,
+      txns: s.txns.filter((t) => t.source !== 'demo'),
+      goals: s.goals.filter((g) => !LEGACY_SAMPLE.goals.includes(g.id)),
+      investments: s.investments.filter((x) => !LEGACY_SAMPLE.investments.includes(x.id)),
+      liabilities: s.liabilities.filter((l) => !LEGACY_SAMPLE.liabilities.includes(l.id)),
+    };
     case 'startFresh': return { ...initial, profile: { ...initial.profile, name: a.name?.trim() ?? '' }, onboarded: true, tourDone: s.tourDone, alertsRead: s.alertsRead };
     case 'upsertNote': {
       const notes = s.notes ?? [];
