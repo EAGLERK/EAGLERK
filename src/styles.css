@@ -862,3 +862,22 @@ button, a, select, summary, label, input[type='checkbox'] { touch-action: manipu
 @media (max-width: 899px) { .showcase { height: 200px; } }
 /* Figures of different sizes still start on one line across the row. */
 @media (min-width: 900px) { .sumcard .big { min-height: 48px; } }
+
+/* ===== Google Sheets ===== */
+dialog.sheet-dialog { width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow-y: auto; }
+.sheet-dialog .modal-body { gap: 12px; }
+.sheet-dialog p { margin: 0; }
+.sheet-steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.sheet-error { margin: 0; padding: 8px 12px; border-radius: var(--r-md); background: var(--bad-bg); color: var(--bad-text); font-size: 14px; line-height: 1.45; }
+ul.files .file-info .sheet-error { margin-top: 6px; font-size: 13px; }
+.sheet-preview { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface-2); }
+.sheet-sample { gap: 4px; }
+.sheet-sample li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.sheet-sample .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-sample .in { color: var(--good-text); }
+.sheet-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.sheet-actions .check { min-height: 0; }
+@media (max-width: 599px) {
+  ul.files.sheets li { flex-wrap: wrap; }
+  ul.files.sheets .sheet-actions { width: 100%; justify-content: flex-start; }
+}

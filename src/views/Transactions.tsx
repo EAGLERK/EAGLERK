@@ -3,6 +3,7 @@ import { DEFAULT_CATEGORIES, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../en
 import { categorize } from '../engine/categorize';
 import { monthsWithData } from '../engine/cashflow';
 import { readStatementFile } from '../engine/statementFile';
+import { SheetList, useSheets } from '../components/Sheets';
 import type { Txn } from '../engine/types';
 import { Icon } from '../components/icons';
 import { Callout, Card, Field, Num } from '../components/ui';
@@ -239,6 +240,7 @@ function ImportCard() {
   const picker = useRef<HTMLInputElement>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
+  const sheets = useSheets();
 
   // Every imported file, with how many rows it brought and the dates they cover.
   const files = useMemo(() => {
@@ -254,8 +256,10 @@ function ImportCard() {
     };
     state.txns.forEach((t) => add(t, false));
     drafts.added.forEach((t) => add(t, true));
-    return [...by.entries()];
-  }, [state.txns, drafts.added]);
+    // Files that belong to a connected Google Sheet are listed (with their sync controls) in their own list.
+    const sheetFiles = new Set((state.sheets ?? []).map((s) => s.label));
+    return [...by.entries()].filter(([name]) => !sheetFiles.has(name));
+  }, [state.txns, state.sheets, drafts.added]);
 
   const importFile = async (f: File) => {
     setWarning(null);
@@ -295,7 +299,7 @@ function ImportCard() {
       title="Import a bank statement"
       sub={(
         <>
-          <div>Works with CSV and Excel statements from any bank. I work out the columns myself.</div>
+          <div>Works with CSV and Excel statements from any bank, or a Google Sheet that keeps itself up to date. I work out the columns myself.</div>
           <details>
             <summary>Why not connect my bank account directly?</summary>
             <div className="stack sub" style={{ marginTop: 8 }}>
@@ -317,10 +321,12 @@ function ImportCard() {
             onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void importFile(f); }}
           />
           <button className="btn small" onClick={() => picker.current?.click()}><Icon name="upload" size={16} />Import</button>
+          <button className="btn small" onClick={sheets.openConnect}><Icon name="table" size={16} />Google Sheet</button>
         </>
       )}
     >
       {warning && <Callout tone="watch">{warning}</Callout>}
+      <SheetList />
       {notes.length > 0 && <Callout tone="info"><span>{notes.join(' ')}</span></Callout>}
       {files.length > 0 && (
         <ul className="clean files" aria-label="Imported files">

@@ -120,6 +120,25 @@ What has and has not been checked:
 
 Every transaction can be edited in the list: date (click it for a calendar), description, category, amount, and money in or out. Anything imported, typed in or changed is a **draft** until you press **Save changes**: it is highlighted, it does not count on the Dashboard, and leaving the screen asks whether to save, leave without saving, or keep editing. Closing or reloading the tab shows the browser's own warning. Tests: `npm run e2e:edit`.
 
+## Google Sheets
+
+On Transactions, **Google Sheet** next to Import connects a sheet whose transactions MyMoney keeps up to date.
+
+1. In Google Sheets press **Share** and set General access to **Anyone with the link** (Viewer). (A sheet published with File, Share, Publish to the web works too.)
+2. Paste the link. MyMoney reads the sheet, shows what it found (count, dates, money in and out, three sample rows) and adds nothing until you press Add.
+3. From then on it looks again while MyMoney is open: when it opens, every few minutes, when you come back to the tab and when the connection returns. New rows arrive with a toast that has Undo. **Sync now** looks immediately; **Auto** switches the checking off; **Remove** deletes the sheet's transactions and the connection (with Undo).
+
+How the sheet is read: with the same reader as statement files, so it finds the header row itself. It needs Date, Description and Amount (or Debit and Credit). Add a **Type** column (Income or Expense) or use Debit/Credit to avoid guessing: with one Amount column, positive numbers count as money out unless some amounts are negative, in which case the negative ones are money out and the rest money in. The preview shows the sign of each row so a wrong guess is visible before you add anything.
+
+What to know:
+
+- **The sheet is the source of truth** for its rows' date, description and amount. A change you make to one of those rows in MyMoney is replaced by what the sheet says at the next look; **a category you change is kept.** To change a row, change it in the sheet. Rows already imported from a statement file are not added a second time.
+- **Safety rules:** a read that finds no transactions never wipes what you have. If a read would remove most of the rows (more than half, and at least 6), it is **not** applied by itself: the old rows stay, the list says why, and Sync now applies it if that is right. Undo puts the old rows back and does not re-apply the same version of the sheet at the next look.
+- **"Updated automatically" has limits.** Google cannot tell a web page that a sheet changed, so MyMoney asks. It does that only while MyMoney is open in a tab or app (not when closed), so a change shows up within about 5 minutes of looking, or at once when you come back to the tab. Published-to-web sheets can lag a few more minutes because Google caches them. Live updates when the app is closed would need a server that polls for you, which this version does not have.
+- **A link-shared sheet is readable by anyone who has the link.** Do not keep anything in it you would not want a stranger who finds the link to see. Private sheets (needing a Google sign-in) are not supported: that needs a Google Cloud OAuth app and Google's review of the app, which this version does not have.
+- **Privacy:** the browser asks Google directly; no MyMoney server sees the sheet. Only docs.google.com is ever contacted. The link is stored with your data, so it is in your backup file and in your MyMoney account if you sign in.
+- **Not verified against Google.** The environment this was built in could not reach docs.google.com, so the tests use a scripted stand-in for Google (`npm run e2e:sheets`, `tests/sheets.test.ts`). They check MyMoney's behaviour. They cannot show that Google's CSV addresses allow a request from your site (CORS), or how Google formats dates and numbers in its CSV. MyMoney tries Google's query view (`gviz/tq?tqx=out:csv`) first and the export view (`export?format=csv`) if the browser cannot reach the first. Known Google behaviour to watch for: a column that mixes numbers and text can come back with the minority cells blank. **Try it with one real sheet before relying on it**, and tell me what the message says if it fails.
+
 ## Importing a bank statement
 
 Transactions has one Import button. Choose a file and it is read at once into drafts for you to check and save; each imported file is listed with a Remove button.

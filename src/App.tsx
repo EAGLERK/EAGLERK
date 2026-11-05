@@ -4,6 +4,7 @@ import { Icon, type IconName } from './components/icons';
 import { DraftsProvider, useDrafts } from './components/Drafts';
 import { Logo } from './components/Logo';
 import { Notifications } from './components/Notifications';
+import { SheetsProvider } from './components/Sheets';
 import { Tour } from './components/Tour';
 import { Voice } from './components/Voice';
 import type { Tab as VoiceTab } from './voice/parse';
@@ -53,7 +54,7 @@ function suggestedName(user: { user_metadata?: Record<string, unknown> } | null 
 
 /** Unsaved transactions live here, above the screens, so leaving Transactions can ask what to do with them. */
 function Shell() {
-  return <DraftsProvider><ShellInner /></DraftsProvider>;
+  return <DraftsProvider><SheetsProvider><ShellInner /></SheetsProvider></DraftsProvider>;
 }
 
 const screenOf = (route: string) => (route === 'add-transaction' ? 'transactions' : route);

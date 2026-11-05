@@ -110,6 +110,25 @@ export type NoteBlock =
   /** `columns` are the header cells; every row has one cell per column. */
   | { id: string; type: 'table'; title: string; columns: string[]; rows: string[][] };
 
+/** A Google Sheet whose rows are kept in step with MyMoney. Its transactions carry `file` = `label`. */
+export interface SheetLink {
+  id: string;
+  /** What the person pasted, shown back to them. */
+  url: string;
+  /** Addresses to fetch, in order (see sheetTarget). */
+  urls: string[];
+  /** The name the sheet's transactions carry in the imported-files list. */
+  label: string;
+  /** Check for changes by itself while MyMoney is open. */
+  auto: boolean;
+  /** Fingerprint of the last text read, to tell "nothing changed". */
+  hash?: string;
+  /** When the sheet last changed what MyMoney holds (ISO). */
+  changedAt?: string;
+  /** Why the last check failed. Cleared by the next good one. */
+  error?: string;
+}
+
 export interface Note {
   id: string;
   title: string;

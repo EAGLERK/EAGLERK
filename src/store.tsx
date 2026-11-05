@@ -3,7 +3,7 @@ import { DEFAULT_ASSUMPTIONS, ratesFromAssumptions, type Assumption } from './en
 import { averages, monthsWithData, addMonths } from './engine/cashflow';
 import { buildPortfolio, type Portfolio } from './engine/portfolio';
 import { marginalRate } from './engine/tax';
-import type { Note, Goal, Investment, Liability, Profile, Rates, Txn } from './engine/types';
+import type { Note, SheetLink, Goal, Investment, Liability, Profile, Rates, Txn } from './engine/types';
 import { demoData } from './demo';
 import { demoNotes } from './engine/notes';
 import { todayISO } from './lib/format';
@@ -20,6 +20,8 @@ export interface AppState {
   onboarded: boolean;
   /** Notes: lists, tables and text the person keeps for themselves. */
   notes?: Note[];
+  /** Google Sheets that feed transactions. */
+  sheets?: SheetLink[];
   /** The first-time tour has been finished or skipped. */
   tourDone?: boolean;
   /** Ids of alerts the person has read. */
@@ -52,6 +54,10 @@ export type Action =
   | { type: 'deleteTxn'; id: string }
   | { type: 'clearTxns'; source?: Txn['source'] }
   | { type: 'removeFile'; file: string }
+  /** Makes the sheet's saved rows exactly `rows` (all with `file`) and stores the sheet's new state. */
+  | { type: 'syncSheet'; file: string; rows: Txn[]; sheet: SheetLink }
+  | { type: 'updateSheet'; id: string; patch: Partial<SheetLink> }
+  | { type: 'removeSheet'; id: string }
   | { type: 'upsertGoal'; goal: Goal }
   | { type: 'deleteGoal'; id: string }
   | { type: 'upsertInvestment'; inv: Investment }
@@ -83,6 +89,13 @@ function reducer(s: AppState, a: Action): AppState {
     }
     case 'updateTxn': return { ...s, txns: s.txns.map((t) => (t.id === a.id ? { ...t, ...a.patch } : t)) };
     case 'deleteTxn': return { ...s, txns: s.txns.filter((t) => t.id !== a.id) };
+    case 'syncSheet': {
+      const sheets = s.sheets ?? [];
+      const have = sheets.some((x) => x.id === a.sheet.id);
+      return { ...s, txns: [...s.txns.filter((t) => t.file !== a.file), ...a.rows], sheets: have ? sheets.map((x) => (x.id === a.sheet.id ? a.sheet : x)) : [...sheets, a.sheet] };
+    }
+    case 'updateSheet': return { ...s, sheets: (s.sheets ?? []).map((x) => (x.id === a.id ? { ...x, ...a.patch } : x)) };
+    case 'removeSheet': return { ...s, sheets: (s.sheets ?? []).filter((x) => x.id !== a.id) };
     case 'removeFile': return { ...s, txns: s.txns.filter((t) => t.file !== a.file) };
     case 'clearTxns': return { ...s, txns: a.source ? s.txns.filter((t) => t.source !== a.source) : [] };
     case 'upsertGoal': return { ...s, goals: upsert(s.goals, a.goal) };
