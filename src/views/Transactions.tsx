@@ -30,9 +30,13 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
   const [month, setMonth] = useState('all');
   const [category, setCategory] = useState('all');
   const [q, setQ] = useState('');
+  const [source, setSource] = useState('all');
   const [limit, setLimit] = useState(PAGE);
   const [adding, setAdding] = useState(openAdd);
   const months = useMemo(() => monthsWithData(state.txns).reverse(), [state.txns]);
+  // Where rows came from (a statement file, a Google Sheet, or one tab of a sheet). The filter only appears when there is more than one.
+  const sources = useMemo(() => [...new Set(state.txns.map((t) => t.file).filter((f): f is string => !!f))].sort(), [state.txns]);
+  const activeSource = source !== 'all' && sources.includes(source) ? source : 'all';
 
   useEffect(() => {
     if (openAdd) setAdding(true);
@@ -43,13 +47,13 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
     const needle = q.trim().toLowerCase();
     return state.txns
       .map((t) => (drafts.edits[t.id] ? { ...t, ...drafts.edits[t.id] } : t))
-      .filter((t) => (month === 'all' || t.date.startsWith(month)) && (category === 'all' || t.category === category) && (!needle || t.description.toLowerCase().includes(needle)))
+      .filter((t) => (month === 'all' || t.date.startsWith(month)) && (activeSource === 'all' || t.file === activeSource) && (category === 'all' || t.category === category) && (!needle || t.description.toLowerCase().includes(needle)))
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [state.txns, drafts.edits, month, category, q]);
+  }, [state.txns, drafts.edits, month, category, q, activeSource]);
   const pinned = useMemo(() => [...drafts.added].sort((a, b) => b.date.localeCompare(a.date)), [drafts.added]);
   const list = useMemo(() => [...pinned.map((t) => ({ t, status: 'new' as RowStatus })), ...rows.map((t) => ({ t, status: (drafts.edits[t.id] ? 'edited' : 'saved') as RowStatus }))], [pinned, rows, drafts.edits]);
 
-  const filtered = month !== 'all' || category !== 'all' || q.trim() !== '';
+  const filtered = month !== 'all' || category !== 'all' || activeSource !== 'all' || q.trim() !== '';
   const totals = rows.reduce((a, t) => ({ in: a.in + (t.type === 'income' ? t.amount : 0), out: a.out + (t.type === 'expense' ? t.amount : 0) }), { in: 0, out: 0 });
 
   const closeAdd = () => {
@@ -103,6 +107,7 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
       >
         <div className="form-grid filters" style={{ marginBottom: 12 }}>
           <Field label="Month"><select value={month} onChange={(e) => { setMonth(e.target.value); setLimit(PAGE); }}><option value="all">All months</option>{months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}</select></Field>
+          {sources.length > 1 && <Field label="List"><select value={activeSource} onChange={(e) => { setSource(e.target.value); setLimit(PAGE); }}><option value="all">All lists</option>{sources.map((f) => <option key={f} value={f}>{f}</option>)}</select></Field>}
           <Field label="Category"><select value={category} onChange={(e) => { setCategory(e.target.value); setLimit(PAGE); }}><option value="all">All categories</option>{DEFAULT_CATEGORIES.map((c) => <option key={c.name}>{c.name}</option>)}</select></Field>
           <Field label="Search"><input value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE); }} placeholder="swiggy, rent, ..." /></Field>
         </div>
@@ -110,7 +115,7 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
         {list.length === 0 ? (
           <div className="empty-cta">
             <p className="sub">{filtered ? 'No transactions match these filters.' : 'No transactions yet. Add one with the button above, or import a bank statement.'}</p>
-            {filtered && <button className="btn" onClick={() => { setMonth('all'); setCategory('all'); setQ(''); }}>Clear filters</button>}
+            {filtered && <button className="btn" onClick={() => { setMonth('all'); setCategory('all'); setSource('all'); setQ(''); }}>Clear filters</button>}
           </div>
         ) : (
           <div className="table-wrap">

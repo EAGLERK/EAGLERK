@@ -154,6 +154,15 @@ On Transactions, **Google Sheet** next to Import connects a sheet whose transact
 
 How the sheet is read: with the same reader as statement files, so it finds the header row itself. It needs Date, Description and Amount (or Debit and Credit). Add a **Type** column (Income or Expense) or use Debit/Credit to avoid guessing: with one Amount column, positive numbers count as money out unless some amounts are negative, in which case the negative ones are money out and the rest money in. The preview shows the sign of each row so a wrong guess is visible before you add anything.
 
+### One tab per month
+
+If you keep a tab per month ("Nov 2026", "Dec 2026"), choose **Several tabs, for example one per month** in the dialog, paste the link and type the tab names, one per line, written as they appear at the bottom of the sheet. Each tab becomes its own list: it is saved, synced, switched to Auto and removed on its own, and shows under one "Google Sheet · Name" row. The **List** filter on Transactions narrows the table to one tab. When a new month starts, press **Add tabs** on that row and type the new tab name; tabs already connected are skipped.
+
+- A tab named like "Nov 2026", "November 2026", "Nov-26", "2026-11" or "11/2026" also gives the year for dates written without one ("5 Nov", "Nov 5"). A bare day ("5") is not understood: put the month in the date.
+- **MyMoney cannot list the tabs for you.** Reading the tab names needs a Google API key or sign-in, so you type them. It also does not notice a new month's tab by itself.
+- Tabs are fetched by name (`gviz/tq?tqx=out:csv&sheet=<name>`). If Google has no tab with that name it may return another tab, so a tab whose content is identical to another tab in the same add, or to one already connected, is refused with a message about the spelling. A misspelled name that happens to match nothing else still needs your eye on the preview, which lists each tab's date range and how many rows fall outside its month.
+- A sheet shared with **Publish to the web** cannot be read by tab name this way; use a normal share link ("Anyone with the link").
+
 What to know:
 
 - **The sheet is the source of truth** for its rows' date, description and amount. A change you make to one of those rows in MyMoney is replaced by what the sheet says at the next look; **a category you change is kept.** To change a row, change it in the sheet. Rows already imported from a statement file are not added a second time.

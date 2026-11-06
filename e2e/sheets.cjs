@@ -30,6 +30,12 @@ async function start(browser, opts = {}) {
     const cors = { 'access-control-allow-origin': '*' };
     if (fake.mode === 'private') return route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'text/html' }, body: '<!DOCTYPE html><html><body>Sign in</body></html>' });
     if (fake.mode === 'http500') return route.fulfill({ status: 500, headers: cors, body: 'oops' });
+    // Month tabs: a request that names a tab (sheet=Nov%202026) gets that tab's CSV. A name Google does not know gets the first tab, which is what the real service tends to do.
+    const named = new globalThis.URL(route.request().url()).searchParams.get('sheet');
+    if (fake.tabs && named !== null) {
+      const body = fake.tabs[named] ?? Object.values(fake.tabs)[0];
+      return route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'text/csv; charset=utf-8' }, body });
+    }
     return route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'text/csv; charset=utf-8' }, body: fake.csv });
   });
 
@@ -43,7 +49,7 @@ async function start(browser, opts = {}) {
 const data = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('mymoney:v1') || '{}'));
 const rows = async (p, label) => ((await data(p)).txns || []).filter((t) => t.file === label);
 const LABEL = 'Google Sheet · Expenses';
-const dialog = (p) => p.getByRole('dialog', { name: 'Add from Google Sheets' });
+const dialog = (p) => p.getByRole('dialog', { name: /^Add (from Google Sheets|tabs to )/ });
 const item = (p) => p.getByRole('list', { name: 'Connected Google Sheets' });
 const toastText = (p) => p.locator('.toast').allInnerTexts().then((t) => t.join(' | '));
 const minutes = (p, n) => p.clock.fastForward(n * 60_000);
@@ -205,13 +211,106 @@ const minutes = (p, n) => p.clock.fastForward(n * 60_000);
     await shown(dialog(p).getByText('Found 12 transactions'));
     const box = await dialog(p).boundingBox();
     check(box.x >= 0 && box.x + box.width <= 390 && box.y >= 0 && box.y + box.height <= 780, 'on a phone the dialog fits the screen');
-    const fs = await dialog(p).locator('input:not([type=checkbox])').evaluateAll((els) => els.map((e) => parseFloat(getComputedStyle(e).fontSize)));
+    const fs = await dialog(p).locator('input:not([type=checkbox]):not([type=radio]), textarea').evaluateAll((els) => els.map((e) => parseFloat(getComputedStyle(e).fontSize)));
     check(fs.every((s) => s >= 16), 'and its fields are 16px so iPhones do not zoom');
     await dialog(p).getByRole('button', { name: /^Add / }).click();
     await shown(item(p).getByText(LABEL));
     check(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'the connected-sheet row does not scroll sideways on a phone');
     const btn = await item(p).getByRole('button', { name: /Sync .* now/ }).boundingBox();
     check(btn && btn.height >= 40, 'its buttons keep a tappable size');
+    await ctx.close();
+
+    // ---------- one tab per month ----------
+    ({ ctx, p, fake } = await start(browser));
+    const tab = (lines) => ['Date,Description,Amount', ...lines].join('\n') + '\n';
+    fake.tabs = {
+      'Nov 2026': tab(['5 Nov,Coffee,-120', '7 Nov,Salary,50000', 'Nov 9,Rent,-15000']),
+      'Dec 2026': tab(['2 Dec,Groceries,-800', '10 Dec,Bonus,2000']),
+      'Jan 2027': tab(['3 Jan,Fuel,-600']),
+    };
+    const G = 'Google Sheet · Budget';
+    await p.getByRole('button', { name: 'Google Sheet', exact: true }).click();
+    await dialog(p).getByLabel('Link to the sheet').fill(LINK);
+    await dialog(p).getByRole('radio', { name: /Several tabs/ }).check();
+    await dialog(p).getByLabel('Tab names').fill('Nov 2026\nDec 2026');
+    await dialog(p).getByRole('button', { name: 'Check the tabs' }).click();
+    check(await shown(dialog(p).getByText('Found 5 transactions in 2 tabs')), 'several tabs: the dialog counts the rows across both tabs');
+    check(fake.requests.some((u) => /sheet=Nov%202026/.test(u)) && fake.requests.some((u) => /sheet=Dec%202026/.test(u)) && fake.requests.every((u) => u.startsWith('https://docs.google.com/')), 'it asked Google for each tab by name, and nobody else');
+    check((await dialog(p).locator('.sheet-tabs li').count()) === 2 && await shown(dialog(p).getByText(/2026-11-05 to 2026-11-09/)), 'each tab is listed with its own date range, and year-less dates took 2026 from the tab name');
+    await dialog(p).getByLabel('Name', { exact: true }).fill('Budget');
+    check((await dialog(p).locator('.btn.primary').count()) === 1, 'still one primary button');
+    await dialog(p).getByRole('button', { name: 'Add 5 transactions from 2 tabs' }).click();
+    check(await wait(async () => (await rows(p, G + ' · Nov 2026')).length === 3 && (await rows(p, G + ' · Dec 2026')).length === 2), 'each tab is saved as its own list: 3 under Nov 2026, 2 under Dec 2026');
+    let dd = await data(p);
+    check(dd.sheets.length === 2 && new Set(dd.sheets.map((x) => x.group)).size === 1 && dd.sheets.map((x) => x.tab).join() === 'Nov 2026,Dec 2026', 'two connections that share one group, each remembering its tab');
+    check((await rows(p, G + ' · Nov 2026')).every((t) => t.date.startsWith('2026-11')) && (await rows(p, G + ' · Dec 2026')).every((t) => t.date.startsWith('2026-12')), 'dates carry the right month and year');
+    check(await shown(item(p).getByText('Google Sheet · Budget').first()) && (await item(p).locator('li.sheet-tab').count()) === 2, 'the list shows the spreadsheet once with a row per tab under it');
+    check(/Added 5 transactions from Budget \(2 tabs\)/.test(await toastText(p)), 'one toast covers the whole add');
+
+    // a change on one tab only touches that tab
+    fake.tabs['Dec 2026'] = tab(['2 Dec,Groceries,-800', '10 Dec,Bonus,2000', '12 Dec,Gift,-300']);
+    await item(p).getByRole('button', { name: `Sync ${G} · Dec 2026 now` }).click();
+    check(await wait(async () => (await rows(p, G + ' · Dec 2026')).length === 3) && (await rows(p, G + ' · Nov 2026')).length === 3, 'syncing one tab changes only that tab');
+
+    // a new month: Add tabs
+    await item(p).getByRole('button', { name: 'Add tabs to Budget' }).click();
+    await shown(dialog(p).getByRole('heading', { name: /Add tabs to Budget/ }));
+    check((await dialog(p).getByLabel('Link to the sheet').count()) === 0, 'Add tabs does not ask for the link again');
+    await dialog(p).getByLabel('New tabs').fill('Nov 2026\nJan 2027');
+    await dialog(p).getByRole('button', { name: 'Check the tabs' }).click();
+    check(await shown(dialog(p).getByText('Found 1 transaction in 1 tab')), 'a tab that is already connected is skipped, the new month is read');
+    await dialog(p).getByRole('button', { name: /^Add 1 transaction from 1 tab$/ }).click();
+    check(await wait(async () => (await rows(p, G + ' · Jan 2027')).length === 1) && ((await data(p)).sheets || []).length === 3 && new Set((await data(p)).sheets.map((x) => x.group)).size === 1, 'the new month joins the same group');
+
+    // the transaction list can be narrowed to one tab
+    await p.locator('label.field', { hasText: /^List/ }).locator('select').selectOption(G + ' · Dec 2026');
+    check(await shown(p.getByText(/^3 shown/)), 'the List filter narrows the transactions to one month tab');
+    await p.locator('label.field', { hasText: /^List/ }).locator('select').selectOption('all');
+
+    // Google has no such tab: it shows the first tab. That must be caught, not saved.
+    await item(p).getByRole('button', { name: 'Add tabs to Budget' }).click();
+    await dialog(p).getByLabel('New tabs').fill('Feb 2027');
+    await dialog(p).getByRole('button', { name: 'Check the tabs' }).click();
+    check(!(await shown(dialog(p).getByText(/^Found/), 800)), 'a tab name Google does not know is not counted as data');
+    await dialog(p).getByRole('button', { name: 'Cancel' }).click();
+    await p.waitForTimeout(200);
+    check(((await data(p)).sheets || []).length === 3, 'and nothing was added');
+
+    // two tabs that come back identical
+    await p.getByRole('button', { name: 'Google Sheet', exact: true }).click();
+    await dialog(p).getByLabel('Link to the sheet').fill(LINK);
+    await dialog(p).getByRole('radio', { name: /Several tabs/ }).check();
+    await dialog(p).getByLabel('Tab names').fill('Nov 2026\nNov 26');
+    await dialog(p).getByRole('button', { name: 'Check the tabs' }).click();
+    check(await shown(dialog(p).getByText(/exactly the same content as/)) && !(await dialog(p).getByRole('button', { name: /^Add / }).count()), 'a misspelled tab that returns another tab\'s content is flagged and cannot be added');
+    await dialog(p).getByRole('button', { name: 'Cancel' }).click();
+
+    // Remove all, then Undo
+    const nov = (await rows(p, G + ' · Nov 2026')).length;
+    await item(p).getByRole('button', { name: 'Remove all of Budget' }).click();
+    check(await wait(async () => !((await data(p)).sheets || []).length && !((await data(p)).txns || []).length), 'Remove all deletes every tab\'s rows and connections');
+    await p.locator('.toast-btn', { hasText: 'Undo' }).last().click();
+    check(await wait(async () => ((await data(p)).sheets || []).length === 3 && (await rows(p, G + ' · Nov 2026')).length === nov), 'and Undo brings every tab back');
+    check(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'no sideways scroll with a grouped sheet');
+    check(p.errors.length === 0, 'no page errors with month tabs' + (p.errors.length ? ': ' + p.errors[0] : ''));
+    await ctx.close();
+
+    // the dialog on a phone, in tab mode
+    ({ ctx, p, fake } = await start(browser, { viewport: { width: 390, height: 780 }, hasTouch: true, isMobile: true }));
+    fake.tabs = { 'Nov 2026': tab(['5 Nov,Coffee,-120']), 'Dec 2026': tab(['2 Dec,Groceries,-800']) };
+    await p.getByRole('button', { name: 'Google Sheet', exact: true }).click();
+    await dialog(p).getByLabel('Link to the sheet').fill(LINK);
+    await dialog(p).getByRole('radio', { name: /Several tabs/ }).check();
+    await dialog(p).getByLabel('Tab names').fill('Nov 2026\nDec 2026');
+    await dialog(p).getByRole('button', { name: 'Check the tabs' }).click();
+    await shown(dialog(p).getByText(/Found 2 transactions/));
+    const pb = await dialog(p).boundingBox();
+    check(pb.x >= 0 && pb.x + pb.width <= 390 && pb.y >= 0 && pb.y + pb.height <= 780, 'on a phone the tab dialog fits the screen');
+    await dialog(p).getByRole('button', { name: /^Add / }).click();
+    await shown(item(p).locator('li.sheet-tab').first());
+    check(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'grouped tab rows do not scroll sideways on a phone');
+    const tb = await item(p).locator('li.sheet-tab').first().getByRole('button', { name: /Sync/ }).boundingBox();
+    check(tb && tb.height >= 40, 'tab buttons keep a tappable size');
     await ctx.close();
   } catch (e) {
     console.log('FAIL crashed: ' + (e && e.message));

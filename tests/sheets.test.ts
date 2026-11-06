@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { parseStatement } from '../src/engine/csv';
-import { hashText, looksDestructive, looksLikeLoginPage, sheetLabel, sheetTarget, syncRows } from '../src/engine/sheets';
+import { hashText, looksDestructive, looksLikeLoginPage, monthOfTab, sheetLabel, sheetTarget, spreadsheetId, splitTabNames, syncRows, tabTarget } from '../src/engine/sheets';
 import type { Txn } from '../src/engine/types';
 import { fetchSheetCsv, SheetFetchError } from '../src/sheets/fetch';
 
@@ -141,5 +141,33 @@ describe('fetchSheetCsv', () => {
     const f = ok('a,b');
     await fetchSheetCsv(['u'], f);
     expect((f.mock.calls as unknown as unknown[][])[0][1]).toMatchObject({ cache: 'no-store', credentials: 'omit' });
+  });
+});
+
+describe('month tabs', () => {
+  it('spreadsheetId takes a share link or a bare id and refuses published links', () => {
+    expect(spreadsheetId(`https://docs.google.com/spreadsheets/d/${ID}/edit#gid=0`)).toEqual({ ok: true, id: ID });
+    expect(spreadsheetId(ID)).toEqual({ ok: true, id: ID });
+    expect(spreadsheetId('https://docs.google.com/spreadsheets/d/e/2PACX-1vABC/pubhtml')).toMatchObject({ ok: false });
+    expect(spreadsheetId('https://evil.example/spreadsheets/d/' + ID)).toMatchObject({ ok: false });
+    expect(spreadsheetId('')).toMatchObject({ ok: false });
+  });
+  it('tabTarget asks for a tab by name and encodes it', () => {
+    expect(tabTarget(ID, ' Nov 2026 ')).toEqual([`https://docs.google.com/spreadsheets/d/${ID}/gviz/tq?tqx=out:csv&sheet=Nov%202026`]);
+    expect(tabTarget(ID, 'a&b=1')[0]).toContain('sheet=a%26b%3D1');
+  });
+  it('splitTabNames splits on lines, commas and semicolons and drops repeats', () => {
+    expect(splitTabNames('Nov 2026, Dec 2026\nnov 2026;Jan 2027\n\n')).toEqual(['Nov 2026', 'Dec 2026', 'Jan 2027']);
+    expect(splitTabNames('')).toEqual([]);
+  });
+  it('monthOfTab reads the usual month tab names', () => {
+    for (const [n, ym] of [['Nov 2026', '2026-11'], ['November 2026', '2026-11'], ['Nov-26', '2026-11'], ['2026-11', '2026-11'], ['11/2026', '2026-11'], ['Sept 2025', '2025-09']] as const) expect(monthOfTab(n)?.ym, n).toBe(ym);
+    for (const n of ['Summary', 'Budget', 'Foo 2026', '13/2026', '']) expect(monthOfTab(n), n).toBeNull();
+  });
+  it('year-less dates take the year from the tab', () => {
+    const csv = 'Date,Description,Amount\n5 Nov,Coffee,-120\nNov 7,Salary,50000\n';
+    const r = parseStatement(csv, { defaultYear: 2026 });
+    expect(r.rows.map((x) => x.date)).toEqual(['2026-11-05', '2026-11-07']);
+    expect(parseStatement(csv).rows).toHaveLength(0);
   });
 });

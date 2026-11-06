@@ -132,6 +132,14 @@ export interface SheetLink {
   changedAt?: string;
   /** Why the last check failed. Cleared by the next good one. */
   error?: string;
+  /** Set when this is one tab of a spreadsheet that has several (for example one per month): the tabs that belong together share it. */
+  group?: string;
+  /** The tab's name exactly as it appears in the sheet ("Nov 2026"). */
+  tab?: string;
+  /** The spreadsheet's id, so another tab can be added later. */
+  spreadsheet?: string;
+  /** The name the person gave the spreadsheet, shared by its tabs. */
+  title?: string;
 }
 
 export interface Note {

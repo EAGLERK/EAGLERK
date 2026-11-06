@@ -6,6 +6,8 @@ import type { Txn } from './types';
 export interface ReadOptions {
   /** How an ambiguous numeric date (03/04/2026) is read when the file itself does not settle it. Defaults to day first. */
   dateOrder?: 'dmy' | 'mdy';
+  /** The year to give dates written without one ("5 Nov", "Nov 5"). Set when a month tab such as "Nov 2026" says which year it is. */
+  defaultYear?: number;
 }
 
 // Currency codes that may sit in front of or behind an amount ("USD 12", "12 EUR", "Rs. 450"). Only known codes count, so "UPI123" is never an amount.
@@ -86,7 +88,7 @@ function fmt(y: number, mo: number, d: number): string | null {
 export type DateOrder = 'dmy' | 'mdy';
 
 /** Reads a date in the formats banks use. Numeric dates are day-first unless `order` says otherwise. Returns YYYY-MM-DD or null. */
-export function parseDate(raw: string, order: DateOrder = 'dmy'): string | null {
+export function parseDate(raw: string, order: DateOrder = 'dmy', defaultYear?: number): string | null {
   const s = raw.trim();
   let m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?!\d)/);
   if (m) return fmt(+m[1], +m[2], +m[3]);
@@ -105,11 +107,18 @@ export function parseDate(raw: string, order: DateOrder = 'dmy'): string | null 
     const mi = MONTHS.indexOf(m[1].toLowerCase());
     if (mi >= 0) return fmt(+m[3], mi + 1, +m[2]);
   }
+  // No year written: only when the caller knows it (a month tab such as "Nov 2026" says which year this is).
+  if (defaultYear) {
+    m = s.match(/^(\d{1,2})(?:st|nd|rd|th)?[-/. ]+([A-Za-z]{3})[a-z]*\.?$/);
+    if (m) { const mi = MONTHS.indexOf(m[2].toLowerCase()); if (mi >= 0) return fmt(defaultYear, mi + 1, +m[1]); }
+    m = s.match(/^([A-Za-z]{3})[a-z]*\.?[-/. ]+(\d{1,2})(?:st|nd|rd|th)?$/);
+    if (m) { const mi = MONTHS.indexOf(m[1].toLowerCase()); if (mi >= 0) return fmt(defaultYear, mi + 1, +m[2]); }
+  }
   return null;
 }
 
 /** Is this a date in either order? Used to find the date column, before the file's order is known. */
-const anyDate = (v: string): string | null => parseDate(v, 'dmy') ?? parseDate(v, 'mdy');
+const anyDate = (v: string, year?: number): string | null => parseDate(v, 'dmy', year) ?? parseDate(v, 'mdy', year);
 
 /** Excel stores dates as day counts from 1899-12-30. Only values in a plausible range count as dates. */
 export function serialToISO(raw: string): string | null {
@@ -215,7 +224,7 @@ function findHeader(rows: string[][]): Header | null {
 
 interface ColStat { nonEmpty: number; strictDate: number; serialDate: number; money: number; decimals: number; ints: number; len: number; text: number; marks: number; seq: boolean }
 
-function columnStats(data: string[][], ncols: number): ColStat[] {
+function columnStats(data: string[][], ncols: number, year?: number): ColStat[] {
   const stats: ColStat[] = [];
   for (let c = 0; c < ncols; c++) {
     const s: ColStat = { nonEmpty: 0, strictDate: 0, serialDate: 0, money: 0, decimals: 0, ints: 0, len: 0, text: 0, marks: 0, seq: false };
@@ -224,10 +233,10 @@ function columnStats(data: string[][], ncols: number): ColStat[] {
       const v = (r[c] ?? '').trim();
       if (!v) continue;
       s.nonEmpty++;
-      if (anyDate(v)) s.strictDate++;
+      if (anyDate(v, year)) s.strictDate++;
       else if (serialToISO(v)) s.serialDate++;
       const m = parseMoney(v);
-      if (m && !anyDate(v)) {
+      if (m && !anyDate(v, year)) {
         s.money++;
         if (m.decimals) s.decimals++;
         else if (Number.isInteger(m.n)) ints.push(m.n);
@@ -288,9 +297,9 @@ export function parseTable(input: string[][], opts: ReadOptions = {}): CsvResult
   const body = header ? rows.slice(header.row + 1) : rows;
   const ncols = Math.max(...rows.map((r) => r.length));
   // Column statistics come from the rows that carry a date, so a header line or a footer cannot skew them.
-  const withDate = body.filter((r) => r.some((c) => anyDate(c)));
+  const withDate = body.filter((r) => r.some((c) => anyDate(c, opts.defaultYear)));
   const sample = withDate.length >= 2 ? withDate : body;
-  const stats = columnStats(sample, ncols);
+  const stats = columnStats(sample, ncols, opts.defaultYear);
   const nonEmptyRows = sample.length;
 
   /* --- date column */
@@ -310,7 +319,7 @@ export function parseTable(input: string[][], opts: ReadOptions = {}): CsvResult
     return empty(`I could not find a column of dates in this file (${ncols} columns, ${rows.length} rows). The first rows read: ${sample.slice(0, 220)}`);
   }
   const order = detectOrder(body.map((r) => r[iDate] ?? ''), opts.dateOrder);
-  const toDate = (v: string) => (serial ? serialToISO(v) : parseDate(v, order)) ?? (serial ? null : serialToISO(v));
+  const toDate = (v: string) => (serial ? serialToISO(v) : parseDate(v, order, opts.defaultYear)) ?? (serial ? null : serialToISO(v));
   const dated = body.filter((r) => toDate(r[iDate] ?? ''));
 
   /* --- description column */

@@ -884,3 +884,14 @@ ul.files .file-info .sheet-error { margin-top: 6px; font-size: 13px; }
 
 /* The "Sample data" badge is a button only for data from an earlier version (it opens Settings to remove it). */
 button.badge-btn { border: 0; font: inherit; cursor: pointer; }
+
+/* Google Sheets: several tabs of one spreadsheet */
+.sheet-mode { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.sheet-mode legend { font-weight: 500; padding: 0; margin-bottom: 4px; }
+.sheet-dialog textarea { width: 100%; min-height: 96px; padding: 8px 12px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--axis); border-radius: var(--r-md); resize: vertical; }
+.sheet-tabs { gap: 6px; }
+.sheet-tabs li { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.sheet-tabs li.bad b, .sheet-tabs li.bad span { color: var(--bad-text); }
+ul.files li.sheet-group { border-top: 1px solid var(--border); }
+ul.files li.sheet-tab { padding-left: 30px; border-top: 0; padding-top: 6px; padding-bottom: 6px; }
+@media (max-width: 599px) { ul.files.sheets li.sheet-tab { padding-left: 14px; } }

@@ -79,3 +79,56 @@ export function syncRows(existing: Txn[], parsed: Txn[], file: string): SyncResu
 
 /** True when a sync would throw away most of what was there, which is more likely a broken sheet than an intended edit. */
 export const looksDestructive = (oldCount: number, removed: number): boolean => oldCount >= 10 && removed > Math.max(5, oldCount / 2);
+
+/* ---------- several tabs in one spreadsheet (one tab per month) ---------- */
+
+export type SpreadsheetId = { ok: true; id: string } | { ok: false; error: string };
+
+/**
+ * The id of the spreadsheet in a normal share link (or a bare id). A tab is fetched by its name, which only works with this id: a
+ * "published to the web" link has no readable id, so for those each tab's own link has to be added on its own.
+ */
+export function spreadsheetId(input: string): SpreadsheetId {
+  const raw = input.trim();
+  if (!raw) return { ok: false, error: 'Paste the link to your Google Sheet.' };
+  if (/^[A-Za-z0-9_-]{20,}$/.test(raw)) return { ok: true, id: raw };
+  const t = sheetTarget(raw);
+  if (!t.ok) return t;
+  if (/\/spreadsheets\/d\/e\//.test(raw)) return { ok: false, error: 'A link made with "Publish to the web" cannot list tabs by name. Use the normal Share link (Anyone with the link), or add each tab’s own link as its own sheet.' };
+  const id = raw.match(/\/spreadsheets\/d\/([A-Za-z0-9_-]+)/)?.[1];
+  return id ? { ok: true, id } : { ok: false, error: 'That link has no sheet in it. Copy it from the Share button in Google Sheets.' };
+}
+
+/** Where to read one tab by its name. Google's query view takes the tab name; the export view only takes a numeric tab id, so there is one address. */
+export const tabTarget = (id: string, tab: string): string[] => [`https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab.trim())}`];
+
+/** Tab names typed one per line (commas and semicolons also separate them), trimmed, without repeats, in the order given. */
+export function splitTabNames(text: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of text.split(/[\n,;]+/)) {
+    const name = raw.trim().replace(/\s+/g, ' ');
+    if (!name || name.length > 100 || seen.has(name.toLowerCase())) continue;
+    seen.add(name.toLowerCase());
+    out.push(name);
+  }
+  return out;
+}
+
+const MONTH_WORDS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+/** "Nov 2026", "November 2026", "Nov-26", "2026-11" and "11/2026" are month tabs. Anything else is not, and returns null. */
+export function monthOfTab(name: string): { year: number; month: number; ym: string } | null {
+  const s = name.trim().toLowerCase();
+  const make = (year: number, month: number) => (month >= 1 && month <= 12 && year >= 1990 && year <= 2100 ? { year, month, ym: `${year}-${String(month).padStart(2, '0')}` } : null);
+  let m = s.match(/^([a-z]{3})[a-z]*\.?[\s,'’_/-]*(\d{2}|\d{4})$/);
+  if (m) {
+    const mi = MONTH_WORDS.indexOf(m[1]);
+    if (mi >= 0) return make(m[2].length === 2 ? 2000 + +m[2] : +m[2], mi + 1);
+  }
+  m = s.match(/^(\d{4})[\s/_-]+(\d{1,2})$/);
+  if (m) return make(+m[1], +m[2]);
+  m = s.match(/^(\d{1,2})[\s/_-]+(\d{4})$/);
+  if (m) return make(+m[2], +m[1]);
+  return null;
+}
