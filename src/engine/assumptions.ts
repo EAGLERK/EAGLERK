@@ -54,3 +54,21 @@ export const DEFAULT_ASSUMPTIONS: Assumption[] = [
 export function ratesFromAssumptions(list: Assumption[]): Record<string, number> {
   return Object.fromEntries(list.map((a) => [a.key, a.value]));
 }
+
+/** The assumptions the goal planner actually reads. Outside India these are the only ones shown. */
+export const GOAL_KEYS = ['inflation', 'houseGrowth', 'carGrowth', 'bikeGrowth', 'homeLoan', 'carLoan', 'bikeLoan', 'fd'] as const;
+
+const PLACEHOLDER = 'Placeholder, not from your country. Enter the rate or growth you expect, or the rate your lender quoted.';
+
+/**
+ * The assumptions for a country. India has researched ones (RBI rate, small-savings schemes, bank products), each with a source. Anywhere else the
+ * app has no sourced numbers, so it shows only what goals need, as editable placeholders, and assumes no interest on savings. Never silently India's rates.
+ */
+export function assumptionsFor(country: string | undefined): Assumption[] {
+  if ((country ?? 'IN') === 'IN') return DEFAULT_ASSUMPTIONS;
+  return DEFAULT_ASSUMPTIONS.filter((a) => (GOAL_KEYS as readonly string[]).includes(a.key)).map((a) => (
+    a.key === 'fd'
+      ? { ...a, label: 'Interest on savings (for other goals)', value: 0, status: 'check' as const, asOf: '', source: 'Assumed 0 until you enter your own: no growth on money set aside.', group: 'Bank products' as const }
+      : { ...a, status: 'check' as const, asOf: '', source: PLACEHOLDER }
+  ));
+}

@@ -36,6 +36,10 @@ export interface Profile {
   emergencyMonths: number;
   hasTermInsurance: boolean;
   hasHealthInsurance: boolean;
+  /** ISO 3166 country code ("IN", "US"). Missing in data saved before the app was global: that means India. */
+  country?: string;
+  /** ISO 4217 currency code ("INR", "USD"). Amounts are shown in it and never converted. Missing means INR. */
+  currency?: string;
 }
 
 export type GoalKind = 'car' | 'house' | 'bike' | 'other';

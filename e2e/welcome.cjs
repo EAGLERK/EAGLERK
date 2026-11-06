@@ -42,7 +42,7 @@ async function importCsv(page, name, text) {
 (async () => {
   const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   try {
-    const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+    const ctx = await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 860 } });
     await ctx.addInitScript(spy);
     const p = await ctx.newPage();
     const errors = [];
@@ -144,7 +144,7 @@ async function importCsv(page, name, text) {
     await ctx.close();
 
     // ---------- a browser that refuses notifications ----------
-    const dctx = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+    const dctx = await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 860 } });
     await dctx.addInitScript(() => { window.__grant = false; });
     await dctx.addInitScript(spy);
     const dp = await dctx.newPage();
@@ -159,7 +159,7 @@ async function importCsv(page, name, text) {
     await dctx.close();
 
     // ---------- phone ----------
-    const mctx = await browser.newContext({ viewport: { width: 390, height: 780 }, isMobile: true, hasTouch: true });
+    const mctx = await browser.newContext({ locale: 'en-IN', viewport: { width: 390, height: 780 }, isMobile: true, hasTouch: true });
     const m = await mctx.newPage();
     await m.goto(URL);
     check(await shown(m.getByRole('dialog', { name: /set up your profile/i })), 'phone: the popup opens');
@@ -187,7 +187,7 @@ async function importCsv(page, name, text) {
 
     // ---------- no sample data ----------
     {
-      const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+      const ctx = await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 860 } });
       const q = await ctx.newPage();
       await q.goto(URL);
       await q.getByLabel('What should we call you?').fill('Asha');
@@ -200,7 +200,7 @@ async function importCsv(page, name, text) {
       await ctx.close();
 
       // Someone who loaded sample data in an earlier version can still see it and take it out, without losing what they added themselves.
-      const old = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+      const old = await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 860 } });
       const o = await old.newPage();
       await o.goto(URL);
       const state = demoState('Asha');

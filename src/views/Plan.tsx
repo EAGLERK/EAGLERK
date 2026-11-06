@@ -3,7 +3,7 @@ import { buildAdvice, projectWealth, type StepTone } from '../engine/advisor';
 import { Icon } from '../components/icons';
 import { Badge, Callout, Card, Stat } from '../components/ui';
 import { ProjectionChart, StackedBar } from '../components/charts';
-import { inr, inrCompact, pct } from '../lib/format';
+import { money, moneyCompact, pct } from '../lib/format';
 import { useStore } from '../store';
 
 const STEP_LABEL: Record<StepTone, string> = { protect: 'Protect', safety: '1 · Safety net', debt: '2 · Kill costly debt', goal: '3 · Goals', wealth: '4 · Long-term wealth' };
@@ -30,13 +30,13 @@ export function Plan({ go }: { go: (tab: string) => void }) {
         <button className="btn" onClick={() => go('settings')}>Edit profile</button>
       </div>
 
-      {!d.plan.fromTransactions && <Callout tone="watch">No income found in your transactions yet, so this plan uses the estimates in your profile ({inr(state.profile.monthlyIncome)} income, {inr(state.profile.monthlyExpenses)} spend). Import a statement for a plan based on what you actually spend.</Callout>}
+      {!d.plan.fromTransactions && <Callout tone="watch">No income found in your transactions yet, so this plan uses the estimates in your profile ({money(state.profile.monthlyIncome)} income, {money(state.profile.monthlyExpenses)} spend). Import a statement for a plan based on what you actually spend.</Callout>}
 
       <div className="grid g4">
-        <Stat label="Monthly income" value={inr(advice.income)} note={d.plan.fromTransactions ? `Average of ${d.plan.months} full month(s)` : 'Profile estimate'} />
-        <Stat label="Monthly spend" value={inr(advice.spend)} note="Includes EMIs and rent" />
-        <Stat label="Available to allocate" value={inr(advice.capacity)} tone={advice.capacity <= 0 ? 'bad' : undefined} delta={d.plan.invested > 0 ? <span className="muted">You invest {inr(d.plan.invested)} now</span> : undefined} />
-        <Stat label="Emergency fund" value={`${inrCompact(advice.emergencyHave)} / ${inrCompact(advice.emergencyTarget)}`} tone={advice.emergencyHave >= advice.emergencyTarget ? 'good' : 'watch'} delta={<span>{advice.emergencyHave >= advice.emergencyTarget ? '✓ funded' : '! ' + pct((advice.emergencyHave / Math.max(advice.emergencyTarget, 1)) * 100, 0) + ' funded'}</span>} />
+        <Stat label="Monthly income" value={money(advice.income)} note={d.plan.fromTransactions ? `Average of ${d.plan.months} full month(s)` : 'Profile estimate'} />
+        <Stat label="Monthly spend" value={money(advice.spend)} note="Includes EMIs and rent" />
+        <Stat label="Available to allocate" value={money(advice.capacity)} tone={advice.capacity <= 0 ? 'bad' : undefined} delta={d.plan.invested > 0 ? <span className="muted">You invest {money(d.plan.invested)} now</span> : undefined} />
+        <Stat label="Emergency fund" value={`${moneyCompact(advice.emergencyHave)} / ${moneyCompact(advice.emergencyTarget)}`} tone={advice.emergencyHave >= advice.emergencyTarget ? 'good' : 'watch'} delta={<span>{advice.emergencyHave >= advice.emergencyTarget ? '✓ funded' : '! ' + pct((advice.emergencyHave / Math.max(advice.emergencyTarget, 1)) * 100, 0) + ' funded'}</span>} />
       </div>
 
       {advice.actions.length > 0 && (
@@ -56,7 +56,7 @@ export function Plan({ go }: { go: (tab: string) => void }) {
                     <tr key={i}>
                       <td className="title" style={{ whiteSpace: 'nowrap' }}><div className="sub">{STEP_LABEL[l.step]}</div><div style={{ fontWeight: 550 }}>{l.label}</div></td>
                       <td data-label="Put it in"><div>{l.into}</div><div className="sub">{l.where}</div></td>
-                      <td data-label="Per month" className="r" style={{ whiteSpace: 'nowrap' }}>{inr(l.monthly)}{l.short && <div><Badge tone="watch">! short</Badge></div>}</td>
+                      <td data-label="Per month" className="r" style={{ whiteSpace: 'nowrap' }}>{money(l.monthly)}{l.short && <div><Badge tone="watch">! short</Badge></div>}</td>
                       <td data-label="Why" className="sub" style={{ minWidth: 220 }}>{l.why}</td>
                     </tr>
                   ))}
@@ -64,23 +64,23 @@ export function Plan({ go }: { go: (tab: string) => void }) {
               </table>
             </div>
             <dl className="kv" style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--grid)' }}>
-              <dt className="strong">Total allocated</dt><dd className="strong">{inr(advice.allocated)}</dd>
-              <dt>{advice.unallocated > 1 ? 'Left unassigned' : 'Status'}</dt><dd>{advice.unallocated > 1 ? inr(advice.unallocated) : 'Fully assigned'}</dd>
+              <dt className="strong">Total allocated</dt><dd className="strong">{money(advice.allocated)}</dd>
+              <dt>{advice.unallocated > 1 ? 'Left unassigned' : 'Status'}</dt><dd>{advice.unallocated > 1 ? money(advice.unallocated) : 'Fully assigned'}</dd>
             </dl>
           </>
         )}
         {advice.wealthMonthly > 0 && (
           <div style={{ marginTop: 16 }} className="stack">
             <h3>Long-term mix ({advice.equityPct}% equity-oriented)</h3>
-            <StackedBar format={inr} parts={advice.lines.filter((l) => l.step === 'wealth').map((l, i) => ({ label: l.into, value: l.monthly, color: ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)'][i % 5] }))} />
+            <StackedBar format={money} parts={advice.lines.filter((l) => l.step === 'wealth').map((l, i) => ({ label: l.into, value: l.monthly, color: ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)'][i % 5] }))} />
           </div>
         )}
       </Card>
 
-      <Card title="Where this could take you" sub={`Today's holdings plus ${inr(projMonthly)} a month ${advice.wealthMonthly > 0 ? 'of long-term investing from the plan' : 'that you invest now (the plan has nothing left over for long-term yet)'}. Goal money is spent on goals, so it is left out.`}>
+      <Card title="Where this could take you" sub={`Today's holdings plus ${money(projMonthly)} a month ${advice.wealthMonthly > 0 ? 'of long-term investing from the plan' : 'that you invest now (the plan has nothing left over for long-term yet)'}. Goal money is spent on goals, so it is left out.`}>
         <ProjectionChart data={projection} />
         <p className="sub" style={{ marginTop: 8 }}>
-          In 20 years: about <b>{inrCompact(end.base)}</b> expected (range {inrCompact(end.low)} to {inrCompact(end.high)}), which is roughly <b>{inrCompact(end.base / Math.pow(1 + d.rates.inflation / 100, 20))}</b> in today&rsquo;s money. Returns are after tax. These are modelled assumptions, not predictions; real markets move in jumps, and the cautious line is the one to plan around.
+          In 20 years: about <b>{moneyCompact(end.base)}</b> expected (range {moneyCompact(end.low)} to {moneyCompact(end.high)}), which is roughly <b>{moneyCompact(end.base / Math.pow(1 + d.rates.inflation / 100, 20))}</b> in today&rsquo;s money. Returns are after tax. These are modelled assumptions, not predictions; real markets move in jumps, and the cautious line is the one to plan around.
         </p>
       </Card>
 
@@ -95,9 +95,9 @@ export function Plan({ go }: { go: (tab: string) => void }) {
                   return (
                     <tr key={goal.id}>
                       <td className="title">{goal.name}</td>
-                      <td data-label="Needed / month" className="r">{inr(plan.requiredMonthly)}</td>
-                      <td data-label="Funded" className="r">{inr(funded)}</td>
-                      <td data-label="Status"><Badge tone={ok ? 'good' : 'bad'}>{ok ? '\u2713 on track' : '\u2715 short by ' + inr(plan.requiredMonthly - funded)}</Badge></td>
+                      <td data-label="Needed / month" className="r">{money(plan.requiredMonthly)}</td>
+                      <td data-label="Funded" className="r">{money(funded)}</td>
+                      <td data-label="Status"><Badge tone={ok ? 'good' : 'bad'}>{ok ? '\u2713 on track' : '\u2715 short by ' + money(plan.requiredMonthly - funded)}</Badge></td>
                       <td className="actions"><div className="row-actions"><button className="btn small" onClick={() => go('goals')}>{ok ? 'View goal' : 'Adjust goal'}<Icon name="arrow" size={16} /></button></div></td>
                     </tr>
                   );

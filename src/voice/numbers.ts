@@ -8,8 +8,9 @@ const ONES: Record<string, number> = {
   thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
 };
 const TENS: Record<string, number> = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
-const SCALE: Record<string, number> = { hundred: 100, thousand: 1000, k: 1000, lakh: 1e5, lakhs: 1e5, lac: 1e5, lacs: 1e5, lakhh: 1e5, crore: 1e7, crores: 1e7, million: 1e6, m: 1e6, l: 1e5 };
-const CURRENCY = new Set(['rs', 'rupee', 'rupees', 'inr', 'rupaye', 'rupay']);
+const SCALE: Record<string, number> = { hundred: 100, thousand: 1000, k: 1000, lakh: 1e5, lakhs: 1e5, lac: 1e5, lacs: 1e5, lakhh: 1e5, crore: 1e7, crores: 1e7, million: 1e6, millions: 1e6, mn: 1e6, m: 1e6, billion: 1e9, bn: 1e9, b: 1e9, l: 1e5 };
+// Words that name the currency. They are skipped when reading an amount, so "spent 12 dollars on lunch" and "paid 800 rupees" both work.
+const CURRENCY = new Set(['rs', 'rupee', 'rupees', 'inr', 'rupaye', 'rupay', 'dollar', 'dollars', 'bucks', 'usd', 'euro', 'euros', 'eur', 'pound', 'pounds', 'quid', 'gbp', 'yen', 'jpy', 'cad', 'aud', 'franc', 'francs', 'chf', 'dirham', 'dirhams', 'aed', 'rand', 'zar', 'peso', 'pesos', 'ringgit', 'myr', 'baht', 'thb', 'won', 'krw', 'yuan', 'rmb', 'cny', 'naira', 'ngn', 'shilling', 'shillings', 'riyal', 'riyals']);
 
 const isDigits = (t: string) => /^\d+(\.\d+)?$/.test(t);
 const isWord = (t: string) => t in ONES || t in TENS;

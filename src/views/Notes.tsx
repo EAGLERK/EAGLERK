@@ -4,7 +4,7 @@ import type { Note, NoteBlock, TodoItem } from '../engine/types';
 import { Icon, type IconName } from '../components/icons';
 import { Card } from '../components/ui';
 import { useToast } from '../components/feedback';
-import { inr } from '../lib/format';
+import { money } from '../lib/format';
 import { useStore } from '../store';
 import { onOpenNote, takePendingNote } from '../voice/bus';
 
@@ -327,7 +327,7 @@ function TableBlock({ block, onChange }: { block: Extract<NoteBlock, { type: 'ta
       <div className="row">
         <button className="btn small" onClick={addRow}><Icon name="plus" size={16} />Add row</button>
         <button className="btn small" onClick={addColumn}><Icon name="plus" size={16} />Add column</button>
-        {totals.length > 0 && <span className="sub table-totals">{totals.map((t) => `Total ${t.column}: ${inr(t.total)}`).join(' · ')}</span>}
+        {totals.length > 0 && <span className="sub table-totals">{totals.map((t) => `Total ${t.column}: ${money(t.total)}`).join(' · ')}</span>}
       </div>
     </div>
   );

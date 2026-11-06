@@ -70,7 +70,7 @@ Light and dark are two settings of the same semantic names. Dark follows the dev
 
 ## Type
 
-One family, the system stack: `system-ui, -apple-system, 'Segoe UI', sans-serif`. No web font to load, which suits offline use. Figures use tabular numbers and Indian digit grouping (₹1,25,430), with lakh and crore forms on charts.
+One family, the system stack: `system-ui, -apple-system, 'Segoe UI', sans-serif`. No web font to load, which suits offline use. Figures use tabular numbers and the grouping of the profile's country (₹1,25,430 in India, $125,430 in the US, 125.430 € in Germany), with lakh and crore forms on charts in India and 1.2M forms elsewhere.
 
 | Role | Size / weight / line-height / tracking | Measured in the app |
 |---|---|---|

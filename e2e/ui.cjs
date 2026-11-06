@@ -30,7 +30,7 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
   const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   try {
     // ---------- phone: size, CTAs, clipping ----------
-    const phoneCtx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const phoneCtx = await browser.newContext({ locale: 'en-IN', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const ph = await phoneCtx.newPage();
     await ph.goto(URL);
     await seed(ph);
@@ -55,7 +55,7 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     await phoneCtx.close();
 
     // ---------- desktop ----------
-    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const ctx = await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 900 } });
     const p = await ctx.newPage();
     const errors = [];
     p.on('console', (m) => ['error', 'warning'].includes(m.type()) && !/GL Driver|ReadPixels/.test(m.text()) && errors.push(m.text().slice(0, 160)));
@@ -129,7 +129,7 @@ const count = async (page) => Number(((await page.locator('main').innerText()).m
     check(await shown(p.getByRole('dialog')) && (await cssMotion()) === 0, 'dialog: opens with no CSS animation');
     await p.keyboard.press('Escape');
 
-    const calm = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+    const calm = await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
     const cp = await calm.newPage();
     await cp.goto(URL);
     await seed(cp);

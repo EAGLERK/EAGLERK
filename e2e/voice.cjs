@@ -23,7 +23,7 @@ const STUB = `
 `;
 
 async function start(browser, { demo = false, stub = true, nospeech = false, viewport = { width: 1280, height: 860 } } = {}) {
-  const ctx = await browser.newContext({ viewport });
+  const ctx = await browser.newContext({ locale: 'en-IN', viewport });
   const p = await ctx.newPage();
   if (stub) await p.addInitScript(STUB);
   if (nospeech) await p.addInitScript(() => { delete window.SpeechRecognition; delete window.webkitSpeechRecognition; });
@@ -50,7 +50,7 @@ const tomorrowless = (n) => { const d = new Date(); d.setDate(d.getDate() - n); 
 // With the feature switched off (server started with VITE_FEATURE_VOICE=0 and this run with VOICE=0) the microphone and its tour tip are gone.
 async function off() {
   const browser = await chromium.launch();
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+  const ctx = await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 860 } });
   const p = await ctx.newPage();
   await p.goto(URL);
   await p.getByLabel('What should we call you?').fill('Asha');
@@ -73,7 +73,7 @@ async function off() {
 
     // ---------- the tour mentions it ----------
     {
-      const c2 = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+      const c2 = await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 860 } });
       const q = await c2.newPage();
       await q.goto(URL);
       await q.getByLabel('What should we call you?').fill('Asha');

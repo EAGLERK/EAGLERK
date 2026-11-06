@@ -4,7 +4,7 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../engine/categories';
 import { newGoal } from '../engine/goals';
 import { newItem, newTodo, newText } from '../engine/notes';
 import type { Rates, Note, NoteBlock, Txn, Goal } from '../engine/types';
-import { inr, monthLabel } from '../lib/format';
+import { cur, money, moneyExact, monthLabel } from '../lib/format';
 import type { Action, AppState } from '../store';
 import { clean, goalWord, type Cmd, type Tab } from './parse';
 
@@ -87,7 +87,7 @@ function findTxn(target: string, c: PlanCtx): Found | null {
   return hits.sort((a, b) => b.txn.date.localeCompare(a.txn.date) || Number(b.staged) - Number(a.staged))[0];
 }
 
-const describeTxn = (t: Txn, today: string) => `${inr(t.amount)} ${t.description || t.category} on ${dayText(t.date, today)}`;
+const describeTxn = (t: Txn, today: string) => `${moneyExact(t.amount)} ${t.description || t.category} on ${dayText(t.date, today)}`;
 
 function findNote(name: string, notes: Note[]): Note | null {
   const n = clean(name);
@@ -174,9 +174,9 @@ export function plan(cmd: Cmd, c: PlanCtx): Plan {
       const s = summarize(state.txns, month);
       const when = `${cmd.period === 'last' ? '' : 'so far in '}${monthLabel(month)}`;
       if (!s.txnCount) return say(`There are no saved transactions for ${monthLabel(month)}.`);
-      if (cmd.what === 'spend') return say(`You spent ${inr(s.spend)} ${when}.`);
-      if (cmd.what === 'income') return say(`You earned ${inr(s.income)} ${when}.`);
-      return say(s.saved >= 0 ? `You saved ${inr(s.saved)} ${when}.` : `You spent ${inr(-s.saved)} more than you earned ${when}.`);
+      if (cmd.what === 'spend') return say(`You spent ${money(s.spend)} ${when}.`);
+      if (cmd.what === 'income') return say(`You earned ${money(s.income)} ${when}.`);
+      return say(s.saved >= 0 ? `You saved ${money(s.saved)} ${when}.` : `You spent ${money(-s.saved)} more than you earned ${when}.`);
     }
 
     case 'addTxn': {
@@ -185,7 +185,7 @@ export function plan(cmd: Cmd, c: PlanCtx): Plan {
       const date = cmd.date ?? c.today;
       const category = categorize(cmd.description, cmd.type);
       const txn: Txn = { id: c.newId(), date, description: cmd.description || category, amount: cmd.amount, type: cmd.type, category, source: 'manual' };
-      return say(`Added ${cmd.type === 'income' ? 'income' : 'expense'} of ${inr(cmd.amount)}, ${txn.description}, ${dayText(date, c.today)}, under ${category}. Say save to keep it, or undo.`, [{ k: 'nav', tab: 'transactions' }, { k: 'stage', txn }]);
+      return say(`Added ${cmd.type === 'income' ? 'income' : 'expense'} of ${moneyExact(cmd.amount)}, ${txn.description}, ${dayText(date, c.today)}, under ${category}. Say save to keep it, or undo.`, [{ k: 'nav', tab: 'transactions' }, { k: 'stage', txn }]);
     }
 
     case 'txnEdit': {
@@ -195,7 +195,7 @@ export function plan(cmd: Cmd, c: PlanCtx): Plan {
       let what: string;
       if (cmd.field === 'amount') {
         if (!cmd.amount || cmd.amount <= 0) return say('That amount does not look right.');
-        patch = { amount: cmd.amount }; what = `amount to ${inr(cmd.amount)}`;
+        patch = { amount: cmd.amount }; what = `amount to ${moneyExact(cmd.amount)}`;
       } else if (cmd.field === 'date') {
         if (!cmd.date) return say('I did not catch the date.');
         patch = { date: cmd.date }; what = `date to ${dayText(cmd.date, c.today)}`;
@@ -228,7 +228,7 @@ export function plan(cmd: Cmd, c: PlanCtx): Plan {
     case 'noteCreate': {
       const id = c.newId;
       const note: Note = cmd.kind === 'sell'
-        ? { id: id(), title: cmd.title || 'Things to sell', updatedAt: c.now, blocks: [{ id: id(), type: 'table', title: '', columns: ['Item', 'Asking price (₹)', 'Status'], rows: [['', '', ''], ['', '', '']] }] }
+        ? { id: id(), title: cmd.title || 'Things to sell', updatedAt: c.now, blocks: [{ id: id(), type: 'table', title: '', columns: ['Item', `Asking price (${cur()})`, 'Status'], rows: [['', '', ''], ['', '', '']] }] }
         : cmd.kind === 'text'
           ? { id: id(), title: cmd.title, updatedAt: c.now, blocks: [newText(id)] }
           : { id: id(), title: cmd.title || (cmd.kind === 'buy' ? 'Things to buy' : 'To-do list'), updatedAt: c.now, blocks: [newTodo(id, '')] };
@@ -300,7 +300,7 @@ export function plan(cmd: Cmd, c: PlanCtx): Plan {
       }
       if (!(n > 0) || n > 1_000_000_000) return say('That amount does not look right. Say it again.');
       const label = cmd.field === 'monthlyIncome' ? 'monthly take-home' : cmd.field === 'monthlyExpenses' ? 'monthly spending' : 'yearly gross income';
-      return confirm(`Change your ${label} from ${inr(p[cmd.field])} to ${inr(n)}?`, say(`Your ${label} is now ${inr(n)}.`, [{ k: 'dispatch', action: { type: 'profile', patch: { [cmd.field]: n } } }]));
+      return confirm(`Change your ${label} from ${money(p[cmd.field])} to ${money(n)}?`, say(`Your ${label} is now ${money(n)}.`, [{ k: 'dispatch', action: { type: 'profile', patch: { [cmd.field]: n } } }]));
     }
     case 'setAssumption': {
       const w = keyWords(cmd.label);
@@ -317,7 +317,7 @@ export function plan(cmd: Cmd, c: PlanCtx): Plan {
     case 'goalAdd': {
       if (state.goals.some((g) => g.kind === cmd.kind)) return say(`You already have a ${cmd.kind} goal. Say change ${cmd.kind} price to set it.`);
       const goal = newGoal(cmd.kind, c.newId(), c.today, c.rates);
-      return say(`Added a ${cmd.kind} goal at ${inr(goal.price)}. Say its price to change it.`, [{ k: 'dispatch', action: { type: 'upsertGoal', goal } }, { k: 'nav', tab: 'goals' }]);
+      return say(`Added a ${cmd.kind} goal at ${money(goal.price)}. Say its price to change it.`, [{ k: 'dispatch', action: { type: 'upsertGoal', goal } }, { k: 'nav', tab: 'goals' }]);
     }
     case 'goalPrice':
     case 'goalMonth':
@@ -328,7 +328,7 @@ export function plan(cmd: Cmd, c: PlanCtx): Plan {
       if (cmd.t === 'goalDelete') return confirm(`Delete the ${g.name} goal?`, say('Deleted. Say undo to bring it back.', [{ k: 'dispatch', action: { type: 'deleteGoal', id: g.id } }]));
       if (cmd.t === 'goalPrice') {
         if (cmd.price <= 0) return say('That price does not look right.');
-        return confirm(`Change the ${g.name} price from ${inr(g.price)} to ${inr(cmd.price)}?`, say(`The ${g.name} price is now ${inr(cmd.price)}.`, [{ k: 'dispatch', action: { type: 'upsertGoal', goal: { ...g, price: cmd.price } } }, { k: 'nav', tab: 'goals' }]));
+        return confirm(`Change the ${g.name} price from ${money(g.price)} to ${money(cmd.price)}?`, say(`The ${g.name} price is now ${money(cmd.price)}.`, [{ k: 'dispatch', action: { type: 'upsertGoal', goal: { ...g, price: cmd.price } } }, { k: 'nav', tab: 'goals' }]));
       }
       return confirm(`Move the ${g.name} target from ${monthLabel(g.targetMonth)} to ${monthLabel(cmd.month)}?`, say(`The ${g.name} target is now ${monthLabel(cmd.month)}.`, [{ k: 'dispatch', action: { type: 'upsertGoal', goal: { ...g, targetMonth: cmd.month } } }, { k: 'nav', tab: 'goals' }]));
     }

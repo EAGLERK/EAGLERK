@@ -11,7 +11,7 @@ const check = (ok, msg) => { console.log((ok ? 'PASS ' : 'FAIL ') + msg); if (!o
 const shown = (loc, t = 5000) => loc.waitFor({ timeout: t }).then(() => true, () => false);
 
 async function start(browser, opts = {}, demo = false) {
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 }, ...opts });
+  const ctx = await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 860 }, ...opts });
   const p = await ctx.newPage();
   await p.goto(URL);
   if (demo) await seed(p);

@@ -1,10 +1,10 @@
 # MyMoney
 
-A personal finance planner for Indian households. It answers four questions:
+A personal finance planner you can use in any country. It works in your own currency and number format; a few extra tools (tax estimate, lender rules, savings schemes) are built for India only. See "Countries and currencies" below. It answers four questions:
 
 1. **Where does my money go?** Import a bank statement (CSV) or add transactions by hand. Monthly income, spend, savings rate, 50/30/20 check, category breakdown and month-over-month spikes.
-2. **Can I afford a car, house or bike, and by when?** Price at your target date, cash needed on the day, EMI, total interest, the monthly saving that gets you there, affordability checks, and a tenure trade-off table.
-3. **How are my investments doing, best to worst?** FD, RD, PPF, NPS, EPF, mutual funds, stocks, gold and savings, valued today and ranked on return **after tax and inflation**, with flags (idle cash, DICGC limit, upcoming maturity).
+2. **Can I afford a car, house or bike, and by when?** Price at your target date, cash needed on the day, the monthly loan payment (EMI), total interest, the monthly saving that gets you there, affordability checks, and a tenure trade-off table.
+3. **How are my investments doing, best to worst?** *(India only, and switched off by default.)* FD, RD, PPF, NPS, EPF, mutual funds, stocks, gold and savings, valued today and ranked on return **after tax and inflation**, with flags (idle cash, DICGC limit, upcoming maturity).
 4. **What should I do with the surplus?** A monthly allocation in a fixed order: safety net, costly debt, goals (soonest first), long-term wealth. Plus a ranked "where should new money go" tool and a 20-year projection.
 
 By default everything runs in the browser and is stored in `localStorage`. Nothing is uploaded. Optional accounts are described below.
@@ -37,6 +37,30 @@ The app starts empty and has no sample data: add a transaction, import a stateme
 - **Bell:** alerts worked out from your own data (overspending, goals that do not fit, heavy EMIs, uncategorised rows, stale data, backup and sync problems), each with a reason and a button. The rules are in `src/engine/alerts.ts` with tests in `tests/alerts.test.ts`.
 - **Browser alerts:** Settings, Notifications. Important alerts that appear while MyMoney is open in a background tab also show as system notifications. There is no push service, so nothing arrives when the app is closed; adding that would need a small server, a service worker and a push key.
 - Tests: `npm run e2e:welcome`.
+
+## Countries and currencies
+
+MyMoney is not tied to India. On first launch it asks "Where are you?" (pre-filled from the browser's language) and uses that country's currency. Settings, Country and currency changes either later.
+
+What follows the country:
+
+- **Currency and number format.** Amounts are written in the chosen currency the way that country writes them: ₹1,25,430 in India, $125,430 in the US, 125.430 € in Germany, ¥125,430 in Japan (no decimals for currencies without them). Below 1,000, cents are kept ($4.50 stays $4.50). Changing the currency changes how amounts are *shown*; it does **not convert** amounts you already have, and there is one currency per profile (no mixed-currency accounts).
+- **Reading statements.** Amounts are read in any common format: `1,234.50`, `1.234,56 €`, `1 234,56`, `CHF 1'234.50`, `(500.00)`, `450 Dr`, with the currency symbol or code in front or behind. Dates such as `03/04/2026` are read day-first, except in the US and the Philippines (month-first), and whenever the file settles it (a day above 12). Semicolon-separated exports and decimal commas, common in Europe, work. The Google Sheet reader uses the same rules.
+- **Categories.** Matching is keyword-based and English: Indian narrations (UPI, NEFT, Swiggy) and common names from elsewhere (Walmart, Tesco, Lidl, REWE, DoorDash, Comcast, mortgage, paycheck, and so on). Anything else is "Other" and can be changed by hand. Statements in other languages mostly land in "Other" until recategorised.
+- **Loan payments.** Called "EMI" in India, Pakistan, Bangladesh, Sri Lanka and Nepal, and "loan payment" everywhere else.
+- **Mitra.** Commands are English. It understands "12 dollars", "20 bucks", "45 euros", "1.5 million", "2 mn" as well as "80 lakh" and "1.25 crore", and listens for the English of your country (en-US, en-GB, en-IN and so on).
+
+What is **India-only**, and switched off elsewhere:
+
+- The **tax estimate** (new regime slabs) and the "Salaried" box.
+- The **lender minimum down payment** check for a house (the RBI's loan-to-value limits).
+- The **researched assumptions** (RBI repo rate, CPI, small-savings schemes, bank products). Elsewhere Settings lists only what goals need (planning inflation, house, car and bike price growth, loan rates) as **placeholders you are asked to replace**, with a notice on Goals until you do. The app has no sourced numbers for other countries and does not pretend to; it assumes **0 interest on savings** until you enter yours.
+- The **Investments and Plan** tabs (still behind `VITE_FEATURE_INVESTING=1`, and now offered only to India).
+- Income fallbacks: a new profile outside India starts with 0 for monthly income, spend and annual income (the rupee-sized defaults would be nonsense in dollars), so Goals asks for your take-home until you enter it or import transactions.
+
+Data saved before this change has no country and stays in India and rupees.
+
+What is **not** done: other countries' tax rules, loan rules and rate data; converting between currencies or holding several at once; right-to-left layouts; translating the interface or Mitra into other languages; non-English category keywords. The phone sign-in field still reads a bare 10-digit number as Indian (phone sign-in is off by default). Tests: `tests/global.test.ts` and `npm run e2e:global`.
 
 ## Notes
 
@@ -243,7 +267,7 @@ Tax modelled: new regime FY 2026-27, 4% cess, Rs 12 lakh rebate with marginal re
 
 ## Known limits
 
-- **No live bank sync.** In India that needs the RBI Account Aggregator framework, which a personal app cannot join directly. Statement import is the supported path; re-importing a file does not duplicate rows.
+- **No live bank sync.** Connecting to a bank needs a regulated provider in every country (open-banking aggregators in the UK and EU, data aggregators in the US, the Account Aggregator framework in India), which a personal app cannot join directly. Statement import is the supported path; re-importing a file does not duplicate rows.
 - **New tax regime only.** 80C / 80D / HRA are not modelled, so PPF and ELSS look less attractive than they would to an old-regime filer.
 - **Single device.** Data is in one browser. Use Settings > Download backup, or Copy backup if downloads are blocked.
 - **Not investment advice.** The advisor is a transparent rule set (110 minus age for equity share, adjusted for risk). The author is not a SEBI-registered adviser.

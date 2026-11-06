@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, type Dispatch, type ReactNode } from 'react';
-import { DEFAULT_ASSUMPTIONS, ratesFromAssumptions, type Assumption } from './engine/assumptions';
+import { assumptionsFor, ratesFromAssumptions, DEFAULT_ASSUMPTIONS, type Assumption } from './engine/assumptions';
 import { averages, monthsWithData, addMonths } from './engine/cashflow';
 import { buildPortfolio, type Portfolio } from './engine/portfolio';
 import { marginalRate } from './engine/tax';
 import type { Note, SheetLink, Goal, Investment, Liability, Profile, Rates, Txn } from './engine/types';
 import { todayISO } from './lib/format';
+import { countryOf, isIndia, setMoneyContext } from './lib/region';
 
 export interface AppState {
   version: 1;
@@ -26,6 +27,16 @@ export interface AppState {
   alertsRead?: string[];
   /** When a backup file was last downloaded (YYYY-MM-DD), for the backup reminder. */
   lastBackupAt?: string;
+}
+
+/** The country and currency a profile uses. Data from before the app was global has neither, and that means India and rupees. */
+export const profileRegion = (p: Pick<Profile, 'country' | 'currency'>): { country: string; currency: string } => ({ country: p.country ?? 'IN', currency: p.currency ?? 'INR' });
+
+/** A new profile for someone in `country`. Outside India the income fallbacks start at 0 rather than rupee-sized numbers; Settings and Goals ask for the real ones. */
+export function newProfile(name: string, country: string, currency?: string): Profile {
+  const c = countryOf(country);
+  const base: Profile = { ...EMPTY_PROFILE, name, country, currency: currency ?? c?.currency ?? 'USD' };
+  return isIndia(country) ? base : { ...base, monthlyIncome: 0, monthlyExpenses: 0, annualGrossIncome: 0, salaried: false };
 }
 
 export const EMPTY_PROFILE: Profile = {
@@ -65,7 +76,7 @@ export type Action =
   | { type: 'override'; key: string; value: number | null }
   /** Takes out what the old sample data added (matched by its transaction source and fixed ids). */
   | { type: 'removeSample' }
-  | { type: 'startFresh'; name?: string }
+  | { type: 'startFresh'; name?: string; country?: string; currency?: string }
   | { type: 'upsertNote'; note: Note }
   | { type: 'deleteNote'; id: string }
   | { type: 'tour'; done: boolean }
@@ -119,7 +130,7 @@ function reducer(s: AppState, a: Action): AppState {
       investments: s.investments.filter((x) => !LEGACY_SAMPLE.investments.includes(x.id)),
       liabilities: s.liabilities.filter((l) => !LEGACY_SAMPLE.liabilities.includes(l.id)),
     };
-    case 'startFresh': return { ...initial, profile: { ...initial.profile, name: a.name?.trim() ?? '' }, onboarded: true, tourDone: s.tourDone, alertsRead: s.alertsRead };
+    case 'startFresh': return { ...initial, profile: a.country ? newProfile(a.name?.trim() ?? '', a.country, a.currency) : { ...initial.profile, name: a.name?.trim() ?? '' }, onboarded: true, tourDone: s.tourDone, alertsRead: s.alertsRead };
     case 'upsertNote': {
       const notes = s.notes ?? [];
       return { ...s, notes: notes.some((n) => n.id === a.note.id) ? notes.map((n) => (n.id === a.note.id ? a.note : n)) : [a.note, ...notes] };
@@ -168,6 +179,8 @@ const load = (): AppState => readLocalState() ?? initial;
 
 export interface Derived {
   today: string;
+  country: string;
+  currency: string;
   assumptions: Assumption[];
   rates: Rates;
   marginal: number;
@@ -206,11 +219,17 @@ export function StoreProvider({ children, initial: start, persistence = 'local' 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
+  const region = profileRegion(state.profile);
+  // Amounts are formatted by a module-level formatter, so it has to know the currency before any child renders.
+  setMoneyContext(region.country, region.currency);
+
   const d = useMemo<Derived>(() => {
     const today = todayISO();
-    const assumptions = DEFAULT_ASSUMPTIONS.map((a) => (a.key in state.overrides ? { ...a, value: state.overrides[a.key] } : a));
-    const rates = ratesFromAssumptions(assumptions);
-    const marginal = marginalRate(state.profile.annualGrossIncome, state.profile.salaried);
+    const assumptions = assumptionsFor(region.country).map((a) => (a.key in state.overrides ? { ...a, value: state.overrides[a.key] } : a));
+    // Engines read rates by key, so every key has a value even where the list shown to the person is shorter.
+    const rates = { ...ratesFromAssumptions(DEFAULT_ASSUMPTIONS.map((a) => ({ ...a, value: a.key in state.overrides ? state.overrides[a.key] : isIndia(region.country) ? a.value : a.key === 'fd' ? 0 : a.value }))), ...ratesFromAssumptions(assumptions) };
+    // The tax slabs are India's. Elsewhere there is no tax estimate, so nothing downstream assumes one.
+    const marginal = isIndia(region.country) ? marginalRate(state.profile.annualGrossIncome, state.profile.salaried) : 0;
     const portfolio = buildPortfolio(state.investments, state.liabilities, today, rates, marginal);
 
     const months = monthsWithData(state.txns);
@@ -222,7 +241,7 @@ export function StoreProvider({ children, initial: start, persistence = 'local' 
     const fromTransactions = avg.months > 0 && avg.income > 0;
     const existingEmi = state.liabilities.reduce((a, l) => a + l.emi, 0);
     return {
-      today, assumptions, rates, marginal, portfolio, latestMonth,
+      today, country: region.country, currency: region.currency, assumptions, rates, marginal, portfolio, latestMonth,
       plan: {
         income: fromTransactions ? avg.income : state.profile.monthlyIncome,
         spend: avg.months > 0 ? avg.spend : state.profile.monthlyExpenses,

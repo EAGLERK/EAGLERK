@@ -10,7 +10,7 @@ import { Icon } from '../components/icons';
 import { useToast } from '../components/feedback';
 import { Badge, Callout, Card, Field, Num, Stat, Toggle } from '../components/ui';
 import { StackedBar } from '../components/charts';
-import { inr, inrCompact, pct, todayISO, uid } from '../lib/format';
+import { money, moneyCompact, pct, todayISO, uid } from '../lib/format';
 import { useStore } from '../store';
 import { CLASS_COLOR } from './Dashboard';
 
@@ -49,8 +49,8 @@ export function Investments() {
       {p.holdings.length > 0 && (
         <>
           <div className="grid g4">
-            <Stat label="Value today" value={inrCompact(p.total)} note={`Invested ${inrCompact(p.invested)}`} />
-            <Stat label="Gain" value={inrCompact(p.total - p.invested)} tone={p.total >= p.invested ? 'good' : 'bad'} delta={p.invested > 0 ? <span>{pct(((p.total - p.invested) / p.invested) * 100)} on cost</span> : undefined} />
+            <Stat label="Value today" value={moneyCompact(p.total)} note={`Invested ${moneyCompact(p.invested)}`} />
+            <Stat label="Gain" value={moneyCompact(p.total - p.invested)} tone={p.total >= p.invested ? 'good' : 'bad'} delta={p.invested > 0 ? <span>{pct(((p.total - p.invested) / p.invested) * 100)} on cost</span> : undefined} />
             <Stat label="Return after tax" value={pct(p.blendedPosttax)} note="Weighted by value, per year" />
             <Stat label="Return after tax and inflation" value={pct(realReturn(p.blendedPosttax, infl))} tone={realReturn(p.blendedPosttax, infl) < 1 ? 'watch' : 'good'} note={`Inflation assumed ${infl}%`} />
           </div>
@@ -82,8 +82,8 @@ export function Investments() {
                           <div className="sub">{KIND_LABEL[h.inv.kind]}{h.inv.institution ? ` · ${h.inv.institution}` : ''}{mat ? ` · matures ${mat.date}` : ''}</div>
                           {h.flags.map((f) => <div key={f} className="watch small">! {f}</div>)}
                         </td>
-                        <td data-label="Value" className="r" style={{ whiteSpace: 'nowrap' }}>{inr(h.value)}</td>
-                        <td data-label="Gain" className={`r ${h.gain >= 0 ? 'good' : 'bad'}`} style={{ whiteSpace: 'nowrap' }}>{h.gain >= 0 ? '+' : ''}{inr(h.gain)}</td>
+                        <td data-label="Value" className="r" style={{ whiteSpace: 'nowrap' }}>{money(h.value)}</td>
+                        <td data-label="Gain" className={`r ${h.gain >= 0 ? 'good' : 'bad'}`} style={{ whiteSpace: 'nowrap' }}>{h.gain >= 0 ? '+' : ''}{money(h.gain)}</td>
                         <td data-label="Rate" className="r"><span className="cellval">{pct(h.pretax)}<span className="sub">{h.rateSource === 'assumed' ? 'assumed' : 'yours'}</span></span></td>
                         <td data-label="After tax" className="r">{pct(h.posttax)}</td>
                         <td data-label="Real return" className={`r ${h.real < 0.5 ? 'bad' : ''}`}>{pct(h.real)}</td>
@@ -140,7 +140,7 @@ function InvestmentForm({ initial, onClose }: { initial: Investment; onClose: ()
       </div>
       <label className="check" style={{ marginTop: 12 }}><input type="checkbox" checked={!!v.emergency} onChange={(e) => set({ emergency: e.target.checked })} /> Count this toward my emergency fund (must be quickly withdrawable)</label>
       {mat && (
-        <div style={{ marginTop: 12 }}><Callout tone="info">Matures on <b>{mat.date}</b> at about <b>{inr(mat.value)}</b> (interest {inr(mat.interest)}). Banks round differently, so expect a few rupees of difference.</Callout></div>
+        <div style={{ marginTop: 12 }}><Callout tone="info">Matures on <b>{mat.date}</b> at about <b>{money(mat.value)}</b> (interest {money(mat.interest)}). Banks round differently, so expect a few rupees of difference.</Callout></div>
       )}
       <div className="form-actions">
         <button className="btn primary" disabled={!v.name || v.amount <= 0} onClick={() => { dispatch({ type: 'upsertInvestment', inv: v }); toast(`${v.name} saved`); onClose(); }}>Save investment</button>
@@ -193,8 +193,8 @@ function Compare() {
                   <td data-label="Rate" className="r"><span className="cellval">{pct(r.pretax)}<span><Badge tone={status(r.inst.rateKey) === 'verified' ? 'good' : status(r.inst.rateKey) === 'check' ? 'watch' : undefined} title="verified: official notification · check: confirm with your bank · estimate: modelled assumption">{status(r.inst.rateKey)}</Badge></span></span></td>
                   <td data-label="After tax" className="r">{pct(r.posttax)}</td>
                   <td data-label="Real return" className={`r ${r.real < 0.5 ? 'bad' : ''}`}>{pct(r.real)}</td>
-                  <td data-label="You end with" className="r">{inrCompact(c.net)}</td>
-                  <td data-label="In today's money" className="r">{inrCompact(c.real)}</td>
+                  <td data-label="You end with" className="r">{moneyCompact(c.net)}</td>
+                  <td data-label="In today's money" className="r">{moneyCompact(c.real)}</td>
                   <td data-label="Bad year" className="r">{r.inst.badYear ? pct(r.inst.badYear, 0) : '0%'}</td>
                   <td data-label="Verdict">{r.verdict === 'best' ? <Badge tone="good">{'✓'} Best</Badge> : r.verdict === 'avoid' ? <Badge tone="bad">{'✕'} Avoid</Badge> : r.verdict === 'unsuitable' ? <Badge>Not for this</Badge> : <Badge tone="info">OK</Badge>}</td>
                 </tr>
@@ -203,7 +203,7 @@ function Compare() {
           </tbody>
         </table>
       </div>
-      <p className="sub" style={{ marginTop: 8 }}>You would put in {inrCompact(lump + monthly * Math.round(years * 12))}. &ldquo;Bad year&rdquo; is an illustrative bad calendar year, not a worst case and not from a verified dataset. Equity exit tax is 12.5% above Rs 1.25 lakh of gains if held a year or more. Rates marked &ldquo;estimate&rdquo; are assumptions you can edit in Settings; none of them is a forecast.</p>
+      <p className="sub" style={{ marginTop: 8 }}>You would put in {moneyCompact(lump + monthly * Math.round(years * 12))}. &ldquo;Bad year&rdquo; is an illustrative bad calendar year, not a worst case and not from a verified dataset. Equity exit tax is 12.5% above Rs 1.25 lakh of gains if held a year or more. Rates marked &ldquo;estimate&rdquo; are assumptions you can edit in Settings; none of them is a forecast.</p>
     </Card>
   );
 }
@@ -234,16 +234,16 @@ function DepositCalc() {
       </div>
       <div className="grid g2" style={{ marginTop: 14 }}>
         <dl className="kv">
-          <dt>You put in</dt><dd>{inr(principal)}</dd>
-          <dt>Interest earned</dt><dd>{inr(interest)}</dd>
-          <dt className="strong">Maturity value (before tax)</dt><dd className="strong">{inr(maturityValue)}</dd>
+          <dt>You put in</dt><dd>{money(principal)}</dd>
+          <dt>Interest earned</dt><dd>{money(interest)}</dd>
+          <dt className="strong">Maturity value (before tax)</dt><dd className="strong">{money(maturityValue)}</dd>
           <dt>Effective yield</dt><dd>{pct(effectiveYield(rate), 2)}</dd>
-          <dt>Maturity after tax at your slab ({pct(d.marginal * 100, 0)})</dt><dd>{inr(afterTaxMaturity)}</dd>
+          <dt>Maturity after tax at your slab ({pct(d.marginal * 100, 0)})</dt><dd>{money(afterTaxMaturity)}</dd>
           <dt>Return after tax and inflation</dt><dd className={real < 0.5 ? 'bad' : 'good'}>{real < 0.5 ? '✕ ' : '✓ '}{pct(real)}</dd>
         </dl>
         <div className="stack">
           {real < 0.5 && <Callout tone="bad">After tax and {d.rates.inflation}% inflation this deposit grows your buying power by only {pct(real)} a year. Fine for money you need soon; poor for anything longer.</Callout>}
-          {yearlyInterest > FD_TDS_THRESHOLD && <Callout tone="watch">Interest of about {inr(yearlyInterest)} a year crosses the Rs {FD_TDS_THRESHOLD.toLocaleString('en-IN')} threshold at one bank, so the bank will cut 10% TDS. It is still taxed at your slab either way; TDS only changes when you pay.</Callout>}
+          {yearlyInterest > FD_TDS_THRESHOLD && <Callout tone="watch">Interest of about {money(yearlyInterest)} a year crosses the Rs {FD_TDS_THRESHOLD.toLocaleString('en-IN')} threshold at one bank, so the bank will cut 10% TDS. It is still taxed at your slab either way; TDS only changes when you pay.</Callout>}
           {years >= 5 && <Callout tone="info">For 5 years or more, PPF at {d.rates.ppf}% is tax-free, so it needs a pre-tax FD rate of {pct(d.rates.ppf / (1 - d.marginal), 2)} to match.</Callout>}
         </div>
       </div>

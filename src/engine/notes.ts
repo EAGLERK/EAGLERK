@@ -1,4 +1,5 @@
 import { parseMoney } from './csv';
+import { cur } from '../lib/format';
 import type { Note, NoteBlock, TodoItem } from './types';
 
 export type NoteKind = 'blank' | 'buy' | 'sell';
@@ -9,14 +10,14 @@ const rid: Id = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? cryp
 export const newItem = (id: Id = rid, text = ''): TodoItem => ({ id: id(), text, done: false });
 export const newTodo = (id: Id = rid, title = ''): NoteBlock => ({ id: id(), type: 'todo', title, items: [newItem(id)] });
 export const newText = (id: Id = rid): NoteBlock => ({ id: id(), type: 'text', text: '' });
-export const newTable = (id: Id = rid, columns = ['Item', 'Details', 'Price (₹)'], rowCount = 3): NoteBlock => ({
+export const newTable = (id: Id = rid, columns = ['Item', 'Details', `Price (${cur()})`], rowCount = 3): NoteBlock => ({
   id: id(), type: 'table', title: '', columns, rows: Array.from({ length: rowCount }, () => columns.map(() => '')),
 });
 
 /** A starting point for a new note: a list of things to buy, a table of things to sell, or an empty page. */
 export function createNote(kind: NoteKind, now: string, id: Id = rid): Note {
   if (kind === 'buy') return { id: id(), title: 'Things to buy', updatedAt: now, blocks: [newTodo(id, 'To buy')] };
-  if (kind === 'sell') return { id: id(), title: 'Things to sell', updatedAt: now, blocks: [newTable(id, ['Item', 'Asking price (₹)', 'Status'])] };
+  if (kind === 'sell') return { id: id(), title: 'Things to sell', updatedAt: now, blocks: [newTable(id, ['Item', `Asking price (${cur()})`, 'Status'])] };
   return { id: id(), title: '', updatedAt: now, blocks: [newText(id)] };
 }
 

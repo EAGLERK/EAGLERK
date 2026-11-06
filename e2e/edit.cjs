@@ -14,7 +14,7 @@ const CSV = `Date,Narration,Withdrawal Amt.,Deposit Amt.,Closing Balance
 `;
 
 async function start(browser, opts = {}) {
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 }, ...opts });
+  const ctx = await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 860 }, ...opts });
   await ctx.addInitScript(() => {
     window.__picker = 0;
     const orig = HTMLInputElement.prototype.showPicker;

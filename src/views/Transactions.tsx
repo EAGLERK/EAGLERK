@@ -3,13 +3,14 @@ import { DEFAULT_CATEGORIES, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../en
 import { categorize } from '../engine/categorize';
 import { monthsWithData } from '../engine/cashflow';
 import { readStatementFile } from '../engine/statementFile';
+import { dateOrderFor, isIndia, moneyContext } from '../lib/region';
 import { SheetList, useSheets } from '../components/Sheets';
 import type { Txn } from '../engine/types';
 import { Icon } from '../components/icons';
 import { Callout, Card, Field, Num } from '../components/ui';
 import { rowProblem, useDrafts } from '../components/Drafts';
 import { useConfirm, useToast } from '../components/feedback';
-import { inr, monthLabel, todayISO, uid } from '../lib/format';
+import { money, monthLabel, todayISO, uid, cur, moneyExact } from '../lib/format';
 import { useStore } from '../store';
 
 const PAGE = 100;
@@ -98,7 +99,7 @@ export function Transactions({ openAdd = false, onCloseAdd }: { openAdd?: boolea
 
       <Card
         title="All transactions"
-        sub={`${rows.length} shown${unsavedNote} · in ${inr(totals.in)} · out ${inr(totals.out)}`}
+        sub={`${rows.length} shown${unsavedNote} · in ${money(totals.in)} · out ${money(totals.out)}`}
       >
         <div className="form-grid filters" style={{ marginBottom: 12 }}>
           <Field label="Month"><select value={month} onChange={(e) => { setMonth(e.target.value); setLimit(PAGE); }}><option value="all">All months</option>{months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}</select></Field>
@@ -207,7 +208,7 @@ function AddForm({ onDone }: { onDone: () => void }) {
   const add = () => {
     const t: Txn = { id: uid(), date, description: desc || chosen, amount, type, category: chosen, source: 'manual' };
     drafts.stage([t]);
-    toast(`${type === 'income' ? 'Income' : 'Expense'} of ${inr(amount)} added to the list. Press Save changes to keep it.`);
+    toast(`${type === 'income' ? 'Income' : 'Expense'} of ${moneyExact(amount)} added to the list. Press Save changes to keep it.`);
     onDone();
   };
 
@@ -217,8 +218,8 @@ function AddForm({ onDone }: { onDone: () => void }) {
         <div className="form-grid">
           <Field label="Type"><select value={type} onChange={(e) => { setType(e.target.value as 'income' | 'expense'); setCat(''); }}><option value="expense">Expense</option><option value="income">Income</option></select></Field>
           <Field label="Date" required><input type="date" value={date} max={todayISO()} onClick={openCalendar} onChange={(e) => setDate(e.target.value)} /></Field>
-          <Field label="Description"><input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="UPI-Swiggy, Salary, ..." /></Field>
-          <Num label="Amount (₹)" value={amount} onChange={setAmount} min={0} required />
+          <Field label="Description"><input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={isIndia(moneyContext().country) ? 'UPI-Swiggy, Salary, ...' : 'Coffee shop, Salary, ...'} /></Field>
+          <Num label={`Amount (${cur()})`} value={amount} onChange={setAmount} min={0} required />
           <Field label="Category" hint={cat ? undefined : 'Picked from the description'}>
             <select value={chosen} onChange={(e) => setCat(e.target.value)}>{(type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map((c) => <option key={c}>{c}</option>)}</select>
           </Field>
@@ -264,7 +265,7 @@ function ImportCard() {
   const importFile = async (f: File) => {
     setWarning(null);
     setNotes([]);
-    const result = await readStatementFile(f);
+    const result = await readStatementFile(f, { dateOrder: dateOrderFor(state.profile.country) });
     if (!result.rows.length) {
       setWarning(result.warnings[0] ?? `Nothing could be read from ${f.name}.`);
       return;
@@ -303,9 +304,9 @@ function ImportCard() {
           <details>
             <summary>Why not connect my bank account directly?</summary>
             <div className="stack sub" style={{ marginTop: 8 }}>
-              <p>In India, a live feed of your bank transactions has to go through the RBI&rsquo;s Account Aggregator framework: you consent to an AA, and the data goes only to regulated financial-information users. A personal app cannot plug into that on its own.</p>
-              <p>So this app does not pretend to do it. Download a statement from net banking each month (CSV or Excel) and import it. Re-importing the same file will not create duplicates.</p>
-              <p>If you want live sync later, the clean path is to put an AA gateway provider behind a small backend and feed its output into the same import function used here.</p>
+              <p>Connecting to a bank means going through a regulated provider: open-banking aggregators in the UK and Europe, data aggregators in the US, the Account Aggregator framework in India, and similar schemes elsewhere. They need agreements, security audits and a server, and a personal app cannot do that on its own.</p>
+              <p>So this app does not pretend to. Download a statement from your bank each month (CSV or Excel), or keep your transactions in a Google Sheet, and bring them in here. Re-importing the same file will not create duplicates.</p>
+              <p>Live sync could be added later by putting an aggregator behind a small backend and feeding its output into the same import used here.</p>
             </div>
           </details>
         </>

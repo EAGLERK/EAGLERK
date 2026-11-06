@@ -1,3 +1,4 @@
+import { emiWord, emiWords, isIndia } from '../lib/region';
 import { lazy, Suspense, useState } from 'react';
 import { addMonths } from '../engine/cashflow';
 import { earliestMonths, GOAL_DEFAULTS, newGoal, planGoal, type PlanContext } from '../engine/goals';
@@ -5,7 +6,7 @@ import type { Goal, GoalKind } from '../engine/types';
 import { Icon, type IconName } from '../components/icons';
 import { useToast } from '../components/feedback';
 import { Badge, Callout, Card, Field, Num, NumInput } from '../components/ui';
-import { inr, inrCompact, monthLabel, monthsText, pct, uid } from '../lib/format';
+import { money, moneyCompact, monthLabel, monthsText, pct, uid, cur } from '../lib/format';
 import { features } from '../features';
 import { useStore } from '../store';
 import { LoansCard } from './Loans';
@@ -63,6 +64,13 @@ export function Goals() {
         </button>
       </div>
 
+      {state.goals.length > 0 && d.plan.income <= 0 && (
+        <Callout tone="watch">Add your monthly take-home in Settings, or import some transactions, so I can tell whether your goals are affordable. Until then every loan looks unaffordable.</Callout>
+      )}
+      {state.goals.length > 0 && !isIndia(d.country) && !['homeLoan', 'carLoan', 'bikeLoan'].some((k) => k in state.overrides) && (
+        <Callout tone="info">The loan rates and price growth below are placeholders, not figures for your country. Set the rate you were quoted in Settings, under Rates and assumptions.</Callout>
+      )}
+
       {choosing && (
         <Card title="What are you saving for?" sub="Pick one. You can change every number afterwards.">
           <GoalChooser onPick={add} />
@@ -73,14 +81,14 @@ export function Goals() {
       {plans.length > 0 && (
         <Card title="All goals together">
           <div className="stats">
-            <div><div className="sub">Saving needed every month</div><div className="num" style={{ fontSize: 24, fontWeight: 650 }}>{inr(totalMonthly)}</div></div>
-            <div><div className="sub">Your monthly surplus</div><div className="num" style={{ fontSize: 24, fontWeight: 650 }}>{inr(surplus)}</div><div className="sub">{d.plan.fromTransactions ? `Average of the last ${d.plan.months} month${d.plan.months === 1 ? '' : 's'}` : 'From your profile estimate'}</div></div>
-            <div><div className="sub">New EMIs once all goals are bought</div><div className="num" style={{ fontSize: 24, fontWeight: 650 }}>{inr(totalEmi)}</div></div>
+            <div><div className="sub">Saving needed every month</div><div className="num" style={{ fontSize: 24, fontWeight: 650 }}>{money(totalMonthly)}</div></div>
+            <div><div className="sub">Your monthly surplus</div><div className="num" style={{ fontSize: 24, fontWeight: 650 }}>{money(surplus)}</div><div className="sub">{d.plan.fromTransactions ? `Average of the last ${d.plan.months} month${d.plan.months === 1 ? '' : 's'}` : 'From your profile estimate'}</div></div>
+            <div><div className="sub">New {emiWords()} once all goals are bought</div><div className="num" style={{ fontSize: 24, fontWeight: 650 }}>{money(totalEmi)}</div></div>
           </div>
           {totalMonthly > surplus ? (
-            <div style={{ marginTop: 12 }}><Callout tone="bad">Your goals need {inr(totalMonthly - surplus)} a month more than you have left over. Something has to give: push dates out, trim prices, or raise income.{features.investing ? ' The Plan tab shows which goal gets funded first.' : ''}</Callout></div>
+            <div style={{ marginTop: 12 }}><Callout tone="bad">Your goals need {money(totalMonthly - surplus)} a month more than you have left over. Something has to give: push dates out, trim prices, or raise income.{features.investing ? ' The Plan tab shows which goal gets funded first.' : ''}</Callout></div>
           ) : (
-            <div style={{ marginTop: 12 }}><Callout tone="good">All goals fit inside your surplus with {inr(surplus - totalMonthly)} a month to spare.{features.investing ? ' The Plan tab funds your emergency fund and any costly debt before goals, so check it for the real order.' : ''}</Callout></div>
+            <div style={{ marginTop: 12 }}><Callout tone="good">All goals fit inside your surplus with {money(surplus - totalMonthly)} a month to spare.{features.investing ? ' The Plan tab funds your emergency fund and any costly debt before goals, so check it for the real order.' : ''}</Callout></div>
           )}
         </Card>
       )}
@@ -98,7 +106,7 @@ export function Goals() {
         <Card>
           <div className="empty-cta">
             <h2>No goals yet</h2>
-            <p className="sub">Add a car, house or bike. You will see the price at your target date, the cash needed up front, the EMI, the total interest, and the monthly saving that gets you there.</p>
+            <p className="sub">Add a car, house or bike. You will see the price at your target date, the cash needed up front, the monthly {emiWord()}, the total interest, and the monthly saving that gets you there.</p>
             <button className="btn" onClick={() => setChoosing(true)}><Icon name="plus" size={18} />Add your first goal</button>
           </div>
         </Card>
@@ -125,19 +133,19 @@ function GoalCard({ goal, ctx, surplus }: { goal: Goal; ctx: PlanContext; surplu
   return (
     <Card
       title={<span>{goal.name} <span className="muted" style={{ fontWeight: 400 }}>· {monthLabel(goal.targetMonth)} ({monthsText(p.months)} away)</span></span>}
-      sub={`Price today ${inr(goal.price)}`}
+      sub={`Price today ${money(goal.price)}`}
       right={<div className="row-actions"><button className="btn small" aria-expanded={edit} onClick={() => setEdit(!edit)}><Icon name={edit ? 'close' : 'pencil'} size={16} />{edit ? 'Done' : 'Edit'}</button><button className="btn small danger" onClick={() => { dispatch({ type: 'deleteGoal', id: goal.id }); toast(`${goal.name} goal removed`, { undo: () => dispatch({ type: 'upsertGoal', goal }) }); }}><Icon name="trash" size={16} />Remove</button></div>}
     >
       {edit && (
         <div className="form-grid" style={{ marginBottom: 16 }}>
           <Field label="Name"><input value={goal.name} onChange={(e) => set({ name: e.target.value })} /></Field>
-          <Num label="Price today (₹)" value={goal.price} onChange={(n) => set({ price: n })} min={0} />
+          <Num label={`Price today (${cur()})`} value={goal.price} onChange={(n) => set({ price: n })} min={0} />
           <Field label="Target month"><input type="month" value={goal.targetMonth} onChange={(e) => e.target.value && set({ targetMonth: e.target.value })} /></Field>
           <Num label="Down payment (%)" value={goal.downPaymentPct} onChange={(n) => set({ downPaymentPct: Math.min(100, n) })} min={0} />
           <Num label="Loan rate (%)" value={goal.loanRate} onChange={(n) => set({ loanRate: n })} min={0} hint="Ask your lender for the real quote" />
           <Num label="Loan tenure (years)" value={goal.loanYears} onChange={(n) => set({ loanYears: n })} min={0} />
           <Num label="Fees, tax, insurance (%)" value={goal.extraCostPct} onChange={(n) => set({ extraCostPct: n })} min={0} hint={goal.kind === 'house' ? 'Stamp duty + registration, varies by state' : 'Road tax, registration, insurance'} />
-          <Num label="Already saved (₹)" value={goal.saved} onChange={(n) => set({ saved: n })} min={0} />
+          <Num label={`Already saved (${cur()})`} value={goal.saved} onChange={(n) => set({ saved: n })} min={0} />
         </div>
       )}
 
@@ -145,14 +153,14 @@ function GoalCard({ goal, ctx, surplus }: { goal: Goal; ctx: PlanContext; surplu
         <div>
           <h3 style={{ marginBottom: 8 }}>The numbers</h3>
           <dl className="kv">
-            <dt>Price at {monthLabel(goal.targetMonth)} <span className="muted small">(+{d(ctx.rates[growthKey])}%/yr)</span></dt><dd>{inr(p.priceAtTarget)}</dd>
-            <dt>Down payment ({goal.downPaymentPct}%)</dt><dd>{inr(p.downPayment)}</dd>
-            <dt>Fees, tax, insurance ({goal.extraCostPct}%)</dt><dd>{inr(p.extraCost)}</dd>
-            <dt className="strong">Cash needed on the day</dt><dd className="strong">{inr(p.upfront)}</dd>
-            {hasLoan && <><dt>Loan</dt><dd>{inr(p.loanAmount)}</dd>
-              <dt>EMI ({goal.loanRate}% · {goal.loanYears} yr)</dt><dd className="strong">{inr(p.emi)}</dd>
-              <dt>Total interest</dt><dd className={p.interest > p.priceAtTarget * 0.25 ? 'watch' : ''}>{inr(p.interest)}</dd></>}
-            <dt>Total cost of ownership</dt><dd>{inr(p.lifetimeCost)}</dd>
+            <dt>Price at {monthLabel(goal.targetMonth)} <span className="muted small">(+{d(ctx.rates[growthKey])}%/yr)</span></dt><dd>{money(p.priceAtTarget)}</dd>
+            <dt>Down payment ({goal.downPaymentPct}%)</dt><dd>{money(p.downPayment)}</dd>
+            <dt>Fees, tax, insurance ({goal.extraCostPct}%)</dt><dd>{money(p.extraCost)}</dd>
+            <dt className="strong">Cash needed on the day</dt><dd className="strong">{money(p.upfront)}</dd>
+            {hasLoan && <><dt>Loan</dt><dd>{money(p.loanAmount)}</dd>
+              <dt>{emiWord(true)} ({goal.loanRate}% · {goal.loanYears} yr)</dt><dd className="strong">{money(p.emi)}</dd>
+              <dt>Total interest</dt><dd className={p.interest > p.priceAtTarget * 0.25 ? 'watch' : ''}>{money(p.interest)}</dd></>}
+            <dt>Total cost of ownership</dt><dd>{money(p.lifetimeCost)}</dd>
           </dl>
         </div>
         <div className="stack">
@@ -160,12 +168,12 @@ function GoalCard({ goal, ctx, surplus }: { goal: Goal; ctx: PlanContext; surplu
           <div className="callout info"><span className="ic" aria-hidden>i</span><div>
             {p.requiredMonthly > 0
               ? features.investing
-                ? <>Put aside <b className="num">{inr(p.requiredMonthly)}</b> a month in a <b>{p.vehicle.toLowerCase()}</b> (about {pct(p.vehicleReturn)} a year after tax). </>
-                : <>Put aside <b className="num">{inr(p.requiredMonthly)}</b> a month. This assumes your savings grow about {pct(p.vehicleReturn)} a year after tax; saving more or sooner shortens the wait. </>
+                ? <>Put aside <b className="num">{money(p.requiredMonthly)}</b> a month in a <b>{p.vehicle.toLowerCase()}</b> (about {pct(p.vehicleReturn)} a year after tax). </>
+                : <>Put aside <b className="num">{money(p.requiredMonthly)}</b> a month. This assumes your savings grow about {pct(p.vehicleReturn)} a year after tax; saving more or sooner shortens the wait. </>
               : <>You already have enough set aside for the up-front cash. </>}
             {features.investing && (p.years < 3 ? 'The date is under 3 years away, so keep this out of equity: a market fall right before purchase would hurt.' : 'The date is 3+ years away, so some market exposure is reasonable.')}
           </div></div>
-          {hasLoan && <div className="row"><Badge tone={tone}>{tone === 'good' ? '✓' : tone === 'watch' ? '!' : '✕'} {p.verdict}</Badge><span className="sub">Total EMIs would be {pct(p.foir * 100, 0)} of monthly income {ctx.existingEmi > 0 ? `(including ${inr(ctx.existingEmi)} you pay now)` : ''}</span></div>}
+          {hasLoan && <div className="row"><Badge tone={tone}>{tone === 'good' ? '✓' : tone === 'watch' ? '!' : '✕'} {p.verdict}</Badge><span className="sub">Total {emiWords()} would be {pct(p.foir * 100, 0)} of monthly income {ctx.existingEmi > 0 ? `(including ${money(ctx.existingEmi)} you pay now)` : ''}</span></div>}
           <div className="row">
             <span className="sub">If I save</span>
             <div style={{ width: 130 }}><NumInput className="inline-input" value={pace} onChange={setPace} aria-label="Monthly saving" /></div>
@@ -190,13 +198,13 @@ function GoalCard({ goal, ctx, surplus }: { goal: Goal; ctx: PlanContext; surplu
           <h3 style={{ marginBottom: 8 }}>Tenure trade-off</h3>
           <div className="table-wrap">
             <table className="table num">
-              <thead><tr><th>Tenure</th><th className="r">EMI</th><th className="r">Total interest</th><th className="r">Interest as % of loan</th><th>Fits income?</th></tr></thead>
+              <thead><tr><th>Tenure</th><th className="r">{emiWord(true)}</th><th className="r">Total interest</th><th className="r">Interest as % of loan</th><th>Fits income?</th></tr></thead>
               <tbody>
                 {p.tenures.map((t) => (
                   <tr key={t.years} style={t.years === goal.loanYears ? { background: 'var(--surface-2)' } : undefined}>
                     <td>{t.years} {t.years === 1 ? 'year' : 'years'} {t.years === goal.loanYears && <Badge>current</Badge>}</td>
-                    <td className="r">{inr(t.emi)}</td>
-                    <td className="r">{inrCompact(t.interest)}</td>
+                    <td className="r">{money(t.emi)}</td>
+                    <td className="r">{moneyCompact(t.interest)}</td>
                     <td className="r">{pct((t.interest / p.loanAmount) * 100, 0)}</td>
                     <td><Badge tone={t.verdict === 'comfortable' ? 'good' : t.verdict === 'stretch' ? 'watch' : 'bad'}>{t.verdict === 'comfortable' ? '✓' : t.verdict === 'stretch' ? '!' : '✕'} {t.verdict} · {pct(t.foir * 100, 0)}</Badge></td>
                   </tr>
@@ -204,7 +212,7 @@ function GoalCard({ goal, ctx, surplus }: { goal: Goal; ctx: PlanContext; surplu
               </tbody>
             </table>
           </div>
-          <p className="sub" style={{ marginTop: 6 }}>Pick the shortest tenure whose EMI stays comfortable. Rate shown is what you entered; a flat rate for the whole tenure is assumed.</p>
+          <p className="sub" style={{ marginTop: 6 }}>Pick the shortest tenure whose {emiWord()} stays comfortable. Rate shown is what you entered; a flat rate for the whole tenure is assumed.</p>
         </div>
       )}
     </Card>

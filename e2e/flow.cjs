@@ -25,7 +25,7 @@ const check = (ok, msg) => {
 
 (async () => {
   const browser = await chromium.launch();
-  const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+  const page = await (await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 900 } })).newPage();
   const errors = [];
   // Headless Chromium has no GPU and its software GL prints performance notices for any WebGL canvas.
   // Those are driver messages, not app errors, so ignore only that exact kind.

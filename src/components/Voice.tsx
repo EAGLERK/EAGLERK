@@ -3,6 +3,7 @@ import { uid } from '../lib/format';
 import { pulse, popIn, wave } from '../motion';
 import { useStore } from '../store';
 import { askAI, aiAvailable } from '../voice/ai';
+import { moneyContext } from '../lib/region';
 import { ASSISTANT } from '../voice/brand';
 import { requestOpenNote } from '../voice/bus';
 import { parseAmountPhrase } from '../voice/numbers';
@@ -16,12 +17,12 @@ import { Icon } from './icons';
 type Theme = 'auto' | 'light' | 'dark';
 interface Line { id: number; who: 'me' | 'bot'; text: string }
 
-const HELP = [
+const HELP = () => [
   `I'm ${ASSISTANT}. Here is what I can do:`,
   'Add: "Spent 450 on lunch yesterday", "Got salary 85000"',
   'Notes: "Add milk and eggs to my shopping list", "Note down call the bank", "Tick off milk"',
   'Go: "Open goals", "Show my notes"',
-  'Change: "Set my age to 32", "Change the amount of Swiggy to 500", "Set house price to 80 lakh", "Dark mode"',
+  `Change: "Set my age to 32", "Change the amount of Uber to 500", "Set house price to ${moneyContext().country === 'IN' ? '80 lakh' : '350 thousand'}", "Dark mode"`,
   'Ask: "How much did I spend this month?"',
   'Say "save" to keep new transactions and "undo" to take back the last change.',
 ].join('\n');
@@ -134,7 +135,7 @@ export function Voice({ go, theme, setTheme, tabs }: { go: (tab: string) => void
       reply('Undone.');
       return;
     }
-    if (p.special === 'help') { reply(HELP); return; }
+    if (p.special === 'help') { reply(HELP()); return; }
     let text = p.say;
     if (p.effects?.length) {
       const r = apply(p.effects);
@@ -148,7 +149,7 @@ export function Voice({ go, theme, setTheme, tabs }: { go: (tab: string) => void
   /** Says the reply (aloud when the question came by voice), then listens again if an answer is expected. */
   const reply = (text: string, expectAnswer = false) => {
     if (text) say('bot', text);
-    const aloud = viaMic.current && live.current.speakOn && speakingSupported() && text && text !== HELP;
+    const aloud = viaMic.current && live.current.speakOn && speakingSupported() && text && text !== HELP();
     const next = () => { if (expectAnswer && viaMic.current && live.current.open) listen(); };
     if (aloud) speak(text, next); else next();
   };

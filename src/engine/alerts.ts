@@ -1,4 +1,6 @@
 import { addMonths, insights, monthOf, monthsWithData, summarize } from './cashflow';
+import { money } from '../lib/format';
+import { emiWords } from '../lib/region';
 import type { Txn } from './types';
 
 export type AlertLevel = 'bad' | 'watch' | 'info';
@@ -29,7 +31,6 @@ export interface AlertInput {
   sample: boolean;
 }
 
-const inr = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN');
 const dayNumber = (iso: string) => Math.floor(Date.parse(iso.slice(0, 10) + 'T00:00:00Z') / 86400000);
 const monthName = (m: string) => new Date(m + '-01T00:00:00Z').toLocaleString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
@@ -54,7 +55,7 @@ export function buildAlerts(i: AlertInput): AppAlert[] {
   if (review) {
     const cur = summarize(i.txns, review);
     if (cur.income > 0 && cur.saved < 0) {
-      add({ id: `overspend:${review}`, level: 'bad', title: `You spent more than you earned in ${monthName(review)}`, body: `Spending was ${inr(-cur.saved)} above income. Open Transactions to see where it went.`, action: { label: 'See where it went', tab: 'transactions' } });
+      add({ id: `overspend:${review}`, level: 'bad', title: `You spent more than you earned in ${monthName(review)}`, body: `Spending was ${money(-cur.saved)} above income. Open Transactions to see where it went.`, action: { label: 'See where it went', tab: 'transactions' } });
     }
     // Categories well above the person's own recent average (the same rule the Dashboard notes use).
     const jumps = insights(i.txns, review).filter((n) => n.level === 'watch' && /\bup \d+%/.test(n.text));
@@ -62,10 +63,10 @@ export function buildAlerts(i: AlertInput): AppAlert[] {
   }
 
   if (i.income > 0 && i.existingEmi / i.income > 0.4) {
-    add({ id: 'emi-burden', level: 'watch', title: 'EMIs take a large share of your income', body: `Loan EMIs are ${Math.round((i.existingEmi / i.income) * 100)}% of your monthly income. Lenders usually like to see 40% or less, and new loans for goals will add to it.`, action: { label: 'See your loans', tab: 'goals' } });
+    add({ id: 'emi-burden', level: 'watch', title: `${emiWords(true)} take a large share of your income`, body: `Your ${emiWords()} are ${Math.round((i.existingEmi / i.income) * 100)}% of your monthly income. Lenders usually like to see 40% or less, and new loans for goals will add to it.`, action: { label: 'See your loans', tab: 'goals' } });
   }
   if (i.goalCount > 0 && i.goalsNeed > i.surplus) {
-    add({ id: 'goals-gap', level: 'watch', title: 'Your goals need more than you have left over', body: `Together they need ${inr(i.goalsNeed)} a month and your surplus is ${inr(i.surplus)}. Push a date out, trim a price or raise income.`, action: { label: 'Adjust goals', tab: 'goals' } });
+    add({ id: 'goals-gap', level: 'watch', title: 'Your goals need more than you have left over', body: `Together they need ${money(i.goalsNeed)} a month and your surplus is ${money(i.surplus)}. Push a date out, trim a price or raise income.`, action: { label: 'Adjust goals', tab: 'goals' } });
   }
 
   const other = i.txns.filter((t) => t.category === 'Other').length;

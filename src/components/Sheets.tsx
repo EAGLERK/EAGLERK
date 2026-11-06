@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { parseStatement } from '../engine/csv';
 import { hashText, looksDestructive, sheetLabel, sheetTarget, syncRows } from '../engine/sheets';
 import type { SheetLink, Txn } from '../engine/types';
-import { inr, uid } from '../lib/format';
+import { money, uid, moneyExact } from '../lib/format';
+import { dateOrderFor } from '../lib/region';
 import { dialogIn } from '../motion';
 import { fetchSheetCsv, sheetMessage } from '../sheets/fetch';
 import { useStore } from '../store';
@@ -69,7 +70,7 @@ export function SheetsProvider({ children }: { children: ReactNode }) {
       // Nothing changed since the last time it was applied: nothing to do. (Pressing Sync now always looks again at the rows.)
       if (!manual && hash === sheet.hash && !sheet.error) return;
 
-      const parsed = parseStatement(text);
+      const parsed = parseStatement(text, { dateOrder: dateOrderFor(live.current.state.profile.country) });
       if (!parsed.rows.length) return fail(`I could not find any transactions in the sheet${parsed.warnings[0] ? `: ${parsed.warnings[0]}` : '.'} Your saved transactions were left as they are.`);
       const L = live.current;
       const before = L.state.txns.filter((t) => t.file === sheet.label);
@@ -158,6 +159,7 @@ export function SheetsProvider({ children }: { children: ReactNode }) {
 /* ---------- The dialog: paste a link, see what is in the sheet, add it ---------- */
 
 function ConnectDialog({ onClose, onConnect }: { onClose: () => void; onConnect: (p: Preview, name: string, auto: boolean) => void }) {
+  const { state } = useStore();
   const ref = useRef<HTMLDialogElement>(null);
   const [link, setLink] = useState('');
   const [name, setName] = useState('');
@@ -177,7 +179,7 @@ function ConnectDialog({ onClose, onConnect }: { onClose: () => void; onConnect:
     setBusy(true);
     try {
       const text = await fetchSheetCsv(target.urls);
-      const parsed = parseStatement(text);
+      const parsed = parseStatement(text, { dateOrder: dateOrderFor(state.profile.country) });
       if (!parsed.rows.length) { setError(parsed.warnings[0] ?? 'I could not find transactions in that sheet. It needs a header row with a Date, a Description and an Amount (or Debit and Credit).'); return; }
       setPreview({ url: link.trim(), urls: target.urls, hash: hashText(text), rows: parsed.rows, warnings: parsed.warnings, notes: parsed.notes });
     } catch (err) {
@@ -210,9 +212,9 @@ function ConnectDialog({ onClose, onConnect }: { onClose: () => void; onConnect:
         {preview && (
           <div className="sheet-preview" role="status">
             <b>Found {preview.rows.length} {preview.rows.length === 1 ? 'transaction' : 'transactions'}</b>
-            <span className="sub">{dates[0]} to {dates[dates.length - 1]} &middot; {inr(moneyIn)} in &middot; {inr(moneyOut)} out</span>
+            <span className="sub">{dates[0]} to {dates[dates.length - 1]} &middot; {money(moneyIn)} in &middot; {money(moneyOut)} out</span>
             <ul className="clean sheet-sample">
-              {sample.map((r) => <li key={r.id}><span>{r.date}</span><span className="title">{r.description}</span><span className={r.type === 'income' ? 'in' : ''}>{r.type === 'income' ? '+' : '-'}{inr(r.amount)}</span></li>)}
+              {sample.map((r) => <li key={r.id}><span>{r.date}</span><span className="title">{r.description}</span><span className={r.type === 'income' ? 'in' : ''}>{r.type === 'income' ? '+' : '-'}{moneyExact(r.amount)}</span></li>)}
             </ul>
             {[...preview.warnings, ...preview.notes].map((w) => <span key={w} className="sub">{w}</span>)}
             <label className="field">

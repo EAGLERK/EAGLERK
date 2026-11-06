@@ -1,4 +1,6 @@
 import { affordability, emi, totalInterest, type Affordability } from './loan';
+import { money } from '../lib/format';
+import { emiWord, emiWords, isIndia, moneyContext } from '../lib/region';
 import { equityPostTax, postTaxReturn, INSTRUMENTS } from './instruments';
 import { afterTaxRate, effectiveYield } from './deposits';
 import { inflate, monthsToReach, requiredMonthly } from './projection';
@@ -67,6 +69,8 @@ export function monthsUntil(targetMonth: string, today: string): number {
 
 /** Pick where goal money should sit, by how long it has to wait. Returns after-tax annual return in %. */
 export function goalVehicle(months: number, rates: Rates, marginal: number): { id: string; name: string; ret: number } {
+  // The deposit and fund returns below are India's. Anywhere else the plan assumes money sits in a savings account earning what the person entered (0 until they do).
+  if (!isIndia(moneyContext().country)) return { id: 'savings', name: 'Savings account', ret: rates.fd ?? 0 };
   const y = months / 12;
   if (y <= 2) return { id: 'rd', name: 'Recurring deposit / short FD', ret: afterTaxRate(effectiveYield(rates.rd), marginal) };
   if (y <= 5) return { id: 'shortDebt', name: 'Short-duration debt fund', ret: postTaxReturn(INSTRUMENTS.find((i) => i.id === 'shortDebt')!, rates, marginal, y) };
@@ -106,25 +110,28 @@ export function planGoal(goal: Goal, ctx: PlanContext): GoalPlan {
   const pctIncome = ctx.monthlyIncome > 0 ? (e / ctx.monthlyIncome) * 100 : Infinity;
   const fmtPct = (n: number) => (Number.isFinite(n) ? `${n.toFixed(0)}%` : 'n/a');
   if (loanAmount > 0) {
-    checks.push({ ok: foir <= 0.4, label: 'Total EMIs within 40% of income', detail: `With this loan, ${fmtPct(foir * 100)} of monthly income goes to EMIs. Lenders usually stop at 40-50%.` });
+    checks.push({ ok: foir <= 0.4, label: `Total ${emiWords()} within 40% of income`, detail: `With this loan, ${fmtPct(foir * 100)} of monthly income goes to ${emiWords()}. Lenders usually stop at 40-50%.` });
   }
   if (goal.kind === 'car') {
     checks.push({ ok: goal.downPaymentPct >= 20, label: '20% down payment', detail: `You plan ${goal.downPaymentPct}%. A car loses roughly 15-20% of its value in year one, so less than 20% down leaves you owing more than it is worth.` });
-    checks.push({ ok: goal.loanYears <= 4, label: 'Loan of 4 years or less', detail: `Planned tenure is ${goal.loanYears} years. Longer tenures cut the EMI but cost far more in interest.` });
-    checks.push({ ok: pctIncome <= 10, label: 'Car EMI within 10% of income', detail: `EMI is ${fmtPct(pctIncome)} of income. Fuel, insurance and servicing come on top.` });
+    checks.push({ ok: goal.loanYears <= 4, label: 'Loan of 4 years or less', detail: `Planned tenure is ${goal.loanYears} years. Longer tenures cut the ${emiWord()} but cost far more in interest.` });
+    checks.push({ ok: pctIncome <= 10, label: `Car ${emiWord()} within 10% of income`, detail: `The ${emiWord()} is ${fmtPct(pctIncome)} of income. Fuel, insurance and servicing come on top.` });
   } else if (goal.kind === 'bike') {
-    checks.push({ ok: goal.downPaymentPct >= 20, label: '20% down payment', detail: `You plan ${goal.downPaymentPct}%. Bike loan rates run high, so every rupee of down payment saves interest at ${goal.loanRate}%.` });
+    checks.push({ ok: goal.downPaymentPct >= 20, label: '20% down payment', detail: `You plan ${goal.downPaymentPct}%. Bike loan rates run high, so every bit of down payment saves interest at ${goal.loanRate}%.` });
     checks.push({ ok: goal.loanYears <= 3, label: 'Loan of 3 years or less', detail: `Planned tenure is ${goal.loanYears} years. A bike depreciates faster than a loan at this rate gets paid off.` });
-    checks.push({ ok: pctIncome <= 5, label: 'Bike EMI within 5% of income', detail: `EMI is ${fmtPct(pctIncome)} of income.` });
+    checks.push({ ok: pctIncome <= 5, label: `Bike ${emiWord()} within 5% of income`, detail: `The ${emiWord()} is ${fmtPct(pctIncome)} of income.` });
   } else if (goal.kind === 'house') {
-    const minDp = priceAtTarget <= 3_000_000 ? 10 : priceAtTarget <= 7_500_000 ? 20 : 25;
-    checks.push({ ok: goal.downPaymentPct >= minDp, label: `Lender minimum down payment (${minDp}%)`, detail: `RBI loan-to-value limits: up to Rs 30 lakh 90%, Rs 30-75 lakh 80%, above Rs 75 lakh 75%. At this price you need at least ${minDp}% down.` });
-    checks.push({ ok: goal.downPaymentPct >= 20, label: '20% down payment (recommended)', detail: `You plan ${goal.downPaymentPct}%. More down means a smaller EMI and a lower insurance and interest bill.` });
-    checks.push({ ok: ctx.annualIncome > 0 && goal.price <= ctx.annualIncome * 5, label: 'Price within 5x annual income', detail: ctx.annualIncome > 0 ? `Today's price is ${(goal.price / ctx.annualIncome).toFixed(1)}x annual income. Above 5x, the EMI usually crowds out everything else.` : 'Add your annual income in Settings to check this.' });
+    // The lender minimum is the RBI's loan-to-value rule, in rupees. No other country's rule is built in, so it is only checked for India.
+    if (isIndia(moneyContext().country)) {
+      const minDp = priceAtTarget <= 3_000_000 ? 10 : priceAtTarget <= 7_500_000 ? 20 : 25;
+      checks.push({ ok: goal.downPaymentPct >= minDp, label: `Lender minimum down payment (${minDp}%)`, detail: `RBI loan-to-value limits: up to Rs 30 lakh 90%, Rs 30-75 lakh 80%, above Rs 75 lakh 75%. At this price you need at least ${minDp}% down.` });
+    }
+    checks.push({ ok: goal.downPaymentPct >= 20, label: '20% down payment (recommended)', detail: `You plan ${goal.downPaymentPct}%. More down means a smaller ${emiWord()} and a lower insurance and interest bill.` });
+    checks.push({ ok: ctx.annualIncome > 0 && goal.price <= ctx.annualIncome * 5, label: 'Price within 5x annual income', detail: ctx.annualIncome > 0 ? `Today's price is ${(goal.price / ctx.annualIncome).toFixed(1)}x annual income. Above 5x, the ${emiWord()} usually crowds out everything else.` : 'Add your annual income in Settings to check this.' });
     checks.push({ ok: goal.loanYears <= 20, label: 'Tenure of 20 years or less', detail: `Planned tenure is ${goal.loanYears} years. Each extra 5 years adds a large chunk of interest. Prepay when you can.` });
   }
   if (months <= 0 && goal.saved < upfront) {
-    checks.push({ ok: false, label: 'Target date has arrived', detail: `You have ${Math.round(goal.saved).toLocaleString('en-IN')} saved against ${Math.round(upfront).toLocaleString('en-IN')} needed. Move the date out.` });
+    checks.push({ ok: false, label: 'Target date has arrived', detail: `You have ${money(goal.saved)} saved against ${money(upfront)} needed. Move the date out.` });
   }
 
   const tenures: TenureOption[] = TENURES[goal.kind].map((y) => {

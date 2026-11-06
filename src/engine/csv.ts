@@ -1,5 +1,15 @@
 import { categorize } from './categorize';
+import { COUNTRIES } from '../lib/region';
 import type { Txn } from './types';
+
+/** Options a statement reader takes from the person's settings. */
+export interface ReadOptions {
+  /** How an ambiguous numeric date (03/04/2026) is read when the file itself does not settle it. Defaults to day first. */
+  dateOrder?: 'dmy' | 'mdy';
+}
+
+// Currency codes that may sit in front of or behind an amount ("USD 12", "12 EUR", "Rs. 450"). Only known codes count, so "UPI123" is never an amount.
+const CURRENCY_CODES = new Set([...COUNTRIES.map((c) => c.currency.toLowerCase()), 'rs', 'rm', 'kr']);
 
 export interface CsvResult {
   rows: Txn[];
@@ -98,6 +108,9 @@ export function parseDate(raw: string, order: DateOrder = 'dmy'): string | null 
   return null;
 }
 
+/** Is this a date in either order? Used to find the date column, before the file's order is known. */
+const anyDate = (v: string): string | null => parseDate(v, 'dmy') ?? parseDate(v, 'mdy');
+
 /** Excel stores dates as day counts from 1899-12-30. Only values in a plausible range count as dates. */
 export function serialToISO(raw: string): string | null {
   if (!/^\d{5}(\.\d+)?$/.test(raw.trim())) return null;
@@ -107,8 +120,8 @@ export function serialToISO(raw: string): string | null {
   return fmt(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
 }
 
-/** Day-first unless the file proves month-first (a first number above 12 means day-first; a second above 12 means month-first). */
-function detectOrder(values: string[]): DateOrder {
+/** The file settles it when a first number is above 12 (day first) or a second is (month first). Otherwise `fallback`, which comes from the person's country. */
+function detectOrder(values: string[], fallback: DateOrder = 'dmy'): DateOrder {
   let dayFirst = 0;
   let monthFirst = 0;
   for (const v of values) {
@@ -117,12 +130,13 @@ function detectOrder(values: string[]): DateOrder {
     if (+m[1] > 12) dayFirst++;
     if (+m[2] > 12) monthFirst++;
   }
+  if (monthFirst === dayFirst) return fallback;
   return monthFirst > dayFirst ? 'mdy' : 'dmy';
 }
 
 interface Money { n: number; mark: 'dr' | 'cr' | null; decimals: boolean }
 
-/** Reads an amount: ₹1,23,456.78, (500.00), -450, 450 Dr, 1,200.00 CR, 450-. Null when the cell is not a number. */
+/** Reads an amount: ₹1,23,456.78, $1,234.50, 1.234,56 €, CHF 1'234.50, (500.00), -450, 450 Dr, 1,200.00 CR, 450-. Null when the cell is not a number. */
 export function parseMoney(raw: string | undefined): Money | null {
   if (!raw) return null;
   let s = raw.trim().replace(/[−‒–—]/g, '-');
@@ -134,7 +148,16 @@ export function parseMoney(raw: string | undefined): Money | null {
   if (tail) { mark = /^d/i.test(tail[1]) ? 'dr' : 'cr'; s = s.slice(0, tail.index); }
   const head = s.match(/^(dr|cr|debit|credit)\.?\s*/i);
   if (head && !mark) { mark = /^d/i.test(head[1]) ? 'dr' : 'cr'; s = s.slice(head[0].length); }
-  s = s.replace(/[₹$€£]|\brs\.?|\binr\b/gi, '').replace(/[,\s]/g, '');
+  s = s.replace(/[₹$€£¥₩₽₺₫₪฿₦₱₴₡₲₸₼₾﷼]/g, '');
+  const pre = s.match(/^([a-z]{2,3})\.?\s*(?=[\d(+-])/i);
+  if (pre && CURRENCY_CODES.has(pre[1].toLowerCase())) s = s.slice(pre[0].length);
+  const post = s.match(/(?<=\d)\s*([a-z]{2,3})\.?$/i);
+  if (post && CURRENCY_CODES.has(post[1].toLowerCase())) s = s.slice(0, post.index);
+  s = s.replace(/[\s\u00a0\u202f']/g, ''); // spaces and apostrophes are thousands separators in some countries
+  // A comma followed by one or two digits at the end is a decimal comma (1.234,56 and 450,00); otherwise commas group thousands.
+  const lastComma = s.lastIndexOf(',');
+  if (lastComma > s.lastIndexOf('.') && /^\d{1,2}$/.test(s.slice(lastComma + 1)) && /^[+-]?[\d.,]+-?$/.test(s)) s = `${s.slice(0, lastComma).replace(/[.,]/g, '')}.${s.slice(lastComma + 1)}`;
+  else s = s.replace(/,/g, '');
   if (s.endsWith('-')) { neg = true; s = s.slice(0, -1); }
   if (s.startsWith('-')) { neg = true; s = s.slice(1); }
   if (s.startsWith('+')) s = s.slice(1);
@@ -201,10 +224,10 @@ function columnStats(data: string[][], ncols: number): ColStat[] {
       const v = (r[c] ?? '').trim();
       if (!v) continue;
       s.nonEmpty++;
-      if (parseDate(v)) s.strictDate++;
+      if (anyDate(v)) s.strictDate++;
       else if (serialToISO(v)) s.serialDate++;
       const m = parseMoney(v);
-      if (m && !parseDate(v)) {
+      if (m && !anyDate(v)) {
         s.money++;
         if (m.decimals) s.decimals++;
         else if (Number.isInteger(m.n)) ints.push(m.n);
@@ -253,7 +276,7 @@ interface Draft { date: string; desc: string; amount: number; type: 'income' | '
  * recognisable, and from the content otherwise: a column full of dates is the date, the longest text is the description, and
  * money columns are told apart as debit, credit and balance by how they are filled and by how the running balance moves.
  */
-export function parseTable(input: string[][]): CsvResult {
+export function parseTable(input: string[][], opts: ReadOptions = {}): CsvResult {
   const notes: string[] = [];
   const warnings: string[] = [];
   const empty = (msg: string): CsvResult => ({ rows: [], skipped: 0, warnings: [msg], notes });
@@ -265,7 +288,7 @@ export function parseTable(input: string[][]): CsvResult {
   const body = header ? rows.slice(header.row + 1) : rows;
   const ncols = Math.max(...rows.map((r) => r.length));
   // Column statistics come from the rows that carry a date, so a header line or a footer cannot skew them.
-  const withDate = body.filter((r) => r.some((c) => parseDate(c)));
+  const withDate = body.filter((r) => r.some((c) => anyDate(c)));
   const sample = withDate.length >= 2 ? withDate : body;
   const stats = columnStats(sample, ncols);
   const nonEmptyRows = sample.length;
@@ -286,7 +309,7 @@ export function parseTable(input: string[][]): CsvResult {
     const sample = rows.slice(0, 3).map((r) => r.filter((c) => c).slice(0, 6).join(' | ')).join('  //  ');
     return empty(`I could not find a column of dates in this file (${ncols} columns, ${rows.length} rows). The first rows read: ${sample.slice(0, 220)}`);
   }
-  const order = detectOrder(body.map((r) => r[iDate] ?? ''));
+  const order = detectOrder(body.map((r) => r[iDate] ?? ''), opts.dateOrder);
   const toDate = (v: string) => (serial ? serialToISO(v) : parseDate(v, order)) ?? (serial ? null : serialToISO(v));
   const dated = body.filter((r) => toDate(r[iDate] ?? ''));
 
@@ -425,10 +448,10 @@ export function parseTable(input: string[][]): CsvResult {
 }
 
 /** Parses statement text (CSV, TSV, semicolon or pipe separated). */
-export function parseStatement(text: string): CsvResult {
+export function parseStatement(text: string, opts: ReadOptions = {}): CsvResult {
   let t = text.replace(/^﻿/, '');
   const hint = t.match(/^sep=(.)\r?\n/i);
   if (hint) t = t.slice(hint[0].length);
   const delim = hint ? hint[1] : detectDelimiter(t);
-  return parseTable(splitRecords(t, delim));
+  return parseTable(splitRecords(t, delim), opts);
 }

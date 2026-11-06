@@ -1,4 +1,6 @@
 import { DEFAULT_CATEGORIES, groupOf } from './categories';
+import { money } from '../lib/format';
+import { emiWords } from '../lib/region';
 import type { Txn } from './types';
 
 export const monthOf = (date: string) => date.slice(0, 7);
@@ -93,7 +95,6 @@ export interface Insight {
   text: string;
 }
 
-const inr = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN');
 
 export function insights(txns: Txn[], month: string): Insight[] {
   const cur = summarize(txns, month);
@@ -104,12 +105,12 @@ export function insights(txns: Txn[], month: string): Insight[] {
     const pct = Math.round(cur.savingsRate * 100);
     if (cur.savingsRate >= 0.3) out.push({ level: 'good', text: `You kept ${pct}% of income this month. That is above the 20% minimum most plans assume.` });
     else if (cur.savingsRate >= 0.2) out.push({ level: 'good', text: `Savings rate is ${pct}%, which meets the 20% baseline.` });
-    else if (cur.savingsRate >= 0) out.push({ level: 'watch', text: `Savings rate is ${pct}%, under the 20% baseline. Closing the gap needs ${inr(cur.income * 0.2 - cur.saved)} less spending or more income.` });
-    else out.push({ level: 'bad', text: `You spent ${inr(-cur.saved)} more than you earned this month.` });
+    else if (cur.savingsRate >= 0) out.push({ level: 'watch', text: `Savings rate is ${pct}%, under the 20% baseline. Closing the gap needs ${money(cur.income * 0.2 - cur.saved)} less spending or more income.` });
+    else out.push({ level: 'bad', text: `You spent ${money(-cur.saved)} more than you earned this month.` });
 
     const needsPct = cur.needs / cur.income;
     const wantsPct = cur.wants / cur.income;
-    if (needsPct > 0.5) out.push({ level: 'watch', text: `Needs take ${Math.round(needsPct * 100)}% of income (50/30/20 guideline: 50%). Rent, EMIs and bills are the lever, not daily spending.` });
+    if (needsPct > 0.5) out.push({ level: 'watch', text: `Needs take ${Math.round(needsPct * 100)}% of income (50/30/20 guideline: 50%). Rent, ${emiWords()} and bills are the lever, not daily spending.` });
     if (wantsPct > 0.3) out.push({ level: 'watch', text: `Wants take ${Math.round(wantsPct * 100)}% of income (guideline: 30%).` });
   } else {
     out.push({ level: 'info', text: 'No income recorded for this month, so savings rate cannot be computed.' });
@@ -121,7 +122,7 @@ export function insights(txns: Txn[], month: string): Insight[] {
       if (c.group === 'savings') continue;
       const avg = prior.reduce((a, s) => a + (s.byCategory.find((x) => x.category === c.category)?.amount ?? 0), 0) / prior.length;
       if (avg > 0 && c.amount > avg * 1.25 && c.amount - avg > 1000) {
-        out.push({ level: 'watch', text: `${c.category} is ${inr(c.amount)}, up ${Math.round((c.amount / avg - 1) * 100)}% on your ${prior.length}-month average of ${inr(avg)}.` });
+        out.push({ level: 'watch', text: `${c.category} is ${money(c.amount)}, up ${Math.round((c.amount / avg - 1) * 100)}% on your ${prior.length}-month average of ${money(avg)}.` });
       }
     }
   }

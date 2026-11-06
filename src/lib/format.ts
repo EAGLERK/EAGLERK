@@ -1,18 +1,38 @@
-export const inr = (n: number): string => {
-  if (!Number.isFinite(n)) return '-';
-  const sign = n < 0 ? '-' : '';
-  return `${sign}₹${Math.round(Math.abs(n)).toLocaleString('en-IN')}`;
-};
+import { currencySymbol, formatMoney as fmtMoney, minorUnits, moneyContext } from './region';
 
-/** Rs 12.5 L, Rs 1.2 Cr style used across Indian money apps. */
-export const inrCompact = (n: number): string => {
+/**
+ * An amount in the person's currency. Whole units for anything that is a whole number or is 1,000 or more; below 1,000 a fraction is kept (to the
+ * currency's own decimals), so a $4.50 coffee does not become $5. Grouping follows the country: ₹1,25,430, $125,430, 125.430 €.
+ */
+export function money(n: number): string {
+  if (!Number.isFinite(n)) return '-';
+  const digits = Number.isInteger(n) || Math.abs(n) >= 1000 ? 0 : minorUnits();
+  return fmtMoney(n, digits);
+}
+
+/** Always the currency's own decimals when there is a fraction (4.5 becomes 4.50), for amounts a person typed or read from a statement. */
+export function moneyExact(n: number): string {
+  if (!Number.isFinite(n)) return '-';
+  return fmtMoney(n, Number.isInteger(n) ? 0 : minorUnits());
+}
+
+/** Short form for charts and tight spaces: ₹1.20 L and ₹1.5 Cr in India, $1.2M and €1,5 Mio. elsewhere. */
+export function moneyCompact(n: number): string {
   if (!Number.isFinite(n)) return '-';
   const a = Math.abs(n);
   const sign = n < 0 ? '-' : '';
-  if (a >= 1e7) return `${sign}₹${(a / 1e7).toFixed(2)} Cr`;
-  if (a >= 1e5) return `${sign}₹${(a / 1e5).toFixed(2)} L`;
-  return inr(n);
-};
+  const { country } = moneyContext();
+  if (country === 'IN') {
+    if (a >= 1e7) return `${sign}${currencySymbol()}${(a / 1e7).toFixed(2)} Cr`;
+    if (a >= 1e5) return `${sign}${currencySymbol()}${(a / 1e5).toFixed(2)} L`;
+    return money(n);
+  }
+  if (a < 10_000) return money(n);
+  return fmtMoney(n, 1, 'compact');
+}
+
+/** The symbol or code to show in a field label, for example "Amount ($)". */
+export const cur = (): string => currencySymbol();
 
 export const pct = (n: number, digits = 1): string => (Number.isFinite(n) ? `${n.toFixed(digits)}%` : '-');
 

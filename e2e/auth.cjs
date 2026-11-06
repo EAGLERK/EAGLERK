@@ -47,7 +47,7 @@ async function startApp(port = APP_PORT, extraEnv = {}) {
 }
 
 async function newPage(browser, opts = {}, url = APP) {
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, ...opts });
+  const ctx = await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 900 }, ...opts });
   const page = await ctx.newPage();
   page.errors = [];
   page.on('console', (m) => ['error', 'warning'].includes(m.type()) && !/GL Driver Message|ReadPixels|Failed to load resource/.test(m.text()) && page.errors.push(m.text().slice(0, 200)));

@@ -30,7 +30,8 @@ const THEMES: Array<{ id: Theme; label: string; icon: IconName }> = [
   { id: 'light', label: 'Light', icon: 'sun' },
   { id: 'dark', label: 'Dark', icon: 'moon' },
 ];
-const ALL: Tab[] = [
+/** The sections, in order. Investing is only there for people it fits, so this is read on every render, not once. */
+const allTabs = (): Tab[] => [
   { id: 'dashboard', label: 'Dashboard', short: 'Home', icon: 'dashboard' },
   { id: 'transactions', label: 'Transactions', short: 'Activity', icon: 'transactions' },
   { id: 'goals', label: 'Goals', short: 'Goals', icon: 'goals' },
@@ -67,6 +68,7 @@ function ShellInner() {
   // 'add-transaction' is a shortcut route: the Transactions screen with its form already open.
   const wanted = route === 'add-transaction' ? 'transactions' : route;
   // A link to a screen that is switched off (or does not exist) lands on the Dashboard instead of a blank page.
+  const ALL = allTabs(); // after the store has set the country, so Investing appears only where it fits
   const tab = ALL.some((t) => t.id === wanted) ? wanted : 'dashboard';
   const mainRef = useRef<HTMLElement>(null);
   const drafts = useDrafts();
@@ -194,7 +196,7 @@ function ShellInner() {
         ))}
       </nav>
 
-      {!state.onboarded && <WelcomeDialog suggestedName={suggestedName(auth?.user)} onStart={(name) => dispatch({ type: 'startFresh', name })} />}
+      {!state.onboarded && <WelcomeDialog suggestedName={suggestedName(auth?.user)} onStart={(name, country, currency) => dispatch({ type: 'startFresh', name, country, currency })} />}
       {state.onboarded && !state.tourDone && <Tour onFinish={() => dispatch({ type: 'tour', done: true })} />}
     </div>
   );

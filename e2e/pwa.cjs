@@ -84,7 +84,7 @@ const NATIVE_SHIM = `
     check(!/supabase|api\.anthropic/.test(sw.replace(/\/\*[\s\S]*?\*\//g, '')), 'and its code does not mention any sign-in, sync or AI service');
 
     browser = await chromium.launch();
-    const ctx = await browser.newContext({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
+    const ctx = await browser.newContext({ locale: 'en-IN', viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
     const p = await ctx.newPage();
     const errors = [];
     p.on('pageerror', (e) => errors.push(e.message));
@@ -131,7 +131,7 @@ const NATIVE_SHIM = `
     await ctx.close();
 
     // ---------- pretending to be the Android app ----------
-    const nctx = await browser.newContext({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
+    const nctx = await browser.newContext({ locale: 'en-IN', viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
     await nctx.addInitScript(() => { delete window.SpeechRecognition; delete window.webkitSpeechRecognition; });
     await nctx.addInitScript(NATIVE_SHIM);
     const n = await nctx.newPage();

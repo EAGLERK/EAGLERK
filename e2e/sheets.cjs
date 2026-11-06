@@ -16,7 +16,7 @@ const row = (i, desc = `Shop ${i}`, amt = 100 + i) => `2026-10-${String(i % 28 +
 const sheet = (n, extra = []) => ['Date,Description,Amount', ...Array.from({ length: n }, (_, i) => row(i)), ...extra].join('\n') + '\n';
 
 async function start(browser, opts = {}) {
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, ...opts });
+  const ctx = await browser.newContext({ locale: 'en-IN', viewport: { width: 1280, height: 900 }, ...opts });
   const p = await ctx.newPage();
   const errors = [];
   p.on('pageerror', (e) => errors.push(e.message));

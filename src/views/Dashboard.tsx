@@ -1,10 +1,11 @@
+import { emiWord } from '../lib/region';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { addMonths, insights, series, summarize } from '../engine/cashflow';
 import { planGoal } from '../engine/goals';
 import { Icon, type IconName } from '../components/icons';
 import { Badge, Callout, Card, Delta, Empty, Toggle } from '../components/ui';
 import { HBars, IncomeSpendChart, StackedBar } from '../components/charts';
-import { inr, inrCompact, monthLabel, monthsText, pct } from '../lib/format';
+import { money, moneyCompact, monthLabel, monthsText, pct } from '../lib/format';
 import { features } from '../features';
 import { cascade } from '../motion';
 import { useStore } from '../store';
@@ -115,32 +116,32 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
       <div className="sumgrid">
         <SummaryCard
           feature icon="wallet" title="Left over" subtitle={`${monthLabel(month)} · income minus spend`}
-          value={inr(cur.saved)} pill={cur.income > 0 ? { text: `${pct(savePct * 100, 0)} saved`, tone: saveTone } : undefined}
-          extra={<div className="mini"><div>Income<b>{inr(cur.income)}</b></div><div>Spent<b>{inr(cur.spend)}</b></div>{features.investing && <div>Invested<b>{inr(cur.invested)}</b></div>}</div>}
+          value={money(cur.saved)} pill={cur.income > 0 ? { text: `${pct(savePct * 100, 0)} saved`, tone: saveTone } : undefined}
+          extra={<div className="mini"><div>Income<b>{money(cur.income)}</b></div><div>Spent<b>{money(cur.spend)}</b></div>{features.investing && <div>Invested<b>{money(cur.invested)}</b></div>}</div>}
           foot="See where it went" onFoot={() => go('transactions')}
         />
         {features.investing ? (
           <SummaryCard
             icon="net" title="Net worth" subtitle="Everything you hold minus what you owe"
-            value={inrCompact(p.netWorth)} pill={p.total > 0 ? { text: `${pct(p.blendedPosttax)} after tax`, tone: 'plain' } : undefined}
-            extra={<div className="sub">Assets {inrCompact(p.total)} &middot; Liabilities {inrCompact(p.liabilities)}</div>}
+            value={moneyCompact(p.netWorth)} pill={p.total > 0 ? { text: `${pct(p.blendedPosttax)} after tax`, tone: 'plain' } : undefined}
+            extra={<div className="sub">Assets {moneyCompact(p.total)} &middot; Liabilities {moneyCompact(p.liabilities)}</div>}
             foot="Analyze performance" onFoot={() => go('investments')}
           />
         ) : state.liabilities.length > 0 ? (
           <SummaryCard
             icon="wallet" title="Loans" subtitle={`${state.liabilities.length} loan${state.liabilities.length === 1 ? '' : 's'} you are paying`}
-            value={`${inr(d.plan.existingEmi)}/mo`}
+            value={`${money(d.plan.existingEmi)}/mo`}
             pill={d.plan.income > 0 ? { text: `${pct((d.plan.existingEmi / d.plan.income) * 100, 0)} of income`, tone: d.plan.existingEmi / d.plan.income > 0.4 ? 'bad' : d.plan.existingEmi / d.plan.income > 0.3 ? 'watch' : 'good' } : undefined}
-            extra={<div className="sub">Still owed: {inrCompact(p.liabilities)}</div>}
+            extra={<div className="sub">Still owed: {moneyCompact(p.liabilities)}</div>}
             foot="See your loans" onFoot={() => go('goals')}
           />
         ) : null}
         {goalPlan && nextGoal ? (
           <SummaryCard
             icon="target" title={`Next goal: ${nextGoal.name}`} subtitle={`${monthLabel(nextGoal.targetMonth)} · ${monthsText(goalPlan.months)} away`}
-            value={`${inr(goalPlan.requiredMonthly)}/mo`}
+            value={`${money(goalPlan.requiredMonthly)}/mo`}
             pill={goalPlan.loanAmount > 0 ? { text: goalPlan.verdict, tone: goalPlan.verdict === 'comfortable' ? 'good' : goalPlan.verdict === 'stretch' ? 'watch' : 'bad' } : undefined}
-            extra={<div className="sub">Save to have {inrCompact(goalPlan.upfront)} on the day{goalPlan.loanAmount > 0 ? `, then an EMI of ${inr(goalPlan.emi)}` : ''}</div>}
+            extra={<div className="sub">Save to have {moneyCompact(goalPlan.upfront)} on the day{goalPlan.loanAmount > 0 ? `, then ${emiWord()}: ${money(goalPlan.emi)}` : ''}</div>}
             foot="View goals" onFoot={() => go('goals')}
           />
         ) : (
@@ -158,8 +159,8 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
           sub={`Left over, last ${range} months`}
           right={<Toggle label="Range" value={range} onChange={setRange} options={[['6', '6 months'], ['12', '12 months']]} />}
         >
-          <div className={`bigfig num ${rangeSaved < 0 ? 'bad' : ''}`}>{inr(rangeSaved)}</div>
-          <div className="sub" style={{ marginBottom: 8 }}>Spending in {monthLabel(month)}: <Delta now={cur.spend} before={prev.spend} upIsGood={false} fmt={inrCompact} /></div>
+          <div className={`bigfig num ${rangeSaved < 0 ? 'bad' : ''}`}>{money(rangeSaved)}</div>
+          <div className="sub" style={{ marginBottom: 8 }}>Spending in {monthLabel(month)}: <Delta now={cur.spend} before={prev.spend} upIsGood={false} fmt={moneyCompact} /></div>
           <IncomeSpendChart data={trend.map((t) => ({ label: monthLabel(t.month, false), income: t.income, spend: t.spend, invested: t.invested }))} />
         </Card>
 
@@ -182,9 +183,9 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
         <Card title="50 / 30 / 20 check" sub="Guide: needs 50%, wants 30%, saving 20% of income">
           {cur.income > 0 ? (
             <dl className="kv">
-              <dt>Needs <span className="muted small">(target 50%)</span></dt><dd className={needsPct > 0.5 ? 'watch' : 'good'}>{needsPct > 0.5 ? '! ' : '✓ '}{pct(needsPct * 100, 0)} &middot; {inr(cur.needs)}</dd>
-              <dt>Wants <span className="muted small">(target 30%)</span></dt><dd className={wantsPct > 0.3 ? 'watch' : 'good'}>{wantsPct > 0.3 ? '! ' : '✓ '}{pct(wantsPct * 100, 0)} &middot; {inr(cur.wants)}</dd>
-              <dt>Saved <span className="muted small">(target 20%+)</span></dt><dd className={savePct < 0.2 ? 'watch' : 'good'}>{savePct < 0.2 ? '! ' : '✓ '}{pct(savePct * 100, 0)} &middot; {inr(cur.saved)}</dd>
+              <dt>Needs <span className="muted small">(target 50%)</span></dt><dd className={needsPct > 0.5 ? 'watch' : 'good'}>{needsPct > 0.5 ? '! ' : '✓ '}{pct(needsPct * 100, 0)} &middot; {money(cur.needs)}</dd>
+              <dt>Wants <span className="muted small">(target 30%)</span></dt><dd className={wantsPct > 0.3 ? 'watch' : 'good'}>{wantsPct > 0.3 ? '! ' : '✓ '}{pct(wantsPct * 100, 0)} &middot; {money(cur.wants)}</dd>
+              <dt>Saved <span className="muted small">(target 20%+)</span></dt><dd className={savePct < 0.2 ? 'watch' : 'good'}>{savePct < 0.2 ? '! ' : '✓ '}{pct(savePct * 100, 0)} &middot; {money(cur.saved)}</dd>
             </dl>
           ) : <p className="sub">Needs income recorded for the month.</p>}
           <div style={{ marginTop: 14 }} className="stack">
@@ -211,7 +212,7 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
                     {[...p.holdings].sort((a, b) => b.value - a.value).slice(0, 5).map((h) => (
                       <tr key={h.inv.id}>
                         <td>{h.inv.name}</td>
-                        <td className="r" style={{ whiteSpace: 'nowrap' }}>{inrCompact(h.value)}</td>
+                        <td className="r" style={{ whiteSpace: 'nowrap' }}>{moneyCompact(h.value)}</td>
                         <td className={`r ${h.real < 0.5 ? 'bad' : ''}`} style={{ whiteSpace: 'nowrap' }}>{h.real < 0.5 ? '\u2715 ' : ''}{pct(h.real)}</td>
                       </tr>
                     ))}
@@ -227,7 +228,7 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
         <Card title="Goals at a glance" right={<button className="btn small" onClick={() => go('goals')}>Plan goals</button>}>
           <div className="table-wrap">
             <table className="table num">
-              <thead><tr><th>Goal</th><th>When</th><th className="r">Cash needed</th><th className="r">Save / month</th><th className="r">EMI after</th><th>Affordability</th></tr></thead>
+              <thead><tr><th>Goal</th><th>When</th><th className="r">Cash needed</th><th className="r">Save / month</th><th className="r">{emiWord(true)} after</th><th>Affordability</th></tr></thead>
               <tbody>
                 {state.goals.map((g) => {
                   const pl = planGoal(g, ctx);
@@ -235,9 +236,9 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
                     <tr key={g.id}>
                       <td>{g.name}</td>
                       <td>{monthLabel(g.targetMonth)} <span className="muted small">({pl.months} mo)</span></td>
-                      <td className="r">{inrCompact(pl.upfront)}</td>
-                      <td className="r">{inr(pl.requiredMonthly)}</td>
-                      <td className="r">{pl.loanAmount > 0 ? inr(pl.emi) : '-'}</td>
+                      <td className="r">{moneyCompact(pl.upfront)}</td>
+                      <td className="r">{money(pl.requiredMonthly)}</td>
+                      <td className="r">{pl.loanAmount > 0 ? money(pl.emi) : '-'}</td>
                       <td>{pl.loanAmount > 0 ? <Badge tone={pl.verdict === 'comfortable' ? 'good' : pl.verdict === 'stretch' ? 'watch' : 'bad'}>{pl.verdict === 'comfortable' ? '✓ ' : pl.verdict === 'stretch' ? '! ' : '✕ '}{pl.verdict} ({pct(pl.foir * 100, 0)} of income)</Badge> : '-'}</td>
                     </tr>
                   );
@@ -259,7 +260,7 @@ export function Dashboard({ go }: { go: (tab: string) => void }) {
                     <td style={{ overflowWrap: 'anywhere' }}>{t.description}</td>
                     <td><span className="cat-pill">{t.category}</span></td>
                     <td className="num" style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
-                    <td className={`r num ${t.type === 'income' ? 'good' : ''}`} style={{ whiteSpace: 'nowrap' }}>{t.type === 'income' ? '+' : '-'}{inr(t.amount)}</td>
+                    <td className={`r num ${t.type === 'income' ? 'good' : ''}`} style={{ whiteSpace: 'nowrap' }}>{t.type === 'income' ? '+' : '-'}{money(t.amount)}</td>
                   </tr>
                 ))}
               </tbody>

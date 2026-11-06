@@ -1,3 +1,4 @@
+import { moneyContext } from '../lib/region';
 import { isNative } from '../platform';
 import { createNativeListener } from './native-speech';
 
@@ -22,6 +23,10 @@ const ctor = (): RecCtor | null => {
 };
 
 /** Inside the phone apps the phone's own recogniser is used, so listening is assumed; a missing one is reported when it starts. */
+/** The English the recogniser should expect: Mitra's commands are English, so this is English as spoken where the person lives (an Indian or Irish accent is recognised better that way). */
+const ENGLISH = new Set(['IN', 'US', 'GB', 'AU', 'CA', 'NZ', 'IE', 'ZA', 'PH', 'NG', 'KE', 'GH', 'SG']);
+export const speechLang = (): string => { const c = moneyContext().country; return ENGLISH.has(c) ? `en-${c}` : 'en-US'; };
+
 export const listeningSupported = (): boolean => isNative() || !!ctor();
 export const speakingSupported = (): boolean => typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
 
@@ -50,7 +55,7 @@ function nativeListener(h: ListenHandlers, lang: string): Listener {
   };
 }
 
-export function createListener(h: ListenHandlers, lang = 'en-IN'): Listener | null {
+export function createListener(h: ListenHandlers, lang = speechLang()): Listener | null {
   if (isNative()) return nativeListener(h, lang);
   const C = ctor();
   if (!C) return null;
@@ -95,7 +100,7 @@ export function speak(text: string, onEnd?: () => void): void {
   try {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-IN';
+    u.lang = speechLang();
     u.rate = 1.02;
     u.onend = () => onEnd?.();
     u.onerror = () => onEnd?.();

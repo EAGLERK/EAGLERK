@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { inr, inrCompact } from '../lib/format';
+import { money, moneyCompact } from '../lib/format';
 import { Toggle } from './ui';
 
 const tick = { fill: 'var(--text-muted)', fontSize: 12 };
@@ -30,7 +30,7 @@ function Tip({ active, payload, label, titleFormat }: TipProps) {
       {payload.map((p) => (
         <div className="l" key={String(p.dataKey)}>
           <span><i style={{ background: p.color }} />{p.name}</span>
-          <span className="num">{inr(p.value ?? 0)}</span>
+          <span className="num">{money(p.value ?? 0)}</span>
         </div>
       ))}
     </div>
@@ -86,7 +86,7 @@ export function IncomeSpendChart({ data }: { data: IncomeSpendRow[] }) {
           <thead><tr><th>Month</th><th className="r">Income</th><th className="r">Spend</th><th className="r">Invested</th><th className="r">Left over</th></tr></thead>
           <tbody>
             {data.map((r) => (
-              <tr key={r.label}><td>{r.label}</td><td className="r">{inr(r.income)}</td><td className="r">{inr(r.spend)}</td><td className="r">{inr(r.invested)}</td><td className={`r ${r.income - r.spend < 0 ? 'bad' : ''}`}>{inr(r.income - r.spend)}</td></tr>
+              <tr key={r.label}><td>{r.label}</td><td className="r">{money(r.income)}</td><td className="r">{money(r.spend)}</td><td className="r">{money(r.invested)}</td><td className={`r ${r.income - r.spend < 0 ? 'bad' : ''}`}>{money(r.income - r.spend)}</td></tr>
             ))}
           </tbody>
         </table>
@@ -109,10 +109,10 @@ export function HBars({ rows, total }: { rows: BarRow[]; total?: number }) {
   return (
     <div role="list">
       {rows.map((r) => (
-        <div className="hbar-row" role="listitem" key={r.label} title={`${r.label}: ${inr(r.value)}`}>
+        <div className="hbar-row" role="listitem" key={r.label} title={`${r.label}: ${money(r.value)}`}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
           <div className="hbar-track"><div className="hbar-fill" style={{ width: `${(r.value / max) * 100}%`, background: r.color }} /></div>
-          <span className="num right">{inr(r.value)} <span className="muted small">{sum > 0 ? `${((r.value / sum) * 100).toFixed(0)}%` : ''}</span></span>
+          <span className="num right">{money(r.value)} <span className="muted small">{sum > 0 ? `${((r.value / sum) * 100).toFixed(0)}%` : ''}</span></span>
         </div>
       ))}
     </div>
@@ -125,7 +125,7 @@ export interface Part {
   color: string;
 }
 
-export function StackedBar({ parts, format = inrCompact }: { parts: Part[]; format?: (n: number) => string }) {
+export function StackedBar({ parts, format = moneyCompact }: { parts: Part[]; format?: (n: number) => string }) {
   const total = parts.reduce((a, p) => a + p.value, 0);
   const shown = parts.filter((p) => p.value > 0);
   return (
@@ -181,7 +181,7 @@ export function ProjectionChart({ data }: { data: ProjPoint[] }) {
           <thead><tr><th>Years</th><th className="r">Cautious</th><th className="r">Expected</th><th className="r">Optimistic</th></tr></thead>
           <tbody>
             {data.filter((p) => p.year % 5 === 0 || p.year === data.length - 1).map((p) => (
-              <tr key={p.year}><td>{p.year}</td><td className="r">{inrCompact(p.low)}</td><td className="r">{inrCompact(p.base)}</td><td className="r">{inrCompact(p.high)}</td></tr>
+              <tr key={p.year}><td>{p.year}</td><td className="r">{moneyCompact(p.low)}</td><td className="r">{moneyCompact(p.base)}</td><td className="r">{moneyCompact(p.high)}</td></tr>
             ))}
           </tbody>
         </table>

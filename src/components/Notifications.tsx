@@ -183,7 +183,7 @@ export function NotificationSettings() {
       <div className="stack">
         <ul className="clean sub">
           <li>Spending above your income, or a category well above your own average</li>
-          <li>Goals that need more than you have left over, and heavy loan EMIs</li>
+          <li>Goals that need more than you have left over, and heavy loan payments</li>
           <li>Reminders to import a new statement and to back up your data</li>
           <li>Problems saving to your account</li>
         </ul>

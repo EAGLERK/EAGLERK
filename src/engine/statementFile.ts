@@ -1,5 +1,5 @@
 import { decodeEntities, readXlsx } from './xlsx';
-import { parseStatement, parseTable, type CsvResult } from './csv';
+import { parseStatement, parseTable, type CsvResult, type ReadOptions } from './csv';
 
 const fail = (message: string): CsvResult => ({ rows: [], skipped: 0, warnings: [message], notes: [] });
 
@@ -25,7 +25,7 @@ export function htmlTableRows(html: string): string[][] {
 }
 
 /** Reads a statement from the bytes of whatever file was chosen: CSV or text, Excel (.xlsx), or an HTML table saved as .xls. */
-export async function readStatementBytes(buf: ArrayBuffer): Promise<CsvResult> {
+export async function readStatementBytes(buf: ArrayBuffer, opts: ReadOptions = {}): Promise<CsvResult> {
   const b = new Uint8Array(buf);
   const startsWith = (...sig: number[]) => sig.every((v, i) => b[i] === v);
 
@@ -44,7 +44,7 @@ export async function readStatementBytes(buf: ArrayBuffer): Promise<CsvResult> {
     }
     let first: CsvResult | null = null;
     for (const rows of sheets) {
-      const r = parseTable(rows);
+      const r = parseTable(rows, opts);
       first ??= r;
       if (r.rows.length) return r;
     }
@@ -52,10 +52,10 @@ export async function readStatementBytes(buf: ArrayBuffer): Promise<CsvResult> {
   }
 
   const text = decode(b);
-  if (/<table[\s>]/i.test(text)) return parseTable(htmlTableRows(text));
-  return parseStatement(text);
+  if (/<table[\s>]/i.test(text)) return parseTable(htmlTableRows(text), opts);
+  return parseStatement(text, opts);
 }
 
-export async function readStatementFile(file: File): Promise<CsvResult> {
-  return readStatementBytes(await file.arrayBuffer());
+export async function readStatementFile(file: File, opts: ReadOptions = {}): Promise<CsvResult> {
+  return readStatementBytes(await file.arrayBuffer(), opts);
 }

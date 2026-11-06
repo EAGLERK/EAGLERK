@@ -19,6 +19,7 @@
     "e2e:voice-ai": "node e2e/voice-ai.cjs",
     "e2e:pwa": "node e2e/pwa.cjs",
     "e2e:sheets": "node e2e/sheets.cjs",
+    "e2e:global": "node e2e/global.cjs",
     "dev:auth-demo": "node scripts/dev-auth-demo.cjs",
     "check:supabase": "node scripts/check-supabase.cjs",
     "e2e:ui": "node e2e/ui.cjs",

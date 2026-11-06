@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { COUNTRIES, countryOf, currencyChoices, emiWords, isIndia } from '../lib/region';
+import { useMemo, useRef, useState } from 'react';
 import type { Assumption } from '../engine/assumptions';
 import { Badge, Callout, Card, Field, Num, NumInput, PasswordInput, Toggle } from '../components/ui';
 import { InstallCard } from '../components/Install';
 import { NotificationSettings } from '../components/Notifications';
-import { pct } from '../lib/format';
+import { pct, cur } from '../lib/format';
 import { Icon } from '../components/icons';
 import { useConfirm, useToast } from '../components/feedback';
 import { features } from '../features';
@@ -11,7 +12,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useSync } from '../auth/CloudStore';
 import { useStore, type AppState } from '../store';
 import { incomeTax } from '../engine/tax';
-import { inr } from '../lib/format';
+import { money } from '../lib/format';
 
 const STATUS_TONE = { verified: 'good', check: 'watch', estimate: undefined } as const;
 const STATUS_HELP = {
@@ -26,6 +27,7 @@ export function Settings() {
   const confirm = useConfirm();
   const { toast } = useToast();
   const p = state.profile;
+  const india = isIndia(d.country);
   const where = auth?.user ? 'your account' : 'this browser';
 
   // Earlier versions could load made-up sample data. Anyone who still has it can take it out; nothing offers to add it any more.
@@ -96,24 +98,27 @@ export function Settings() {
 
       {auth?.user && <AccountCard />}
 
-      <Card title="About you" sub="Used for tax slab, equity share and fallbacks until you import transactions">
+      <RegionCard />
+
+      <Card title="About you" sub={india ? 'Used for tax slab, equity share and fallbacks until you import transactions' : 'Used as fallbacks until you import transactions, and to check a house price against your income'}>
         <div className="form-grid">
           <Field label="Name"><input value={p.name} onChange={(e) => dispatch({ type: 'profile', patch: { name: e.target.value } })} /></Field>
           <Num label="Age" value={p.age} onChange={(n) => dispatch({ type: 'profile', patch: { age: Math.round(n) } })} min={18} />
-          <Num label="Monthly take-home (₹)" value={p.monthlyIncome} onChange={(n) => dispatch({ type: 'profile', patch: { monthlyIncome: n } })} min={0} />
-          <Num label="Monthly spend (₹)" value={p.monthlyExpenses} onChange={(n) => dispatch({ type: 'profile', patch: { monthlyExpenses: n } })} min={0} hint="Including rent and EMIs" />
-          <Num label="Annual gross income (₹)" value={p.annualGrossIncome} onChange={(n) => dispatch({ type: 'profile', patch: { annualGrossIncome: n } })} min={0} hint="Sets your tax slab" />
+          <Num label={`Monthly take-home (${cur()})`} value={p.monthlyIncome} onChange={(n) => dispatch({ type: 'profile', patch: { monthlyIncome: n } })} min={0} />
+          <Num label={`Monthly spend (${cur()})`} value={p.monthlyExpenses} onChange={(n) => dispatch({ type: 'profile', patch: { monthlyExpenses: n } })} min={0} hint={`Including rent and ${emiWords()}`} />
+          <Num label={`Annual gross income (${cur()})`} value={p.annualGrossIncome} onChange={(n) => dispatch({ type: 'profile', patch: { annualGrossIncome: n } })} min={0} hint={india ? 'Sets your tax slab' : 'Before tax. Used to check a house price against your income'} />
           {features.investing && (<Num label="Emergency fund (months)" value={p.emergencyMonths} onChange={(n) => dispatch({ type: 'profile', patch: { emergencyMonths: n } })} min={0} hint="6 is standard; 9-12 if income is irregular" />)}
           {features.investing && (<Field label="Risk comfort" wide><Toggle label="Risk profile" value={p.risk} onChange={(v) => dispatch({ type: 'profile', patch: { risk: v } })} options={[['conservative', 'Low'], ['moderate', 'Medium'], ['aggressive', 'High']]} /></Field>)}
         </div>
         <div className="row" style={{ marginTop: 12 }}>
-          <label className="check"><input type="checkbox" checked={p.salaried} onChange={(e) => dispatch({ type: 'profile', patch: { salaried: e.target.checked } })} /> Salaried (Rs 75,000 standard deduction)</label>
+          {india && <label className="check"><input type="checkbox" checked={p.salaried} onChange={(e) => dispatch({ type: 'profile', patch: { salaried: e.target.checked } })} /> Salaried (Rs 75,000 standard deduction)</label>}
           {features.investing && (<label className="check"><input type="checkbox" checked={p.hasHealthInsurance} onChange={(e) => dispatch({ type: 'profile', patch: { hasHealthInsurance: e.target.checked } })} /> I have health insurance</label>)}
           {features.investing && (<label className="check"><input type="checkbox" checked={p.hasTermInsurance} onChange={(e) => dispatch({ type: 'profile', patch: { hasTermInsurance: e.target.checked } })} /> I have term life insurance</label>)}
         </div>
-        <p className="sub" style={{ marginTop: 12 }}>
-          Tax on this income (new regime, FY 2026-27): <b>{inr(incomeTax(p.annualGrossIncome, p.salaried))}</b>.{features.investing && <> Tax on your next rupee of interest: <b>{pct(d.marginal * 100, 1)}</b>. Under the new regime income up to Rs 12.75 lakh (salaried) pays nil, so FD interest costs you nothing extra until you cross that line.</>}
-        </p>
+        {india && <p className="sub" style={{ marginTop: 12 }}>
+          Tax on this income (new regime, FY 2026-27): <b>{money(incomeTax(p.annualGrossIncome, p.salaried))}</b>.{features.investing && <> Tax on your next rupee of interest: <b>{pct(d.marginal * 100, 1)}</b>. Under the new regime income up to Rs 12.75 lakh (salaried) pays nil, so FD interest costs you nothing extra until you cross that line.</>}
+        </p>}
+        {!india && <p className="sub" style={{ marginTop: 12 }}>There is no tax estimate for your country yet: the tax slabs built in are India&rsquo;s, so they are switched off here.</p>}
       </Card>
 
       <Card title="Rates and assumptions" sub={features.investing ? 'Every number the planner uses. Change any of them; reset returns the default.' : 'The numbers your goals use. Change any of them; reset returns the default.'}>
@@ -123,7 +128,7 @@ export function Settings() {
               <b>Verified</b> rates come from the 30 Sep 2026 small-savings notification and the 7 Oct 2026 RBI policy. <b>Check</b> rates differ by bank: aggregator sites disagreed on SBI&rsquo;s 1-year FD by 25 bps, so enter your bank&rsquo;s own. <b>Estimates</b> are modelling choices. Press reports were the source, not the primary notifications, so confirm before a large decision.
             </Callout>
           ) : (
-            <Callout tone="info">Loan rates differ by lender, so enter the rate you were actually quoted. House, car and bike price growth are estimates, not forecasts.</Callout>
+            <Callout tone="info">{india ? 'Loan rates differ by lender, so enter the rate you were actually quoted. House, car and bike price growth are estimates, not forecasts.' : 'These are placeholders, not rates for your country. Enter the loan rate you were quoted and the price growth you expect; until you do, goal plans use the placeholders. Interest on savings is assumed to be 0.'}</Callout>
           )}
           {groups.map((g) => (
             <div key={g}>
@@ -254,6 +259,36 @@ function AccountCard() {
         </details>
 
         {msg && <Callout tone={msg.tone}>{msg.text}</Callout>}
+      </div>
+    </Card>
+  );
+}
+
+
+function RegionCard() {
+  const { state, dispatch, d } = useStore();
+  const { toast } = useToast();
+  const choices = useMemo(() => currencyChoices(), []);
+  const options = choices.some((c) => c.code === d.currency) ? choices : [{ code: d.currency, name: d.currency }, ...choices];
+  const setCountry = (code: string) => {
+    const c = countryOf(code);
+    dispatch({ type: 'profile', patch: { country: code, currency: c?.currency ?? d.currency } });
+    toast(`Country set to ${c?.name ?? code}. Amounts are shown in ${c?.currency ?? d.currency}; existing amounts were not converted.`);
+  };
+  return (
+    <Card title="Country and currency" sub="Sets the currency amounts are written in, how numbers are grouped, and which country-specific tools are offered.">
+      <div className="form-grid">
+        <Field label="Country">
+          <select value={state.profile.country ?? 'IN'} onChange={(e) => setCountry(e.target.value)}>
+            {!countryOf(state.profile.country ?? 'IN') && <option value={state.profile.country}>{state.profile.country}</option>}
+            {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+          </select>
+        </Field>
+        <Field label="Currency" hint="Changing it changes how amounts are shown. It does not convert amounts you already have.">
+          <select value={d.currency} onChange={(e) => dispatch({ type: 'profile', patch: { currency: e.target.value } })}>
+            {options.map((c) => <option key={c.code} value={c.code}>{c.name} ({c.code})</option>)}
+          </select>
+        </Field>
       </div>
     </Card>
   );

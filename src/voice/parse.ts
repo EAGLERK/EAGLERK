@@ -189,7 +189,8 @@ export function parseCommand(raw: string, today: string): Cmd {
     const { date, text } = extractDate(s, today);
     const toks = text.split(' ');
     const a = findAmount(toks);
-    const type: 'income' | 'expense' = INC.test(s) && !/\b(expense|spent|paid|bought)\b/.test(s) ? 'income' : 'expense';
+    // "got paid 500" is money in, even though "paid" usually means money out.
+    const type: 'income' | 'expense' = INC.test(s) && (!/\b(expense|spent|paid|bought)\b/.test(s) || /\b(got|get|was|were|am) paid\b/.test(s)) ? 'income' : 'expense';
     const FILLER = new Set(['add', 'record', 'log', 'enter', 'create', 'new', 'make', 'insert', 'an', 'a', 'the', 'my', 'expense', 'expenses', 'income', 'transaction', 'payment', 'spent', 'spend', 'paid', 'pay', 'bought', 'purchased', 'purchase', 'received', 'got', 'earned', 'credited', 'debited', 'of', 'worth', 'amount', 'for', 'on', 'at', 'to', 'from', 'as', 'in', 'with', 'ordered', 'booked', 'gave', 'sold', 'total', 'rs', 'only', 'about', 'around']);
     const before = a ? toks.slice(0, a.start) : toks;
     const after = a ? toks.slice(a.end) : [];
