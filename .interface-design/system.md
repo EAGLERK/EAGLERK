@@ -2,6 +2,8 @@
 
 Written from `src/styles.css` and the tested UI rules, updated 2026-11-02 when the look was aligned with shadcn/ui. If this file and the CSS disagree, the CSS is right; fix this file.
 
+> The machine-readable form of everything below is `design-system/tokens.json`, with a test that keeps it equal to `src/styles.css`. Read `design-system/README.md` for the component contracts and the measured findings.
+
 ## Direction
 
 **Personality:** calm, neutral and trustworthy, in the shadcn/ui style: neutral surfaces, hairline borders, small shadows, one accent. A personal-money app people open on a phone, often once a day, to see what is left.

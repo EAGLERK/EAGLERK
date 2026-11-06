@@ -26,7 +26,9 @@
     "mobile:android": "npm run build:mobile && cap open android",
     "mobile:ios": "npm run build:mobile && cap open ios",
     "mobile:apk": "npm run build:mobile && cd android && ./gradlew assembleDebug",
-    "mobile:icons": "capacitor-assets generate --assetPath assets --android --ios"
+    "mobile:icons": "capacitor-assets generate --assetPath assets --android --ios",
+    "design:build": "node scripts/build-design-system.mjs",
+    "design:measure": "node scripts/measure-design-system.cjs"
   },
   "dependencies": {
     "@capacitor-community/speech-recognition": "^7.0.1",

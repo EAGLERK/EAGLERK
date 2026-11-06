@@ -1,0 +1,420 @@
+{
+ "measuredAt": "2026-11-06",
+ "viewport": {
+  "desktop": "1280x860",
+  "phone": "390x800"
+ },
+ "elements": {
+  "desktop": {
+   "page title (h1)": {
+    "fs": "24px",
+    "fw": "600",
+    "lh": "28.8px",
+    "ls": "-0.48px",
+    "h": 29,
+    "pad": "0px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "card title (h2)": {
+    "fs": "16px",
+    "fw": "600",
+    "lh": "17.6px",
+    "ls": "normal",
+    "h": 18,
+    "pad": "0px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "summary figure": {
+    "fs": "30px",
+    "fw": "600",
+    "lh": "45px",
+    "ls": "-0.6px",
+    "h": 80,
+    "pad": "0px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "hero figure": {
+    "fs": "36px",
+    "fw": "600",
+    "lh": "54px",
+    "ls": "-0.72px",
+    "h": 54,
+    "pad": "0px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "body / paragraph": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 21,
+    "pad": "0px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "table head": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 42,
+    "pad": "10px 12px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "table cell": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 61,
+    "pad": "12px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "button (outline)": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "16.8px",
+    "ls": "normal",
+    "h": 36,
+    "pad": "0px 14px",
+    "rad": "8px",
+    "sh": "rgba(0, 0, 0, 0.05) 0px 1px 2px 0px",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "button primary": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "16.8px",
+    "ls": "normal",
+    "h": 36,
+    "pad": "8px 16px",
+    "rad": "8px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "button small": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "16.8px",
+    "ls": "normal",
+    "h": 32,
+    "pad": "4px 12px",
+    "rad": "8px",
+    "sh": "rgba(0, 0, 0, 0.05) 0px 1px 2px 0px",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "badge": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 25,
+    "pad": "2px 8px",
+    "rad": "999px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "side link": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 36,
+    "pad": "0px 8px",
+    "rad": "8px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "tab (segmented)": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 32,
+    "pad": "4px 12px",
+    "rad": "8px",
+    "sh": "rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "card": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 288,
+    "pad": "24px",
+    "rad": "14px",
+    "sh": "rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "sumcard": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 306,
+    "pad": "0px",
+    "rad": "14px",
+    "sh": "rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "callout": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 68,
+    "pad": "12px 16px",
+    "rad": "10px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "field label": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 21,
+    "pad": "0px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "input": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 36,
+    "pad": "4px 12px",
+    "rad": "8px",
+    "sh": "rgba(0, 0, 0, 0.05) 0px 1px 2px 0px",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "select": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "normal",
+    "ls": "normal",
+    "h": 36,
+    "pad": "4px 12px",
+    "rad": "8px",
+    "sh": "rgba(0, 0, 0, 0.05) 0px 1px 2px 0px",
+    "ff": "system-ui, -apple-system, \"Seg"
+   }
+  },
+  "phone": {
+   "page title (h1)": {
+    "fs": "24px",
+    "fw": "600",
+    "lh": "28.8px",
+    "ls": "-0.48px",
+    "h": 29,
+    "pad": "0px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "card title (h2)": {
+    "fs": "16px",
+    "fw": "600",
+    "lh": "17.6px",
+    "ls": "normal",
+    "h": 18,
+    "pad": "0px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "summary figure": {
+    "fs": "30px",
+    "fw": "600",
+    "lh": "45px",
+    "ls": "-0.6px",
+    "h": 45,
+    "pad": "0px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "hero figure": {
+    "fs": "30px",
+    "fw": "600",
+    "lh": "45px",
+    "ls": "-0.6px",
+    "h": 45,
+    "pad": "0px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "body / paragraph": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 42,
+    "pad": "0px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "table head": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 42,
+    "pad": "10px 12px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "table cell": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 172,
+    "pad": "12px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "button (outline)": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "16.8px",
+    "ls": "normal",
+    "h": 44,
+    "pad": "0px",
+    "rad": "8px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "button primary": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "16.8px",
+    "ls": "normal",
+    "h": 44,
+    "pad": "8px 16px",
+    "rad": "8px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "button small": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "16.8px",
+    "ls": "normal",
+    "h": 44,
+    "pad": "8px 16px",
+    "rad": "8px",
+    "sh": "rgba(0, 0, 0, 0.05) 0px 1px 2px 0px",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "badge": {
+    "fs": "11px",
+    "fw": "400",
+    "lh": "16.5px",
+    "ls": "normal",
+    "h": 21,
+    "pad": "2px 7px",
+    "rad": "999px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "tab (segmented)": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 44,
+    "pad": "4px 12px",
+    "rad": "8px",
+    "sh": "rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "card": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 710,
+    "pad": "16px",
+    "rad": "14px",
+    "sh": "rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "sumcard": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 261,
+    "pad": "0px",
+    "rad": "14px",
+    "sh": "rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "callout": {
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 110,
+    "pad": "12px 16px",
+    "rad": "10px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "field label": {
+    "fs": "14px",
+    "fw": "500",
+    "lh": "21px",
+    "ls": "normal",
+    "h": 21,
+    "pad": "0px",
+    "rad": "0px",
+    "sh": "",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "input": {
+    "fs": "16px",
+    "fw": "400",
+    "lh": "24px",
+    "ls": "normal",
+    "h": 44,
+    "pad": "4px 12px",
+    "rad": "8px",
+    "sh": "rgba(0, 0, 0, 0.05) 0px 1px 2px 0px",
+    "ff": "system-ui, -apple-system, \"Seg"
+   },
+   "select": {
+    "fs": "16px",
+    "fw": "400",
+    "lh": "normal",
+    "ls": "normal",
+    "h": 44,
+    "pad": "4px 12px",
+    "rad": "8px",
+    "sh": "rgba(0, 0, 0, 0.05) 0px 1px 2px 0px",
+    "ff": "system-ui, -apple-system, \"Seg"
+   }
+  }
+ }
+}
