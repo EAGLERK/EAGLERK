@@ -1,5 +1,5 @@
 {
- "source": "seed: local git history (replaced on first Action run)",
+ "source": "GitHub REST API",
  "generated": "2026-11-22",
  "login": "EAGLERK",
  "days": {
@@ -22,14 +22,6 @@
    "commits": 4,
    "last": "2026-11-21"
   },
-  "MyMoney": {
-   "commits": 66,
-   "last": "2026-11-21"
-  },
-  "school-of-athens": {
-   "commits": 2,
-   "last": "2026-11-18"
-  },
   "dhun-disc-library": {
    "commits": 12,
    "last": "2026-11-17"
@@ -37,6 +29,18 @@
   "Learning": {
    "commits": 5,
    "last": "2026-10-31"
+  },
+  "MyMoney": {
+   "commits": 66,
+   "last": "2026-11-21"
+  },
+  "Rahul-Kumar": {
+   "commits": 0,
+   "last": null
+  },
+  "school-of-athens": {
+   "commits": 2,
+   "last": "2026-11-18"
   }
  }
 }
