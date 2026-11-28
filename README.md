@@ -13,7 +13,7 @@
 <h3 id="products"></h3>
 
 <p>
-<a href="https://github.com/EAGLERK/Day_One"><img src="./cards/repo-day_one.svg" width="49%" alt="HireTown: walk a 3D town, meet recruiters and apply on the spot" /></a>
+<a href="https://github.com/EAGLERK/Day_One"><img src="./cards/repo-day_one.svg" width="49%" alt="Day.One: walk a 3D town, meet recruiters and apply on the spot" /></a>
 <a href="https://github.com/EAGLERK/MyMoney"><img src="./cards/repo-mymoney.svg" width="49%" alt="MyMoney: personal finance planner with the Mitra voice assistant" /></a>
 <a href="https://github.com/EAGLERK/dhun-disc-library"><img src="./cards/repo-dhun-disc-library.svg" width="49%" alt="Dhun Disc Library: real albums with 30-second previews" /></a>
 <a href="https://github.com/EAGLERK/school-of-athens"><img src="./cards/repo-school-of-athens.svg" width="49%" alt="School of Athens: two paintings told as one scroll film" /></a>
